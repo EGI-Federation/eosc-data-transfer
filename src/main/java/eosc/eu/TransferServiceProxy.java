@@ -272,7 +272,7 @@ public class TransferServiceProxy {
                     LOG.infof("Started new transfer %s", jobinfo.job_id);
 
                     // Success
-                    response.complete(Response.ok(new TransferInfo(jobinfo)).build());
+                    response.complete(Response.accepted(new TransferInfo(jobinfo)).build());
                     return Uni.createFrom().nullItem();
                 })
                 .onFailure().invoke(e -> {

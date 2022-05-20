@@ -14,8 +14,15 @@ public class StorageElementBase {
     public String kind;
     public String name;
 
+
+    /**
+     * Constructor
+     */
     public StorageElementBase() {}
 
+    /**
+     * Construct but change kind
+     */
     public StorageElementBase(String kind) {
         this.kind = kind;
     }

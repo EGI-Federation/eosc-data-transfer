@@ -1,6 +1,7 @@
 package eosc.eu.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,15 +15,32 @@ public class UserInfo {
 
     public String kind = "UserInfo";
     public String base_id;
-    public String delegation_id;
     public String user_dn;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String delegation_id;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<String> dn;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<String> vos;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<String> vos_id;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<String> voms_cred;
 
+
+    /**
+     * Constructor
+     */
     public UserInfo() {}
 
+    /**
+     * Construct from FTS user info, makes deep copy
+     */
     public UserInfo(egi.fts.model.UserInfo ui) {
         this.base_id = ui.base_id;
         this.delegation_id = ui.delegation_id;

@@ -10,7 +10,7 @@ import javax.ws.rs.core.MediaType;
 
 
 /**
- * Details of a storage element file or folder)
+ * Details of a storage element (file or folder)
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StorageElement extends StorageElementBase {
@@ -32,8 +32,15 @@ public class StorageElement extends StorageElementBase {
     public String accessUrl;
     public String downloadUrl;
 
+
+    /**
+     * Constructor
+     */
     public StorageElement() {}
 
+    /**
+     * Construct from Zenodo file
+     */
     public StorageElement(ZenodoFile zf) {
         super("StorageElement");
         this.name = zf.filename;

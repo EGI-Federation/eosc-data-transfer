@@ -21,6 +21,7 @@ public class ActionSuccess {
     @JsonInclude(Include.NON_EMPTY)
     public Optional<String> message;
 
+
     /**
      * Constructor
      */

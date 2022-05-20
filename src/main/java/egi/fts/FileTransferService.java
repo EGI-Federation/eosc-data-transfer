@@ -21,10 +21,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import java.util.List;
 
-
-//@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @RegisterProvider(value = FileTransferServiceExceptionMapper.class)
 public interface FileTransferService {
@@ -32,4 +29,9 @@ public interface FileTransferService {
     @GET
     @Path("/whoami")
     Uni<UserInfo> getUserInfoAsync(@RestHeader("Authorization") String auth);
+
+    @POST
+    @Path("/jobs")
+    @Consumes(MediaType.APPLICATION_JSON)
+    Uni<JobInfo> startTransferAsync(@RestHeader("Authorization") String auth, Job transfer);
 }

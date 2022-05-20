@@ -506,6 +506,7 @@ paths:
   /transfer:
     get:
       summary: Retrieve information about a transfer
+      operationId: getTransferInfo
       tags:
         - Transfer
       parameters:
@@ -549,7 +550,8 @@ paths:
                 $ref: '#/components/schemas/Error'
       
     post:
-      summary: Initiate the transfer of multiple sets of files
+      summary: Initiate new transfer of multiple sets of files
+      operationId: startTransfer
       tags:
         - Transfer
       requestBody:
@@ -599,6 +601,7 @@ paths:
 
     delete:
       summary: Cancel transfer
+      operationId: stopTransfer
       tags:
         - Transfer
       parameters:
@@ -780,18 +783,6 @@ components:
           items: 
             $ref: '#/components/schemas/StorageElement'
     
-    TransferFileList:
-      type: array
-      items:
-        type: object
-        required:
-          - url
-        properties:
-          url:
-            type: string
-            format: uri
-      minItems: 1
-    
     TransferPayload:
       description: The source files to transfer to the destination files
       type: object
@@ -800,15 +791,16 @@ components:
         - destinations
       properties:
         sources:
-          $ref: '#/components/schemas/TransferFileList'
+          type: array
+          items:
+            type: string
         destinations:
-          $ref: '#/components/schemas/TransferFileList'
+          type: array
+          items:
+            type: string
         priority:
           description: Override transfer priority for this set of files
           type: integer
-        filesize:
-          type: integer
-          minimum: 0
         checksum:
           description: User defined checksum in the form algorithm:value
           type: string

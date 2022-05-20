@@ -19,10 +19,17 @@ public class StorageContent {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<StorageElement> elements;
 
+
+    /**
+     * Constructor
+     */
     public StorageContent() {
         this.elements = new ArrayList<>();
     }
 
+    /**
+     * Copy constructor makes deep copy
+     */
     public StorageContent(StorageContent storage) {
         if(null == this.elements)
             this.elements = new ArrayList<>();

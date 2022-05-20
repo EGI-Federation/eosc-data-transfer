@@ -18,5 +18,9 @@ public class UserInfo {
     public List<String> vos_id;
     public List<String> voms_cred;
 
+
+    /**
+     * Constructor
+     */
     public UserInfo() {}
 }

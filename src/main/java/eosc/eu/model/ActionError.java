@@ -28,10 +28,10 @@ import javax.ws.rs.core.Response.Status;
 @Schema(name = "Error")
 public class ActionError {
 
-    @Schema(title="The error type")
+    @Schema(title="Error type")
     public String id;
 
-    @Schema(title="The error message")
+    @Schema(title="Error message")
     @JsonInclude(Include.NON_EMPTY)
     public Optional<String> description;
 
@@ -43,6 +43,7 @@ public class ActionError {
     private Status status = defaultStatus();
 
     public static Status defaultStatus() { return Status.INTERNAL_SERVER_ERROR; }
+
 
     /**
      * Copy constructor does deep copy

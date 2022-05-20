@@ -32,6 +32,7 @@ import javax.ws.rs.core.Response;
 
 import eosc.eu.model.*;
 import egi.fts.FileTransferService;
+import egi.fts.model.Job;
 import parser.zenodo.Zenodo;
 
 
@@ -217,6 +218,80 @@ public class TransferServiceProxy {
         } catch (ExecutionException e) {
             // Execution error
             return new ActionError("getUserInfoExecutionError").toResponse();
+        }
+    }
+
+    /**
+     * Initiate new transfer of multiple sets of files.
+     *
+     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     */
+    @POST
+    @Path("/transfer")
+    @SecurityRequirement(name = "bearer")
+    @Operation(operationId = "startTransfer",  summary = "Initiate new transfer of multiple sets of files")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "202", description = "Accepted",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TransferInfo.class))),
+            @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "401", description="Not authorized",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "403", description="Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "419", description="Re-delegate credentials",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+    })
+    public Response startTransfer(@RestHeader("Authorization") String auth, Transfer transfer) {
+
+        LOG.info("Start new data transfer");
+
+        try {
+            ActionParameters ap = new ActionParameters(auth);
+            CompletableFuture<Response> response = new CompletableFuture<>();
+            Uni<ActionParameters> start = Uni.createFrom().item(ap);
+            start
+                .onItem().transformToUni(params -> {
+                    // Pick transfer service and create REST client for it
+                    if (!getTransferService(params)) {
+                        // Could not get REST client
+                        response.complete(new ActionError("invalidServiceConfig",
+                                Tuple2.of("destination", params.destination)).toResponse());
+                        return Uni.createFrom().failure(new RuntimeException());
+                    }
+
+                    return Uni.createFrom().item(params);
+                })
+                .onItem().transformToUni(params -> {
+                    // Start transfer
+                    Job job = new Job(transfer);
+                    return params.fts.startTransferAsync(params.authorization, job);
+                })
+                .onItem().transformToUni(jobinfo -> {
+                    // Transfer started
+                    LOG.infof("Started new transfer %s", jobinfo.job_id);
+
+                    // Success
+                    response.complete(Response.ok(new TransferInfo(jobinfo)).build());
+                    return Uni.createFrom().nullItem();
+                })
+                .onFailure().invoke(e -> {
+                    LOG.error("Failed to start new transfer");
+                    if (!response.isDone())
+                        response.complete(new ActionError(e, Tuple2.of("destination", config.destination()))
+                                .toResponse());
+                })
+                .subscribe().with(unused -> {});
+
+            // Wait until transfer is started (possibly with error)
+            Response r = response.get();
+            return r;
+        } catch (InterruptedException e) {
+            // Cancelled
+            return new ActionError("startTransferInterrupted").toResponse();
+        } catch (ExecutionException e) {
+            // Execution error
+            return new ActionError("startTransferExecutionError").toResponse();
         }
     }
 

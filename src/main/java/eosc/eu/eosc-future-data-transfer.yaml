@@ -1,0 +1,895 @@
+openapi: 3.0.0
+servers:
+  # Added by API Auto Mocking Plugin
+  - url: https://virtserver.swaggerhub.com/thebe14/eosc-future-data-transfer/1.0.0
+    description: SwaggerHub API Auto Mocking
+  - url: http://localhost:8080/{basePath}
+    description: Internal staging server for testing
+    variables:
+      basePath:
+        default: api
+
+info:
+  version: 1.0.2
+  title: EOSC Future Data Transfer API
+  description: >
+    The backend API that abstracts data transfer services in EOSC Future.
+  contact:
+    name: EOSC Future
+    url: https://eosc-portal.eu
+  license:
+    name: Apache License, version 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.txt
+
+security:
+  - bearerAuth: []
+
+externalDocs:
+  url: /api/docs
+
+paths:
+  /user/info:
+    get:
+      operationId: getUserInfo
+      summary: Retrieve information about authenticated user
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        503:
+          description: Try again later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /parser/zenodo:
+    get:
+      summary: Extract source files from Zenodo record
+      operationId: parseZenodo
+      tags: 
+        - Parser
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/sourceFiles'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageContent'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: DOI file not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /storage/folder:
+    parameters:
+      - $ref: '#/components/parameters/storageId'
+  
+    get:
+      summary: Get the properties of a storage folder
+      operationId: getFolderInfo
+      tags: 
+        - Folder
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageElement'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Folder does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        503:
+          description: Try again later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      summary: Create new folder in a storage
+      operationId: createFolder
+      tags: 
+        - Folder
+      requestBody:
+        description: The name of the new folder
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorageElementBase'
+      responses:
+        200:
+          description: OK
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Folder does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        503:
+          description: Try again later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      summary: Rename a folder from a storage
+      operationId: renameFolder
+      tags: 
+        - Folder
+      requestBody:
+        description: The new name of the folder
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorageElementBase'
+      responses:
+        200:
+          description: OK
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Folder does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        503:
+          description: Try again later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Delete folder from storage
+      operationId: deleteFolder
+      tags: 
+        - Folder
+      responses:
+        200:
+          description: OK
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Folder does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        503:
+          description: Try again later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /storage/folder/list:
+    get:
+      summary: List the files and subfolders in a storage
+      operationId: listFolderContent
+      tags: 
+        - Folder
+      parameters:
+        - $ref: '#/components/parameters/storageId'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageContent'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Folder not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        503:
+          description: Try again later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /storage/file:
+    parameters:
+      - $ref: '#/components/parameters/storageId'
+  
+    get:
+      summary: Get the properties of a storage file
+      operationId: getFileInfo
+      tags: 
+        - File
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageElement'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: File does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        503:
+          description: Try again later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      summary: Rename a file from a storage
+      operationId: renameFile
+      tags: 
+        - File
+      requestBody:
+        description: The new name of the file
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorageElementBase'
+      responses:
+        200:
+          description: OK
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: File does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        503:
+          description: Try again later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete file from storage
+      operationId: deleteFile
+      tags: 
+        - File
+      responses:
+        200:
+          description: OK
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: File does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        503:
+          description: Try again later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /transfer:
+    get:
+      summary: Retrieve information about a transfer
+      tags:
+        - Transfer
+      parameters:
+        - $ref: '#/components/parameters/jobId'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferInfo'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Transfer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      
+    post:
+      summary: Initiate the transfer of multiple sets of files
+      tags:
+        - Transfer
+      requestBody:
+        description: Details of the transfer
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transfer'
+      responses:
+        202:
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferInfo'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        409:
+          description: Conflict with current state of resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Cancel transfer
+      tags:
+        - Transfer
+      parameters:
+        - $ref: '#/components/parameters/jobId'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferInfo'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Transfer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    sourceFiles:
+      description: URL to file describing the source file(s)
+      name: source
+      in: query
+      required: true
+      schema:
+        type: string
+        format: uri
+
+    storageId:
+      description: Identifies a file or a folder for the action
+      name: id
+      in: query
+      required: true
+      schema:
+        type: string
+        
+    jobId:
+      description: Identifies a transfer job
+      name: id
+      in: query
+      required: true
+      schema:
+        type: string
+      
+  schemas:
+    Error:
+      description: Generic error response object for server side errors
+      type: object
+      properties:
+        id:
+          type: String
+        description:
+          type: string
+          description: |
+            Message to show to the end-users in the UI
+        details:
+          type: object
+          description: |
+            Detailed message that is useful for developers to understand the problem
+    
+    UserInfo:
+      description: Information about authenticated user
+      type: object
+      properties:
+        kind: 
+          type: string
+          enum: [ "UserInfo" ]
+        base_id:
+          type: string
+        delegation_id:
+          type: string
+        user_dn:
+          type: string
+        dn:
+          type: array
+          items:
+            type: string
+        vos:
+          type: array
+          items:
+            type: string
+        vos_id:
+          type: array
+          items:
+            type: string
+        voms_cred:
+          type: array
+          items:
+            type: string
+
+    StorageElementBase:
+      description: The details needed to create/rename a file or folder in a storage
+      type: object
+      properties:
+        name:
+          type: string
+
+    StorageElement:
+      description: The details of a file or folder from a storage
+      allOf:
+        - $ref: '#/components/schemas/StorageElementBase'
+        - type: object
+          required:
+            - downloadUrl
+          properties:
+            kind: 
+              type: string
+              enum: [ "StorageElement" ]
+            isFolder:
+              type: boolean
+              default: false
+            size:
+              type: integer
+              minimum: 0
+            mode:
+              type: integer
+            createdAt:
+              type: string
+              format: date-time
+            accessedAt:
+              type: string
+              format: date-time
+            modifiedAt:
+              type: string
+              format: date-time
+            mediaType:
+              type: string
+            accessUrl:
+              type: string
+              format: uri
+            downloadUrl:
+              type: string
+              format: uri
+          
+    StorageContent:
+      description: A list of files and subfolders from a storage
+      type: object
+      required:
+        - elements
+      properties:
+        kind: 
+          type: string
+          enum: [ "StorageContent" ]
+        count:
+          type: integer
+          minimum: 0
+        elements:
+          type: array
+          items: 
+            $ref: '#/components/schemas/StorageElement'
+    
+    TransferFileList:
+      type: array
+      items:
+        type: object
+        required:
+          - url
+        properties:
+          url:
+            type: string
+            format: uri
+      minItems: 1
+    
+    TransferPayload:
+      description: The source files to transfer to the destination files
+      type: object
+      required:
+        - sources
+        - destinations
+      properties:
+        sources:
+          $ref: '#/components/schemas/TransferFileList'
+        destinations:
+          $ref: '#/components/schemas/TransferFileList'
+        priority:
+          description: Override transfer priority for this set of files
+          type: integer
+        filesize:
+          type: integer
+          minimum: 0
+        checksum:
+          description: User defined checksum in the form algorithm:value
+          type: string
+          
+    TransferParams:
+      description: The parameters of a transfer
+      type: object
+      properties:
+        priority:
+          type: integer
+        verify_checksum:
+          type: boolean
+        overwrite:
+          type: boolean
+          default: false
+        retry:
+          type: integer
+        strict_copy:
+          description: Disable all checks, just copy the file
+          type: boolean
+          default: false
+        ipv4:
+          description: Force IPv4 if the underlying protocol supports it
+          type: boolean
+        ipv6:
+          description: Force IPv6 if the underlying protocol supports it
+          type: boolean
+
+    Transfer:
+      description: A transfer of multiple sets of files
+      type: object
+      required:
+        - params
+        - files
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransferPayload'
+        params:
+          $ref: '#/components/schemas/TransferParams'
+
+    TransferInfo:
+      type: object
+      required:
+        - job_id
+      properties:
+        kind: 
+          type: string
+          enum: [ "TransferInfo" ]
+        id:
+          type: string
+        type:
+          type: string
+        state:
+          type: string
+        cancel:
+          type: boolean
+        submittedToHost:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        priority:
+          type: integer
+        retry:
+          type: integer
+        retryDelay:
+          type: integer
+        overwrite:
+          type: string
+        metadata:
+          type: string
+        cred_id:
+          type: string
+        user_dn:
+          type: string
+        vo_name:
+          type: string

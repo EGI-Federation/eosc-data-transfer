@@ -1,0 +1,45 @@
+proxy:
+  parsers:
+    zenodo: https://zenodo.org
+  transfer:
+    destination: dcache
+    destinations:
+      dcache: fts
+      datahub: another
+    services:
+      fts:
+        name: File Transfer Service
+        url: https://fts3-public.cern.ch:8446
+        class: egi.fts.FileTransferService
+      another:
+        name: Test
+        url: https://nowhere.com:6578
+        class: egi.eu.Test
+
+quarkus:
+  log:
+    level: INFO
+    min-level: DEBUG
+    console:
+      enable: true
+      level: INFO
+      format: "%d{HH:mm:ss} %-5p [%c{2.}]] (%t) %s%e%n"
+    file:
+      enable: true
+      path: ./dat-transfer.log
+      level: INFO
+      format: "%d{HH:mm:ss} %-5p [%c{2.}]] (%t) %s%e%n"
+  swagger-ui:
+    always-include: true
+    path: swagger-ui
+  smallrye-openapi:
+    path: spec
+    info-title: EOSC Future Data Transfer API
+    info-description: The backend API that abstracts data transfer services in EOSC Future.
+    info-version: 1.0
+  jackson:
+    fail-on-unknown-properties: false
+  http:
+    cors: true
+  tls:
+    trust-all: true

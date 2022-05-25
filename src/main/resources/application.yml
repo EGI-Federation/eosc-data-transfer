@@ -10,7 +10,8 @@ proxy:
       fts:
         name: File Transfer Service
         url: https://fts3-public.cern.ch:8446
-        class: egi.fts.FileTransferService
+        class: egi.eu.DataTransfer
+        timeout: 5000
       another:
         name: Test
         url: https://nowhere.com:6578

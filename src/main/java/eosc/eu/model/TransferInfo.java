@@ -19,6 +19,7 @@ public class TransferInfo {
      * Construct from FTS job info
      */
     public TransferInfo(JobInfo ji) {
+
         this.jobId = ji.job_id;
     }
 }

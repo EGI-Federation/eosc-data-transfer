@@ -13,6 +13,7 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
+import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestPath;
@@ -73,11 +74,18 @@ public class DigitalObjectIdentifier {
         }
 
         // Create the REST client for the selected transfer service
-        params.zenodo = RestClientBuilder.newBuilder()
-                .baseUrl(urlParser)
-                .build(Zenodo.class);
+        try {
+            params.zenodo = RestClientBuilder.newBuilder()
+                    .baseUrl(urlParser)
+                    .build(Zenodo.class);
 
-        return true;
+            return true;
+        }
+        catch (RestClientDefinitionException e) {
+            LOG.error(e.getMessage());
+        }
+
+        return false;
     }
 
     /**

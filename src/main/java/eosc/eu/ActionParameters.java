@@ -18,11 +18,10 @@ import parser.zenodo.Zenodo;
 public class ActionParameters {
 
     public Zenodo zenodo;
-    public FileTransferService fts;
+    public TransferService ts;
     public String source;
     public String destination;
     public String parseService;
-    public String transferService;
     public String authorization;
     public Response response;
 
@@ -47,11 +46,10 @@ public class ActionParameters {
      */
     public ActionParameters(ActionParameters ap) {
         this.zenodo = ap.zenodo;
-        this.fts = ap.fts;
+        this.ts = ap.ts;
         this.source = ap.source;
         this.destination = ap.destination;
         this.parseService = ap.parseService;
-        this.transferService = ap.transferService;
         this.authorization = ap.authorization;
         this.response = ap.response;
     }

@@ -1,7 +1,7 @@
 openapi: 3.0.0
 servers:
   # Added by API Auto Mocking Plugin
-  - url: https://virtserver.swaggerhub.com/thebe14/eosc-future-data-transfer/1.0.0
+  - url: https://virtserver.swaggerhub.com/thebe14/eosc-future-data-transfer/1.0.4
     description: SwaggerHub API Auto Mocking
   - url: http://localhost:8080/{basePath}
     description: Internal staging server for testing
@@ -10,7 +10,7 @@ servers:
         default: api
 
 info:
-  version: 1.0.2
+  version: 1.0.4
   title: EOSC Future Data Transfer API
   description: >
     The backend API that abstracts data transfer services in EOSC Future.
@@ -62,7 +62,7 @@ paths:
     get:
       summary: Extract source files from Zenodo record
       operationId: parseZenodo
-      tags: 
+      tags:
         - Parser
       security: []
       parameters:
@@ -102,11 +102,11 @@ paths:
   /storage/folder:
     parameters:
       - $ref: '#/components/parameters/storageId'
-  
+
     get:
       summary: Get the properties of a storage folder
       operationId: getFolderInfo
-      tags: 
+      tags:
         - Folder
       responses:
         200:
@@ -151,11 +151,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-    
+
     post:
       summary: Create new folder in a storage
       operationId: createFolder
-      tags: 
+      tags:
         - Folder
       requestBody:
         description: The name of the new folder
@@ -203,11 +203,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-    
+
     put:
       summary: Rename a folder from a storage
       operationId: renameFolder
-      tags: 
+      tags:
         - Folder
       requestBody:
         description: The new name of the folder
@@ -255,11 +255,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-    
+
     delete:
       summary: Delete folder from storage
       operationId: deleteFolder
-      tags: 
+      tags:
         - Folder
       responses:
         200:
@@ -305,7 +305,7 @@ paths:
     get:
       summary: List the files and subfolders in a storage
       operationId: listFolderContent
-      tags: 
+      tags:
         - Folder
       parameters:
         - $ref: '#/components/parameters/storageId'
@@ -356,11 +356,11 @@ paths:
   /storage/file:
     parameters:
       - $ref: '#/components/parameters/storageId'
-  
+
     get:
       summary: Get the properties of a storage file
       operationId: getFileInfo
-      tags: 
+      tags:
         - File
       responses:
         200:
@@ -405,11 +405,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-    
+
     put:
       summary: Rename a file from a storage
       operationId: renameFile
-      tags: 
+      tags:
         - File
       requestBody:
         description: The new name of the file
@@ -461,7 +461,7 @@ paths:
     delete:
       summary: Delete file from storage
       operationId: deleteFile
-      tags: 
+      tags:
         - File
       responses:
         200:
@@ -503,52 +503,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /transfer:
-    get:
-      summary: Retrieve information about a transfer
-      operationId: getTransferInfo
-      tags:
-        - Transfer
-      parameters:
-        - $ref: '#/components/parameters/jobId'
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TransferInfo'
-        400:
-          description: Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        401:
-          description: Not authorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        403:
-          description: Permission denied
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        404:
-          description: Transfer not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        419:
-          description: Re-delegate credentials
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-      
+  /transfers:
     post:
       summary: Initiate new transfer of multiple sets of files
       operationId: startTransfer
@@ -599,13 +554,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /transfer/{jobId}:
+    parameters:
+      - $ref: '#/components/parameters/jobId'
+
+    get:
+      summary: Retrieve information about a transfer
+      operationId: getTransferInfo
+      tags:
+        - Transfer
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferInfoExtended'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Transfer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        419:
+          description: Re-delegate credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
     delete:
       summary: Cancel transfer
       operationId: stopTransfer
       tags:
         - Transfer
-      parameters:
-        - $ref: '#/components/parameters/jobId'
       responses:
         200:
           description: OK
@@ -662,27 +662,27 @@ components:
 
     storageId:
       description: Identifies a file or a folder for the action
-      name: id
+      name: storageId
       in: query
       required: true
       schema:
         type: string
-        
+
     jobId:
       description: Identifies a transfer job
-      name: id
-      in: query
+      name: jobId
+      in: path
       required: true
       schema:
         type: string
-      
+
   schemas:
     Error:
       description: Generic error response object for server side errors
       type: object
       properties:
         id:
-          type: String
+          type: string
         description:
           type: string
           description: |
@@ -691,12 +691,12 @@ components:
           type: object
           description: |
             Detailed message that is useful for developers to understand the problem
-    
+
     UserInfo:
       description: Information about authenticated user
       type: object
       properties:
-        kind: 
+        kind:
           type: string
           enum: [ "UserInfo" ]
         base_id:
@@ -737,7 +737,7 @@ components:
           required:
             - downloadUrl
           properties:
-            kind: 
+            kind:
               type: string
               enum: [ "StorageElement" ]
             isFolder:
@@ -765,14 +765,14 @@ components:
             downloadUrl:
               type: string
               format: uri
-          
+
     StorageContent:
       description: A list of files and subfolders from a storage
       type: object
       required:
         - elements
       properties:
-        kind: 
+        kind:
           type: string
           enum: [ "StorageContent" ]
         count:
@@ -780,9 +780,9 @@ components:
           minimum: 0
         elements:
           type: array
-          items: 
+          items:
             $ref: '#/components/schemas/StorageElement'
-    
+
     TransferPayload:
       description: The source files to transfer to the destination files
       type: object
@@ -804,7 +804,7 @@ components:
         checksum:
           description: User defined checksum in the form algorithm:value
           type: string
-          
+
     TransferParams:
       description: The parameters of a transfer
       type: object
@@ -848,40 +848,44 @@ components:
       required:
         - job_id
       properties:
-        kind: 
+        kind:
           type: string
           enum: [ "TransferInfo" ]
-        id:
-          type: string
-        type:
-          type: string
-        state:
-          type: string
-        cancel:
-          type: boolean
-        submittedToHost:
-          type: string
-        submittedAt:
-          type: string
-          format: date-time
-        finishedAt:
-          type: string
-          format: date-time
-        reason:
-          type: string
-        priority:
-          type: integer
-        retry:
-          type: integer
-        retryDelay:
-          type: integer
-        overwrite:
-          type: string
-        metadata:
-          type: string
-        cred_id:
-          type: string
-        user_dn:
-          type: string
-        vo_name:
-          type: string
+
+    TransferInfoExtended:
+      allOf:
+        - $ref: '#/components/schemas/TransferInfo'
+        - type: object
+          properties:
+            type:
+              type: string
+            state:
+              type: string
+            cancel:
+              type: boolean
+            submittedToHost:
+              type: string
+            submittedAt:
+              type: string
+              format: date-time
+            finishedAt:
+              type: string
+              format: date-time
+            reason:
+              type: string
+            priority:
+              type: integer
+            retry:
+              type: integer
+            retryDelay:
+              type: integer
+            overwrite:
+              type: string
+            metadata:
+              type: string
+            cred_id:
+              type: string
+            user_dn:
+              type: string
+            vo_name:
+              type: string

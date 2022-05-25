@@ -4,7 +4,6 @@ import java.util.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import egi.fts.FileTransferServiceException;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
@@ -15,6 +14,10 @@ import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import egi.fts.FileTransferServiceException;
+import eosc.eu.TransferServiceException;
+import parser.zenodo.ZenodoException;
 
 
 /**
@@ -138,10 +141,14 @@ public class ActionError {
      */
     public ActionError(Throwable t) {
         this.id = "exception";
-        this.description = Optional.of(t.getMessage());
+
+        String msg = t.getMessage();
+        if(null != msg && !msg.isEmpty())
+            this.description = Optional.of(msg);
 
         var type = t.getClass();
         if (type.equals(FileTransferServiceException.class) ||
+            type.equals(ZenodoException.class) ||
             type.equals(ClientWebApplicationException.class) ||
             type.equals(WebApplicationException.class) ) {
             // Build from web exception
@@ -158,7 +165,7 @@ public class ActionError {
                     this.id = "notFound"; break;
             }
 
-            if(!this.description.isEmpty()) {
+            if(this.description.isEmpty()) {
                 String reason = we.getResponse().getStatusInfo().getReasonPhrase();
                 if (null != reason && !reason.isEmpty())
                     this.description = Optional.of(reason);
@@ -192,9 +199,15 @@ public class ActionError {
             }
         });
 
-        /*
         var type = t.getClass();
-        if (type.equals(OneZoneException.class) ||
+        if (type.equals(TransferServiceException.class)) {
+            TransferServiceException tse = (TransferServiceException)t;
+            this.id = tse.getId();
+            if(this.id.equals("fieldNotFound"))
+                this.status = Status.NOT_FOUND;
+        }
+        /*
+        else if (type.equals(OneZoneException.class) ||
                 type.equals(OneProviderException.class) ||
                 type.equals(ResteasyWebApplicationException.class) ||
                 type.equals(WebApplicationException.class) ) {
@@ -232,7 +245,7 @@ public class ActionError {
                     } break;
             }
         }
-        */
+         */
     }
 
     /**

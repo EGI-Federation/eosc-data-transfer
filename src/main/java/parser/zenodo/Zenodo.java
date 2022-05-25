@@ -14,6 +14,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 
+/***
+ * REST client for Zenodo
+ */
 @Path("/api")
 @RegisterProvider(value = ZenodoExceptionMapper.class)
 public interface Zenodo {

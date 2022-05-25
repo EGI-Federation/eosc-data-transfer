@@ -1,8 +1,10 @@
 package eosc.eu;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 
+import javax.enterprise.inject.Default;
 import java.util.*;
 
 /***
@@ -22,6 +24,9 @@ public interface ServicesConfig {
     public interface TransferServiceConfig {
         public String name();
         public String url();
+
+        @WithDefault("5000")
+        public int timeout(); // milliseconds
 
         @WithName("class")
         public String className();

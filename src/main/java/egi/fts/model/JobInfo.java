@@ -11,6 +11,7 @@ public class JobInfo {
 
     public String job_id;
 
+
     /**
      * Constructor
      */

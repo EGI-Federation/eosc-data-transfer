@@ -6,24 +6,20 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
-import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestPath;
 import org.jboss.resteasy.reactive.RestQuery;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Arrays;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -31,10 +27,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import eosc.eu.model.*;
-import egi.fts.FileTransferService;
-import egi.fts.model.Job;
 
 
+/***
+ * Class to dynamically select and call the appropriate data transfer service, depending on the desired destination
+ */
 @Path("/")
 @SecuritySchemes(value = {
     @SecurityScheme(securitySchemeName = "none"),
@@ -51,17 +48,17 @@ public class TransferServiceProxy {
 
 
     /**
-     * Prepare REST client for the data transfer service.
-     *
+     * Prepare REST client for the appropriate data transfer service, based on the destination
+     * configured in "proxy.transfer.destination".
      * @param params dictates which transfer service we pick, mapping is in the configuration file
-     * @return true on success, updates fields "destination", "transferService" and "fts"
+     * @return true on success, updates fields "destination" and "ts"
      */
     @PostConstruct
     private boolean getTransferService(ActionParameters params) {
 
         LOG.info("Obtaining REST client for transfer service");
 
-        if (null != params.fts)
+        if (null != params.ts)
             return true;
 
         params.destination = config.destination();
@@ -81,30 +78,31 @@ public class TransferServiceProxy {
             return false;
         }
 
-        params.transferService = serviceConfig.name();
-        LOG.infof("Transfer with <%s>", params.transferService);
-
-        // Check if transfer service base URL is valid
-        URL urlTransferService;
-        try {
-            urlTransferService = new URL(serviceConfig.url());
-        } catch (MalformedURLException e) {
-            LOG.error(e.getMessage());
-            return false;
-        }
-
         // Get the class of the transfer service we should use
         try {
             var classType = Class.forName(serviceConfig.className());
-            // TODO: Load class dynamically
-
-            // Create the REST client for the selected transfer service
-            params.fts = RestClientBuilder.newBuilder()
-                    .baseUrl(urlTransferService)
-                    .build(FileTransferService.class);
-
-            return true;
-        } catch (ClassNotFoundException e) {
+            params.ts = (TransferService)classType.getDeclaredConstructor().newInstance();
+            if(params.ts.initService(serviceConfig)) {
+                LOG.infof("Transfer with <%s>", params.ts.getServiceName());
+                return true;
+            }
+        }
+        catch (ClassNotFoundException e) {
+            LOG.error(e.getMessage());
+        }
+        catch (NoSuchMethodException e) {
+            LOG.error(e.getMessage());
+        }
+        catch (InstantiationException e) {
+            LOG.error(e.getMessage());
+        }
+        catch (InvocationTargetException e) {
+            LOG.error(e.getMessage());
+        }
+        catch (IllegalAccessException e) {
+            LOG.error(e.getMessage());
+        }
+        catch (IllegalArgumentException e) {
             LOG.error(e.getMessage());
         }
 
@@ -113,8 +111,8 @@ public class TransferServiceProxy {
 
     /**
      * Retrieve information about current user.
-     *
-     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     * @param auth The access token needed to call the service.
+     * @return API Response, wraps an ActionSuccess(UserInfo) or an ActionError entity
      */
     @GET
     @Path("/user/info")
@@ -143,7 +141,7 @@ public class TransferServiceProxy {
             CompletableFuture<Response> response = new CompletableFuture<>();
             Uni<ActionParameters> start = Uni.createFrom().item(ap);
             start
-                .onItem().transformToUni(params -> {
+                .chain(params -> {
                     // Pick transfer service and create REST client for it
                     if (!getTransferService(params)) {
                         // Could not get REST client
@@ -154,23 +152,23 @@ public class TransferServiceProxy {
 
                     return Uni.createFrom().item(params);
                 })
-                .onItem().transformToUni(params -> {
+                .chain(params -> {
                     // Get user info
-                    return params.fts.getUserInfoAsync(params.authorization);
+                    return params.ts.getUserInfo(params.authorization);
                 })
-                .onItem().transformToUni(userinfo -> {
+                .chain(userinfo -> {
                     // Got user info
                     LOG.infof("Got user info for user_dn:%s", userinfo.user_dn);
 
                     // Success
-                    response.complete(Response.ok(new eosc.eu.model.UserInfo(userinfo)).build());
+                    response.complete(Response.ok(userinfo).build());
                     return Uni.createFrom().nullItem();
                 })
                 .onFailure().invoke(e -> {
                     LOG.error("Failed to get user info");
                     if (!response.isDone())
-                        response.complete(new ActionError(e, Tuple2.of("destination", config.destination()))
-                                .toResponse());
+                        response.complete(new ActionError(e,
+                                                Tuple2.of("destination", config.destination())).toResponse());
                 })
                 .subscribe().with(unused -> {});
 
@@ -188,16 +186,17 @@ public class TransferServiceProxy {
 
     /**
      * Initiate new transfer of multiple sets of files.
-     *
-     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     * @param auth The access token needed to call the service.
+     * @param transfer The details of the transfer (source and destination files, parameters).
+     * @return API Response, wraps an ActionSuccess(TransferInfo) or an ActionError entity
      */
     @POST
-    @Path("/transfer")
+    @Path("/transfers")
     @SecurityRequirement(name = "bearer")
     @Operation(operationId = "startTransfer",  summary = "Initiate new transfer of multiple sets of files")
     @APIResponses(value = {
             @APIResponse(responseCode = "202", description = "Accepted",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TransferInfo.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TransferInfoExtended.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
@@ -216,35 +215,34 @@ public class TransferServiceProxy {
             CompletableFuture<Response> response = new CompletableFuture<>();
             Uni<ActionParameters> start = Uni.createFrom().item(ap);
             start
-                .onItem().transformToUni(params -> {
+                .chain(params -> {
                     // Pick transfer service and create REST client for it
                     if (!getTransferService(params)) {
                         // Could not get REST client
                         response.complete(new ActionError("invalidServiceConfig",
-                                Tuple2.of("destination", params.destination)).toResponse());
+                                                Tuple2.of("destination", params.destination)).toResponse());
                         return Uni.createFrom().failure(new RuntimeException());
                     }
 
                     return Uni.createFrom().item(params);
                 })
-                .onItem().transformToUni(params -> {
+                .chain(params -> {
                     // Start transfer
-                    Job job = new Job(transfer);
-                    return params.fts.startTransferAsync(params.authorization, job);
+                    return params.ts.startTransfer(params.authorization, transfer);
                 })
-                .onItem().transformToUni(jobinfo -> {
+                .chain(transferInfo -> {
                     // Transfer started
-                    LOG.infof("Started new transfer %s", jobinfo.job_id);
+                    LOG.infof("Started new transfer %s", transferInfo.jobId);
 
                     // Success
-                    response.complete(Response.accepted(new TransferInfo(jobinfo)).build());
+                    response.complete(Response.accepted(transferInfo).build());
                     return Uni.createFrom().nullItem();
                 })
                 .onFailure().invoke(e -> {
                     LOG.error("Failed to start new transfer");
                     if (!response.isDone())
-                        response.complete(new ActionError(e, Tuple2.of("destination", config.destination()))
-                                .toResponse());
+                        response.complete(new ActionError(e,
+                                                Tuple2.of("destination", config.destination())).toResponse());
                 })
                 .subscribe().with(unused -> {});
 
@@ -257,6 +255,165 @@ public class TransferServiceProxy {
         } catch (ExecutionException e) {
             // Execution error
             return new ActionError("startTransferExecutionError").toResponse();
+        }
+    }
+
+    /**
+     * Request information about a transfer.
+     * @param auth The access token needed to call the service.
+     * @param jobId The ID of the transfer to request info about.
+     * @return API Response, wraps an ActionSuccess(TransferInfoExtended) or an ActionError entity
+     */
+    @GET
+    @Path("/transfer/{jobId}")
+    @SecurityRequirement(name = "bearer")
+    @Operation(operationId = "getTransferInfo",  summary = "Retrieve information about a transfer")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TransferInfo.class))),
+            @APIResponse(responseCode = "207", description="Transfer error",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "401", description="Not authorized",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "403", description="Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "404", description="Transfer not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "419", description="Re-delegate credentials",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+    })
+    public Response getTransferInfo(@RestHeader("Authorization") String auth, String jobId) {
+
+        LOG.infof("Retrieve details of transfer %s", jobId);
+
+        try {
+            ActionParameters ap = new ActionParameters(auth);
+            CompletableFuture<Response> response = new CompletableFuture<>();
+            Uni<ActionParameters> start = Uni.createFrom().item(ap);
+            start
+                .chain(params -> {
+                    // Pick transfer service and create REST client for it
+                    if (!getTransferService(params)) {
+                        // Could not get REST client
+                        response.complete(new ActionError("invalidServiceConfig",
+                                              Tuple2.of("destination", params.destination))
+                                                  .toResponse());
+                        return Uni.createFrom().failure(new RuntimeException());
+                    }
+
+                    return Uni.createFrom().item(params);
+                })
+                .chain(params -> {
+                    // Get transfer details
+                    return params.ts.getTransferInfo(params.authorization, jobId);
+                })
+                .chain(transferInfo -> {
+                    // Found transfer
+                    LOG.infof("Transfer %s is %s", transferInfo.jobId, transferInfo.jobState);
+
+                    // Success
+                    response.complete(Response.ok(transferInfo).build());
+                    return Uni.createFrom().nullItem();
+                })
+                .onFailure().invoke(e -> {
+                    LOG.errorf("Failed to get details of transfer %s", jobId);
+                    if (!response.isDone())
+                        response.complete(new ActionError(e,
+                                                Tuple2.of("jobId", jobId)).toResponse());
+                })
+                .subscribe().with(unused -> {});
+
+            // Wait until transfer details retrieved (possibly with error)
+            Response r = response.get();
+            return r;
+        } catch (InterruptedException e) {
+            // Cancelled
+            return new ActionError("getTransferInfoInterrupted").toResponse();
+        } catch (ExecutionException e) {
+            // Execution error
+            return new ActionError("getTransferInfoExecutionError").toResponse();
+        }
+    }
+
+    /**
+     * Request specific field from information about a transfer.
+     * @param auth The access token needed to call the service.
+     * @param jobId The ID of the transfer to request info about.
+     * @param fieldName The name of the TransferInfoExtended field to retrieve (except "kind").
+     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     */
+    @GET
+    @Path("/transfer/{jobId}/{fieldName}")
+    @SecurityRequirement(name = "bearer")
+    @Operation(operationId = "getTransferInfoField",  summary = "Retrieve specific field from information about a transfer")
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Object.class))),
+            @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "401", description="Not authorized",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "403", description="Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "404", description="Transfer not found or field does not exist",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "419", description="Re-delegate credentials",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+    })
+    public Response getTransferInfoField(@RestHeader("Authorization") String auth, String jobId, String fieldName) {
+
+        LOG.infof("Retrieve field %s from details of transfer %s", fieldName, jobId);
+
+        try {
+            ActionParameters ap = new ActionParameters(auth);
+            CompletableFuture<Response> response = new CompletableFuture<>();
+            Uni<ActionParameters> start = Uni.createFrom().item(ap);
+            start
+                .chain(params -> {
+                    // Pick transfer service and create REST client for it
+                    if (!getTransferService(params)) {
+                        // Could not get REST client
+                        response.complete(new ActionError("invalidServiceConfig",
+                                                Tuple2.of("destination", params.destination)).toResponse());
+                        return Uni.createFrom().failure(new RuntimeException());
+                    }
+
+                    return Uni.createFrom().item(params);
+                })
+                .chain(params -> {
+                    // Get transfer info field
+                    return params.ts.getTransferInfoField(params.authorization, jobId, fieldName);
+                })
+                .chain(fieldValue -> {
+                    // Found transfer and field
+                    var entity = fieldValue.getEntity();
+                    LOG.infof("Field %s of transfer %s is %s", fieldName, jobId, (null != entity) ? entity.toString() : "null");
+
+                    // Success
+                    response.complete(fieldValue);
+                    return Uni.createFrom().nullItem();
+                })
+                .onFailure().invoke(e -> {
+                    LOG.errorf("Failed to get field %s of transfer %s", fieldName, jobId);
+                    if (!response.isDone())
+                        response.complete(new ActionError(e, Arrays.asList(
+                                                Tuple2.of("jobId", jobId),
+                                                Tuple2.of("field", fieldName)) ).toResponse());
+                })
+                .subscribe().with(unused -> {});
+
+            // Wait until transfer info field is retrieved (possibly with error)
+            Response r = response.get();
+            return r;
+        } catch (InterruptedException e) {
+            // Cancelled
+            return new ActionError("getTransferInfoFieldInterrupted").toResponse();
+        } catch (ExecutionException e) {
+            // Execution error
+            return new ActionError("getTransferInfoFieldExecutionError").toResponse();
         }
     }
 

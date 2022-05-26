@@ -13,14 +13,11 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestHeader;
-import org.jboss.resteasy.reactive.RestPath;
 import org.jboss.resteasy.reactive.RestQuery;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.Arrays;
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -30,7 +27,8 @@ import eosc.eu.model.*;
 
 
 /***
- * Class to dynamically select and call the appropriate data transfer service, depending on the desired destination
+ * Class for data transfer operations and queries.
+ * Dynamically selects the appropriate data transfer service, depending on the desired destination.
  */
 @Path("/")
 @SecuritySchemes(value = {
@@ -39,149 +37,19 @@ import eosc.eu.model.*;
             type = SecuritySchemeType.HTTP,
             scheme = "Bearer")} )
 @Produces(MediaType.APPLICATION_JSON)
-public class TransferServiceProxy {
+public class DataTransfer extends DataTransferBase {
 
     @Inject
     ServicesConfig config;
 
-    private static final Logger LOG = Logger.getLogger(TransferServiceProxy.class);
+    private static final Logger LOG = Logger.getLogger(DataTransfer.class);
 
 
-    /**
-     * Prepare REST client for the appropriate data transfer service, based on the destination
-     * configured in "proxy.transfer.destination".
-     * @param params dictates which transfer service we pick, mapping is in the configuration file
-     * @return true on success, updates fields "destination" and "ts"
+    /***
+     * Constructor
      */
-    @PostConstruct
-    private boolean getTransferService(ActionParameters params) {
-
-        LOG.info("Obtaining REST client for transfer service");
-
-        if (null != params.ts)
-            return true;
-
-        params.destination = config.destination();
-        LOG.infof("Destination is <%s>", params.destination);
-
-        String serviceId = config.destinations().get(params.destination);
-        if (null == serviceId) {
-            // Unsupported destination
-            LOG.errorf("No transfer service configured for destination <%s>", params.destination);
-            return false;
-        }
-
-        ServicesConfig.TransferServiceConfig serviceConfig = config.services().get(serviceId);
-        if (null == serviceConfig) {
-            // Unsupported transfer service
-            LOG.errorf("No configuration found for transfer service <%s>", serviceId);
-            return false;
-        }
-
-        // Get the class of the transfer service we should use
-        try {
-            var classType = Class.forName(serviceConfig.className());
-            params.ts = (TransferService)classType.getDeclaredConstructor().newInstance();
-            if(params.ts.initService(serviceConfig)) {
-                LOG.infof("Transfer with <%s>", params.ts.getServiceName());
-                return true;
-            }
-        }
-        catch (ClassNotFoundException e) {
-            LOG.error(e.getMessage());
-        }
-        catch (NoSuchMethodException e) {
-            LOG.error(e.getMessage());
-        }
-        catch (InstantiationException e) {
-            LOG.error(e.getMessage());
-        }
-        catch (InvocationTargetException e) {
-            LOG.error(e.getMessage());
-        }
-        catch (IllegalAccessException e) {
-            LOG.error(e.getMessage());
-        }
-        catch (IllegalArgumentException e) {
-            LOG.error(e.getMessage());
-        }
-
-        return false;
-    }
-
-    /**
-     * Retrieve information about current user.
-     * @param auth The access token needed to call the service.
-     * @return API Response, wraps an ActionSuccess(UserInfo) or an ActionError entity
-     */
-    @GET
-    @Path("/user/info")
-    @SecurityRequirement(name = "bearer")
-    @Operation(operationId = "getUserInfo",  summary = "Retrieve information about authenticated user")
-    @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Success",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = UserInfo.class))),
-            @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "403", description="Not authenticated",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "503", description="Try again later",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
-    })
-    public Response getUserInfo(@RestHeader("Authorization") String auth) {
-
-        LOG.info("Get current user info");
-
-        try {
-            ActionParameters ap = new ActionParameters(auth);
-            CompletableFuture<Response> response = new CompletableFuture<>();
-            Uni<ActionParameters> start = Uni.createFrom().item(ap);
-            start
-                .chain(params -> {
-                    // Pick transfer service and create REST client for it
-                    if (!getTransferService(params)) {
-                        // Could not get REST client
-                        response.complete(new ActionError("invalidServiceConfig",
-                                                Tuple2.of("destination", params.destination)).toResponse());
-                        return Uni.createFrom().failure(new RuntimeException());
-                    }
-
-                    return Uni.createFrom().item(params);
-                })
-                .chain(params -> {
-                    // Get user info
-                    return params.ts.getUserInfo(params.authorization);
-                })
-                .chain(userinfo -> {
-                    // Got user info
-                    LOG.infof("Got user info for user_dn:%s", userinfo.user_dn);
-
-                    // Success
-                    response.complete(Response.ok(userinfo).build());
-                    return Uni.createFrom().nullItem();
-                })
-                .onFailure().invoke(e -> {
-                    LOG.error("Failed to get user info");
-                    if (!response.isDone())
-                        response.complete(new ActionError(e,
-                                                Tuple2.of("destination", config.destination())).toResponse());
-                })
-                .subscribe().with(unused -> {});
-
-            // Wait until user info is retrieved (possibly with error)
-            Response r = response.get();
-            return r;
-        } catch (InterruptedException e) {
-            // Cancelled
-            return new ActionError("getUserInfoInterrupted").toResponse();
-        } catch (ExecutionException e) {
-            // Execution error
-            return new ActionError("getUserInfoExecutionError").toResponse();
-        }
+    public DataTransfer() {
+        super(LOG);
     }
 
     /**
@@ -256,6 +124,105 @@ public class TransferServiceProxy {
             // Execution error
             return new ActionError("startTransferExecutionError").toResponse();
         }
+    }
+
+    /***
+     * Find transfers matching criteria.
+     * @param auth The access token needed to call the service.
+     * @param fields
+     * @param limit
+     * @param timeWindow
+     * @param stateIn
+     * @param srcStorageElement
+     * @param dstStorageElement
+     * @param delegationId
+     * @param voName
+     * @param userDN
+     * @return API Response, wraps an ActionSuccess(TransferList) or an ActionError entity
+     */
+    @GET
+    @Path("/transfers")
+    @SecurityRequirement(name = "bearer")
+    @Operation(operationId = "findTransfers",  summary = "Find transfers matching search criteria")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TransferList.class))),
+            @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "401", description="Not authorized",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "403", description="Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "404", description="No matching transfer",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "419", description="Re-delegate credentials",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+    })
+    public Response findTransfers(@RestHeader("Authorization") String auth,
+                                  @RestQuery("fields") String fields,
+                                  @RestQuery("limit") String limit,
+                                  @RestQuery("time_window")  String timeWindow,
+                                  @RestQuery("state_in")  String stateIn,
+                                  @RestQuery("source_se")  String srcStorageElement,
+                                  @RestQuery("dest_se")  String dstStorageElement,
+                                  @RestQuery("dlg_id")  String delegationId,
+                                  @RestQuery("vo_name")  String voName,
+                                  @RestQuery("user_dn")  String userDN) {
+
+        //LOG.infof("Retrieve details of transfer %s", jobId);
+
+        /*
+        try {
+            ActionParameters ap = new ActionParameters(auth);
+            CompletableFuture<Response> response = new CompletableFuture<>();
+            Uni<ActionParameters> start = Uni.createFrom().item(ap);
+            start
+                    .chain(params -> {
+                        // Pick transfer service and create REST client for it
+                        if (!getTransferService(params)) {
+                            // Could not get REST client
+                            response.complete(new ActionError("invalidServiceConfig",
+                                    Tuple2.of("destination", params.destination))
+                                    .toResponse());
+                            return Uni.createFrom().failure(new RuntimeException());
+                        }
+
+                        return Uni.createFrom().item(params);
+                    })
+                    .chain(params -> {
+                        // Get transfer details
+                        return params.ts.getTransferInfo(params.authorization, jobId);
+                    })
+                    .chain(transferInfo -> {
+                        // Found transfer
+                        LOG.infof("Transfer %s is %s", transferInfo.jobId, transferInfo.jobState);
+
+                        // Success
+                        response.complete(Response.ok(transferInfo).build());
+                        return Uni.createFrom().nullItem();
+                    })
+                    .onFailure().invoke(e -> {
+                        LOG.errorf("Failed to get details of transfer %s", jobId);
+                        if (!response.isDone())
+                            response.complete(new ActionError(e,
+                                    Tuple2.of("jobId", jobId)).toResponse());
+                    })
+                    .subscribe().with(unused -> {});
+
+            // Wait until transfer details retrieved (possibly with error)
+            Response r = response.get();
+            return r;
+        } catch (InterruptedException e) {
+            // Cancelled
+            return new ActionError("getTransferInfoInterrupted").toResponse();
+        } catch (ExecutionException e) {
+            // Execution error
+            return new ActionError("getTransferInfoExecutionError").toResponse();
+        }
+
+         */
+
+        return null;
     }
 
     /**
@@ -365,7 +332,7 @@ public class TransferServiceProxy {
     })
     public Response getTransferInfoField(@RestHeader("Authorization") String auth, String jobId, String fieldName) {
 
-        LOG.infof("Retrieve field %s from details of transfer %s", fieldName, jobId);
+        LOG.infof("Retrieve field '%s' from details of transfer %s", fieldName, jobId);
 
         try {
             ActionParameters ap = new ActionParameters(auth);
@@ -401,7 +368,7 @@ public class TransferServiceProxy {
                     if (!response.isDone())
                         response.complete(new ActionError(e, Arrays.asList(
                                                 Tuple2.of("jobId", jobId),
-                                                Tuple2.of("field", fieldName)) ).toResponse());
+                                                Tuple2.of("fieldName", fieldName)) ).toResponse());
                 })
                 .subscribe().with(unused -> {});
 

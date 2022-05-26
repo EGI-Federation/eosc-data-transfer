@@ -109,6 +109,7 @@ public class TransferInfoExtended extends TransferInfo {
 
         this.submittedAt = jie.submit_time;
         this.submittedTo = jie.submit_host;
+        this.finishedAt = jie.job_finished;
         this.status = jie.http_status;
         this.reason = jie.reason;
 

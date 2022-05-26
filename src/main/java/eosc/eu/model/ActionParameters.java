@@ -1,12 +1,12 @@
-package eosc.eu;
+package eosc.eu.model;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status.Family;
 
+import eosc.eu.TransferService;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.Multi;
 
-import egi.fts.FileTransferService;
 import parser.zenodo.Zenodo;
 
 

@@ -1,7 +1,6 @@
 package egi.eu;
 
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
@@ -29,9 +28,9 @@ import egi.fts.model.*;
 /***
  * Class for working with EGI Data Transfer
  */
-public class DataTransfer implements TransferService {
+public class EgiDataTransfer implements TransferService {
 
-    private static final Logger LOG = Logger.getLogger(DataTransfer.class);
+    private static final Logger LOG = Logger.getLogger(EgiDataTransfer.class);
     private static Set<String> infoFieldsAsIs;
     private static Map<String, String> infoFieldsRenamed;
 
@@ -43,7 +42,7 @@ public class DataTransfer implements TransferService {
     /***
      * Constructor
      */
-    public DataTransfer() {}
+    public EgiDataTransfer() {}
 
     /***
      * Initialize the REST client for the File Transfer Service that powers EGI Data Transfer
@@ -52,7 +51,7 @@ public class DataTransfer implements TransferService {
     @PostConstruct
     public boolean initService(ServicesConfig.TransferServiceConfig serviceConfig) {
 
-        LOG.info("Obtaining REST client for EGI Data Transfer service");
+        LOG.info("Obtaining REST client for File Transfer Service");
 
         if (null != this.fts)
             return true;
@@ -130,6 +129,7 @@ public class DataTransfer implements TransferService {
             infoFieldsRenamed.put("bringOnline", "bring_online");
             infoFieldsRenamed.put("targetQOS", "target_qos");
             infoFieldsRenamed.put("cancel", "cancel_job");
+            infoFieldsRenamed.put("finishedAt", "job_finished");
             infoFieldsRenamed.put("submittedAt", "submit_time");
             infoFieldsRenamed.put("submittedTo", "submit_host");
             infoFieldsRenamed.put("status", "http_status");
@@ -245,7 +245,7 @@ public class DataTransfer implements TransferService {
 
         String jobFieldName = translateTransferInfoFieldName(fieldName);
         if(null == jobFieldName)
-            throw new TransferServiceException("fieldNotFound");
+            throw new TransferServiceException("fieldNotSupported");
 
         var field = this.fts.getTransferFieldAsync(auth, jobId, jobFieldName);
         field
@@ -262,8 +262,7 @@ public class DataTransfer implements TransferService {
                 Pattern p = Pattern.compile("^\\{.+\\}$", Pattern.CASE_INSENSITIVE);
                 Matcher m = p.matcher(rawField);
                 if(!m.matches()) {
-                    // Not an object
-                    // Force return as text/plain
+                    // Not an object, force return as text/plain
                     response = Response.ok(jobField).header(CONTENT_TYPE, MediaType.TEXT_PLAIN).build();
                 }
 

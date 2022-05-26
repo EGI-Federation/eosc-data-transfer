@@ -154,15 +154,22 @@ public class ActionError {
             // Build from web exception
             var we = (WebApplicationException)t;
             this.status = Status.fromStatusCode(we.getResponse().getStatus());
-            switch(this.status) {
-                case UNAUTHORIZED:
-                    this.id = "notAuthenticated"; break;
-                case FORBIDDEN:
-                    this.id = "noAccess"; break;
-                case BAD_REQUEST:
-                    this.id = "badRequest"; break;
-                case NOT_FOUND:
-                    this.id = "notFound"; break;
+
+            if(this.id.equals("exception")) {
+                switch (this.status) {
+                    case UNAUTHORIZED:
+                        this.id = "notAuthenticated";
+                        break;
+                    case FORBIDDEN:
+                        this.id = "noAccess";
+                        break;
+                    case BAD_REQUEST:
+                        this.id = "badRequest";
+                        break;
+                    case NOT_FOUND:
+                        this.id = "notFound";
+                        break;
+                }
             }
 
             if(this.description.isEmpty()) {
@@ -175,7 +182,20 @@ public class ActionError {
             // Build from processing exception
             var pe =  (ProcessingException)t;
             this.id = "processingError";
-            this.description = Optional.of(pe.getCause().getMessage());
+
+            var cause = pe.getCause();
+            if(null != cause) {
+                msg = cause.getMessage();
+                if(null != msg && !msg.isEmpty())
+                    this.description = Optional.of(msg);
+            }
+        }
+
+        if (type.equals(TransferServiceException.class)) {
+            TransferServiceException tse = (TransferServiceException)t;
+            this.id = tse.getId();
+            if(this.id.equals("fieldNotSupported"))
+                this.status = Status.BAD_REQUEST;
         }
     }
 
@@ -200,34 +220,31 @@ public class ActionError {
         });
 
         var type = t.getClass();
-        if (type.equals(TransferServiceException.class)) {
-            TransferServiceException tse = (TransferServiceException)t;
-            this.id = tse.getId();
-            if(this.id.equals("fieldNotFound"))
-                this.status = Status.NOT_FOUND;
-        }
-        /*
-        else if (type.equals(OneZoneException.class) ||
-                type.equals(OneProviderException.class) ||
-                type.equals(ResteasyWebApplicationException.class) ||
+        if (type.equals(FileTransferServiceException.class) ||
+                type.equals(ClientWebApplicationException.class) ||
                 type.equals(WebApplicationException.class) ) {
+            // Refine the id for NOT_FOUND errors
             switch(this.status) {
                 case NOT_FOUND:
-                    if(this.details.isPresent())
+                    if(this.details.isPresent() && !this.details.get().isEmpty())
                     {
                         var keys = this.details.get().keySet();
-                        if(keys.contains("spaceId"))
-                            this.id = "spaceNotFound";
+                        if(keys.contains("fieldName"))
+                            this.id = "fieldNotFound";
+                        else if(keys.contains("jobId"))
+                            this.id = "transferNotFound";
                         else if(keys.contains("fileId"))
                             this.id = "fileNotFound";
                         else if(keys.contains("folderId"))
                             this.id = "folderNotFound";
                     } break;
             }
-        } else if(type.equals(ConnectorException.class)) {
+        }
+        /*
+        else if(type.equals(ConnectorException.class)) {
             switch(this.status) {
                 case NOT_FOUND:
-                    if(this.details.isPresent())
+                    if(this.details.isPresent() && !this.details.get().isEmpty())
                     {
                         var keys = this.details.get().keySet();
                         if(keys.contains("catalogId"))

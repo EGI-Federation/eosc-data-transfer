@@ -49,6 +49,9 @@ public class JobInfoExtended extends JobInfo {
     public boolean cancel_job;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Date job_finished;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Date submit_time;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

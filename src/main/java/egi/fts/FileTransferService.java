@@ -47,8 +47,8 @@ public interface FileTransferService {
                                           @RestQuery("limit") String limit,
                                           @RestQuery("time_window")  String timeWindow,
                                           @RestQuery("state_in")  String stateIn,
-                                          @RestQuery("source_se")  String sourceStorageElement,
-                                          @RestQuery("dest_se")  String destinationStorageElement,
+                                          @RestQuery("source_se")  String srcStorageElement,
+                                          @RestQuery("dest_se")  String dstStorageElement,
                                           @RestQuery("dlg_id")  String delegationId,
                                           @RestQuery("vo_name")  String voName,
                                           @RestQuery("user_dn")  String userDN);

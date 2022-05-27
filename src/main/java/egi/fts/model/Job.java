@@ -28,7 +28,7 @@ public class Job {
      */
     public Job(Transfer transfer) {
         this.params = new JobParameters(transfer.params);
-        this.files = new ArrayList<>();
+        this.files = new ArrayList<>(transfer.files.size());
         if(null != transfer.files) {
             for(var fset : transfer.files)
                 this.files.add(new JobFileSet(fset));

@@ -78,7 +78,7 @@ public class DataTransferUser extends DataTransferBase {
         LOG.info("Get current user info");
 
         try {
-            ActionParameters ap = new ActionParameters(auth);
+            ActionParameters ap = new ActionParameters();
             CompletableFuture<Response> response = new CompletableFuture<>();
             Uni<ActionParameters> start = Uni.createFrom().item(ap);
             start
@@ -95,7 +95,7 @@ public class DataTransferUser extends DataTransferBase {
                 })
                 .chain(params -> {
                     // Get user info
-                    return params.ts.getUserInfo(params.authorization);
+                    return params.ts.getUserInfo(auth);
                 })
                 .chain(userinfo -> {
                     // Got user info

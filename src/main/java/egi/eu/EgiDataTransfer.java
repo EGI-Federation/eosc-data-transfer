@@ -1,6 +1,7 @@
 package egi.eu;
 
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
@@ -13,6 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import static javax.ws.rs.core.HttpHeaders.*;
@@ -51,7 +53,7 @@ public class EgiDataTransfer implements TransferService {
     @PostConstruct
     public boolean initService(ServicesConfig.TransferServiceConfig serviceConfig) {
 
-        LOG.info("Obtaining REST client for File Transfer Service");
+        LOG.debug("Obtaining REST client for File Transfer Service");
 
         if (null != this.fts)
             return true;
@@ -199,6 +201,69 @@ public class EgiDataTransfer implements TransferService {
         return result.get();
     }
 
+    /***
+     * Find transfers matching criteria.
+     * @param auth The access token needed to call the service.
+     * @param fields Comma separated list of fields to return for each transfer
+     * @param limit Maximum number of transfers to return
+     * @param timeWindow For terminal states, limit results to 'hours[:minutes]' into the past
+     * @param stateIn Comma separated list of job states to match, by default returns 'ACTIVE' only
+     * @param srcStorageElement Source storage element
+     * @param dstStorageElement Destination storage element
+     * @param delegationId Filter by delegation ID of user who started the transfer
+     * @param voName Filter by VO of user who started the transfer
+     * @param userDN Filter by user who started the transfer
+     * @return API Response, wraps an ActionSuccess(TransferList) or an ActionError entity
+     */
+    public Uni<TransferList> findTransfers(String auth,
+                                           String fields, int limit,
+                                           String timeWindow, @DefaultValue("ACTIVE") String stateIn,
+                                           String srcStorageElement, String dstStorageElement,
+                                           String delegationId, String voName, String userDN) {
+        if(null == this.fts)
+            throw new TransferServiceException("invalidConfig");
+
+        // Translate field names
+        String jobFields = null;
+        if(null != fields && !fields.isEmpty()) {
+            jobFields = "";
+            String[] transferFields = fields.split(",");
+            for (String tf : transferFields) {
+                if(!jobFields.isEmpty())
+                    jobFields += ",";
+
+                String jf = this.translateTransferInfoFieldName(tf);
+                if(null == jf)
+                    // Found unsupported field
+                    throw new TransferServiceException("fieldNotSupported", Tuple2.of("fieldName", tf));
+
+                jobFields += jf;
+            }
+        }
+
+        AtomicReference<Uni<TransferList>> result = new AtomicReference<>();
+
+        var matches = this.fts.findTransfersAsync(auth, jobFields, limit, timeWindow, stateIn,
+                                                                          srcStorageElement, dstStorageElement,
+                                                                          delegationId, voName, userDN);
+        matches
+            .ifNoItem()
+                .after(Duration.ofMillis(this.timeout))
+                .failWith(new TransferServiceException("findTransfersTimeout"))
+            .chain(jobs -> {
+                // Got matching transfers
+                result.set(Uni.createFrom().item(new TransferList(jobs)));
+                return Uni.createFrom().nullItem();
+            })
+            .onFailure().invoke(e -> {
+                LOG.error(e);
+                result.set(Uni.createFrom().failure(e));
+            })
+            .await().indefinitely();
+
+        return result.get();
+    }
+
     /**
      * Request information about a transfer.
      * @param auth The access token that authorizes calling the service.
@@ -277,4 +342,36 @@ public class EgiDataTransfer implements TransferService {
 
         return result.get();
     }
+
+    /**
+     * Cancel a transfer.
+     * @param auth The access token that authorizes calling the service.
+     * @param jobId The ID of the transfer to cancel.
+     * @return API Response, wraps an ActionSuccess(TransferInfoExtended) or an ActionError entity
+     */
+    public Uni<TransferInfoExtended> cancelTransfer(String auth, String jobId) {
+        if(null == this.fts)
+            throw new TransferServiceException("invalidConfig");
+
+        AtomicReference<Uni<TransferInfoExtended>> result = new AtomicReference<>();
+
+        var transferInfo = this.fts.cancelTransferAsync(auth, jobId);
+        transferInfo
+            .ifNoItem()
+                .after(Duration.ofMillis(this.timeout))
+                .failWith(new TransferServiceException("cancelTransferTimeout"))
+            .chain(jobInfoExt -> {
+                // Transfer canceled, got updated transfer info
+                result.set(Uni.createFrom().item(new TransferInfoExtended(jobInfoExt)));
+                return Uni.createFrom().nullItem();
+            })
+            .onFailure().invoke(e -> {
+                LOG.error(e);
+                result.set(Uni.createFrom().failure(e));
+            })
+            .await().indefinitely();
+
+        return result.get();
+    }
+
 }

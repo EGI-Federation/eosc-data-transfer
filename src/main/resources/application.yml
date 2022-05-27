@@ -10,7 +10,7 @@ proxy:
       fts:
         name: File Transfer Service
         url: https://fts3-public.cern.ch:8446
-        class: egi.eu.DataTransfer
+        class: egi.eu.EgiDataTransfer
         timeout: 5000
       another:
         name: Test
@@ -33,11 +33,15 @@ quarkus:
   swagger-ui:
     always-include: true
     path: swagger-ui
+    theme: flattop
+    urls:
+      default: http://localhost:8080/openapi
+      production: https://eosc-data-transfer.vm.fedcloud.eu/openapi
+    urls-primary-name: default
+
   smallrye-openapi:
-    path: spec
-    info-title: EOSC Future Data Transfer API
-    info-description: The backend API that abstracts data transfer services in EOSC Future.
-    info-version: 1.0
+    path: /openapi
+    info-version: 1.0.4
   jackson:
     fail-on-unknown-properties: false
   http:

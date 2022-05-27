@@ -15,11 +15,7 @@ import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestPath;
 import org.jboss.resteasy.reactive.RestQuery;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
@@ -42,16 +38,16 @@ public interface FileTransferService {
 
     @GET
     @Path("/jobs")
-    Uni<List<JobInfo>> findTransfersAsync(@RestHeader("Authorization") String auth,
-                                          @RestQuery("fields") String fields,
-                                          @RestQuery("limit") String limit,
-                                          @RestQuery("time_window")  String timeWindow,
-                                          @RestQuery("state_in")  String stateIn,
-                                          @RestQuery("source_se")  String srcStorageElement,
-                                          @RestQuery("dest_se")  String dstStorageElement,
-                                          @RestQuery("dlg_id")  String delegationId,
-                                          @RestQuery("vo_name")  String voName,
-                                          @RestQuery("user_dn")  String userDN);
+    Uni<List<JobInfoExtended>> findTransfersAsync(@RestHeader("Authorization") String auth,
+                                                  @RestQuery("fields") String fields,
+                                                  @RestQuery("limit") int limit,
+                                                  @RestQuery("time_window")  String timeWindow,
+                                                  @RestQuery("state_in")  String stateIn,
+                                                  @RestQuery("source_se")  String srcStorageElement,
+                                                  @RestQuery("dest_se")  String dstStorageElement,
+                                                  @RestQuery("dlg_id")  String delegationId,
+                                                  @RestQuery("vo_name")  String voName,
+                                                  @RestQuery("user_dn")  String userDN);
 
     @GET
     @Path("/jobs/{jobId}")
@@ -60,4 +56,8 @@ public interface FileTransferService {
     @GET
     @Path("/jobs/{jobId}/{fieldName}")
     Uni<Object> getTransferFieldAsync(@RestHeader("Authorization") String auth, String jobId, String fieldName);
+
+    @DELETE
+    @Path("/jobs/{jobId}")
+    Uni<JobInfoExtended> cancelTransferAsync(@RestHeader("Authorization") String auth, String jobId);
 }

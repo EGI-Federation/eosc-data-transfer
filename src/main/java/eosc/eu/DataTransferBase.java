@@ -36,7 +36,7 @@ public class DataTransferBase {
     @PostConstruct
     protected boolean getTransferService(ActionParameters params) {
 
-        LOG.info("Selecting transfer service...");
+        LOG.debug("Selecting transfer service...");
 
         if (null != params.ts)
             return true;

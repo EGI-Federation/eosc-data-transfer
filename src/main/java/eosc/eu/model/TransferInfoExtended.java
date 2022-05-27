@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 
 /**
@@ -39,16 +40,35 @@ public class TransferInfoExtended extends TransferInfo {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String destination_space_token;
 
-    public boolean verifyChecksum;
-    public boolean overwrite;
-    public int priority;
-    public int retry;
-    public int retryDelay;
-    public int maxTimeInQueue;
-    public int copyPinLifetime;
-    public int bringOnline;
-    public int targetQOS;
-    public boolean cancel;
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String verifyChecksum;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Optional<Boolean> overwrite;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Optional<Integer> priority;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Optional<Integer> retry;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Optional<Integer> retryDelay;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Optional<Integer> maxTimeInQueue;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Optional<Integer> copyPinLifetime;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Optional<Integer> bringOnline;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Optional<Integer> targetQOS;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Optional<Boolean> cancel;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public Date submittedAt;
@@ -96,7 +116,7 @@ public class TransferInfoExtended extends TransferInfo {
         this.destination_se = jie.destination_se;
         this.destination_space_token = jie.space_token;
 
-        this.verifyChecksum = jie.verify_checksum.toLowerCase().equals("n");
+        this.verifyChecksum = jie.verify_checksum;
         this.overwrite = jie.overwrite_flag;
         this.priority = jie.priority;
         this.retry = jie.retry;

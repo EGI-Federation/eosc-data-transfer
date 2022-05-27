@@ -55,14 +55,15 @@ public class ActionError {
 
         this.id = error.id;
         this.description = error.description;
+        this.details = Optional.empty();
 
-        if(null != error.details && error.details.isPresent() && !error.details.get().isEmpty()) {
-            HashMap<String, String> details = new HashMap<>();
-            for(Map.Entry<String, String> detail : error.details.get().entrySet())
-                details.put(detail.getKey(), detail.getValue());
-            this.details = Optional.of(details);
-        } else {
-            this.details = Optional.empty();
+        if(error.details.isPresent()) {
+            var ed = error.details.get();
+            if(!ed.isEmpty()) {
+                HashMap<String, String> details = new HashMap<>();
+                details.putAll(ed);
+                this.details = Optional.of(details);
+            }
         }
     }
 
@@ -141,10 +142,13 @@ public class ActionError {
      */
     public ActionError(Throwable t) {
         this.id = "exception";
+        this.details = Optional.empty();
 
         String msg = t.getMessage();
         if(null != msg && !msg.isEmpty())
             this.description = Optional.of(msg);
+        else
+            this.description = Optional.empty();
 
         var type = t.getClass();
         if (type.equals(FileTransferServiceException.class) ||
@@ -180,7 +184,7 @@ public class ActionError {
         }
         else if(type.equals(ProcessingException.class)) {
             // Build from processing exception
-            var pe =  (ProcessingException)t;
+            var pe = (ProcessingException)t;
             this.id = "processingError";
 
             var cause = pe.getCause();
@@ -196,6 +200,14 @@ public class ActionError {
             this.id = tse.getId();
             if(this.id.equals("fieldNotSupported"))
                 this.status = Status.BAD_REQUEST;
+
+            // Collect the details from the exception (if any)
+            var tseDetails = tse.getDetails();
+            if(null != tseDetails && !tseDetails.isEmpty()) {
+                HashMap<String, String> details = new HashMap<>();
+                details.putAll(tseDetails);
+                this.details = Optional.of(details);
+            }
         }
     }
 
@@ -211,18 +223,26 @@ public class ActionError {
      */
     public ActionError(Throwable t, List<Tuple2<String, String>> details) {
         this(t);
-        this.details = Optional.of(new HashMap<>() {
-            {
-                for(Tuple2<String, String> detail : details)
-                    if(null != detail.getItem2() && !detail.getItem2().isEmpty())
-                        put(detail.getItem1(), detail.getItem2());
-            }
-        });
 
+        // Combine details (copied from throwable) with the extra ones
+        Map<String, String> combinedDetails = new HashMap<>();
+        for(Tuple2<String, String> detail : details)
+            if(null != detail.getItem2() && !detail.getItem2().isEmpty())
+                combinedDetails.put(detail.getItem1(), detail.getItem2());
+
+        if(this.details.isPresent()) {
+            var ed = this.details.get();
+            if(!ed.isEmpty())
+                combinedDetails.putAll(ed);
+        }
+
+        this.details = Optional.of(combinedDetails);
+
+        // Adjust id for some statuses
         var type = t.getClass();
         if (type.equals(FileTransferServiceException.class) ||
-                type.equals(ClientWebApplicationException.class) ||
-                type.equals(WebApplicationException.class) ) {
+            type.equals(ClientWebApplicationException.class) ||
+            type.equals(WebApplicationException.class) ) {
             // Refine the id for NOT_FOUND errors
             switch(this.status) {
                 case NOT_FOUND:

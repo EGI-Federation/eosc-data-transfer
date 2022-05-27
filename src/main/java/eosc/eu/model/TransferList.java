@@ -1,12 +1,11 @@
 package eosc.eu.model;
 
-import egi.fts.model.JobInfoExtended;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
 import java.util.ArrayList;
 
+import egi.fts.model.JobInfoExtended;
 
 
 /**
@@ -16,13 +15,17 @@ import java.util.ArrayList;
 public class TransferList {
 
     public String kind = "TransferList";
-    public List<TransferInfoExtended> jobs;
+    public int count;
+    public List<TransferInfoExtended> transfers;
 
     /**
      * Construct from list of FTS job infos
      */
-    public TransferList() {
-
-        this.jobs = new ArrayList<>();
+    public TransferList(List<JobInfoExtended> jobs) {
+        this.count = jobs.size();
+        this.transfers = new ArrayList<>(this.count);
+        for(var job : jobs) {
+            this.transfers.add(new TransferInfoExtended(job));
+        }
     }
 }

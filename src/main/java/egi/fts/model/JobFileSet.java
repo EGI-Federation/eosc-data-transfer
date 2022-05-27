@@ -40,8 +40,8 @@ public class JobFileSet {
      * Construct from generic transfer file set, makes deep copy
      */
     public JobFileSet(TransferPayload payload) {
-        this.sources = new ArrayList<>();
-        this.destinations = new ArrayList<>();
+        this.sources = new ArrayList<>(payload.sources.size());
+        this.destinations = new ArrayList<>(payload.destinations.size());
         this.sources.addAll(payload.sources);
         this.destinations.addAll(payload.destinations);
     }

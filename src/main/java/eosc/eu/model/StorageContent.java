@@ -14,7 +14,7 @@ import java.util.List;
 public class StorageContent {
 
     public String kind = "StorageContent";
-    public long count;
+    public int count;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<StorageElement> elements;
@@ -24,6 +24,7 @@ public class StorageContent {
      * Constructor
      */
     public StorageContent() {
+        this.count = 0;
         this.elements = new ArrayList<>();
     }
 
@@ -31,12 +32,8 @@ public class StorageContent {
      * Copy constructor makes deep copy
      */
     public StorageContent(StorageContent storage) {
-        if(null == this.elements)
-            this.elements = new ArrayList<>();
-        else
-            this.elements.clear();
-
+        this.count = storage.elements.size();
+        this.elements = new ArrayList<>(this.count);
         this.elements.addAll(storage.elements);
-        this.count = this.elements.size();
     }
 }

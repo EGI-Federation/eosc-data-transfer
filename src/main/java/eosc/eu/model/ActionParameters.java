@@ -18,11 +18,10 @@ import parser.zenodo.Zenodo;
 public class ActionParameters {
 
     public Zenodo zenodo;
+    public String parseService;
     public TransferService ts;
     public String source;
     public String destination;
-    public String parseService;
-    public String authorization;
     public Response response;
 
 
@@ -30,14 +29,6 @@ public class ActionParameters {
      * Constructor
      */
     public ActionParameters() {
-        this.response = Response.ok().build();
-    }
-
-    /**
-     * Construct from access token
-     */
-    public ActionParameters(String accessToken) {
-        this.authorization = accessToken;
         this.response = Response.ok().build();
     }
 
@@ -50,7 +41,6 @@ public class ActionParameters {
         this.source = ap.source;
         this.destination = ap.destination;
         this.parseService = ap.parseService;
-        this.authorization = ap.authorization;
         this.response = ap.response;
     }
 

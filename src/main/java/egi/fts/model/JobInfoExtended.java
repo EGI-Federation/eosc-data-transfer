@@ -15,10 +15,10 @@ import java.util.Optional;
 public class JobInfoExtended extends JobInfo {
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String job_state;    // "ACTIVE"
+    public String job_state;    // "ACTIVE", "FINISHED", "CANCELED"
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String job_type;     // "N"
+    public String job_type;     // "N" or "R"
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> job_metadata;
@@ -35,7 +35,8 @@ public class JobInfoExtended extends JobInfo {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String space_token;
 
-    public boolean dst_file_report;
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Optional<Boolean> dst_file_report;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String verify_checksum; // "b" or "n"

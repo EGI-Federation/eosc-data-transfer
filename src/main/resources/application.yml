@@ -35,7 +35,7 @@ quarkus:
     path: swagger-ui
     theme: flattop
     urls:
-      default: http://localhost:8080/openapi
+      default: /openapi
       production: https://eosc-data-transfer.vm.fedcloud.eu/openapi
     urls-primary-name: default
 

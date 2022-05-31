@@ -23,7 +23,7 @@ public class JobFileSet {
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int priority = 0;
 
-    @Schema(title="User defined checksum in the form algorithm:value")
+    @Schema(title="User defined checksum in the form 'algorithm:value'")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String checksum;
 

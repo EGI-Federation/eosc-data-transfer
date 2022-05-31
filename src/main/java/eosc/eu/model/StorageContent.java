@@ -13,7 +13,7 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StorageContent {
 
-    public String kind = "StorageContent";
+    static public String kind = "StorageContent";
     public int count;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

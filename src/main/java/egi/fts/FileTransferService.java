@@ -1,23 +1,16 @@
 package egi.fts;
 
-import egi.fts.model.*;
-
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.cli.annotations.Description;
-import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
-import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
-import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
-import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
-import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 
 import org.jboss.resteasy.reactive.RestHeader;
-import org.jboss.resteasy.reactive.RestPath;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
+
+import egi.fts.model.*;
 
 
 /***
@@ -60,4 +53,12 @@ public interface FileTransferService {
     @DELETE
     @Path("/jobs/{jobId}")
     Uni<JobInfoExtended> cancelTransferAsync(@RestHeader("Authorization") String auth, String jobId);
+
+    @GET
+    @Path("/dm/list")
+    Uni<List<ObjectInfo>> listFolderContentAsync(@RestHeader("Authorization") String auth, String folderUrl);
+
+    @GET
+    @Path("/dm/stat")
+    Uni<ObjectInfo> getObjectInfoAsync(@RestHeader("Authorization") String auth, @RestQuery("surl") String objectUrl);
 }

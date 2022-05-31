@@ -25,6 +25,7 @@ import eosc.eu.TransferServiceException;
 import eosc.eu.model.*;
 import egi.fts.FileTransferService;
 import egi.fts.model.*;
+import org.jboss.resteasy.reactive.RestHeader;
 
 
 /***
@@ -363,6 +364,38 @@ public class EgiDataTransfer implements TransferService {
             .chain(jobInfoExt -> {
                 // Transfer canceled, got updated transfer info
                 result.set(Uni.createFrom().item(new TransferInfoExtended(jobInfoExt)));
+                return Uni.createFrom().nullItem();
+            })
+            .onFailure().invoke(e -> {
+                LOG.error(e);
+                result.set(Uni.createFrom().failure(e));
+            })
+            .await().indefinitely();
+
+        return result.get();
+    }
+
+    /**
+     * Get the details of a file or folder.
+     * @param auth The access token needed to call the service.
+     * @param seUrl The link to the file or folder to det details of.
+     * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
+     */
+    public Uni<StorageElement> getStorageElementInfo(@RestHeader("Authorization") String auth, String seUrl) {
+        if(null == this.fts)
+            throw new TransferServiceException("invalidConfig");
+
+        AtomicReference<Uni<StorageElement>> result = new AtomicReference<>();
+
+        var seInfo = this.fts.getObjectInfoAsync(auth, seUrl);
+        seInfo
+            .ifNoItem()
+                .after(Duration.ofMillis(this.timeout))
+                .failWith(new TransferServiceException("getStorageElementInfoTimeout"))
+            .chain(objInfo -> {
+                // Got object info
+                objInfo.objectUrl = seUrl;
+                result.set(Uni.createFrom().item(new StorageElement(objInfo)));
                 return Uni.createFrom().nullItem();
             })
             .onFailure().invoke(e -> {

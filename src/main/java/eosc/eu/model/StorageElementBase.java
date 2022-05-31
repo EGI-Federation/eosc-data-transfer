@@ -10,15 +10,19 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StorageElementBase {
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String kind;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String name;
 
 
     /**
      * Constructor
      */
-    public StorageElementBase() {}
+    public StorageElementBase(String kind, String name) {
+        this.kind = kind;
+        this.name = name;
+    }
 
     /**
      * Construct but change kind

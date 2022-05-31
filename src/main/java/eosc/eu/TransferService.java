@@ -1,11 +1,13 @@
 package eosc.eu;
 
+import egi.fts.model.ObjectInfo;
 import io.smallrye.mutiny.Uni;
 
 import java.util.List;
 import javax.ws.rs.core.Response;
 
 import eosc.eu.model.*;
+import org.jboss.resteasy.reactive.RestHeader;
 
 
 /***
@@ -90,4 +92,20 @@ public interface TransferService {
      * @return API Response, wraps an ActionSuccess(TransferInfoExtended) or an ActionError entity
      */
     public abstract Uni<TransferInfoExtended> cancelTransfer(String auth, String jobId);
+
+    /**
+     * List all files and sub-folders in a folder.
+     * @param auth The access token needed to call the service.
+     * @param folderUrl The link to the folder to list content of.
+     * @return API Response, wraps an ActionSuccess(StorageContent) or an ActionError entity
+     */
+    //public abstract Uni<StorageContent> listFolderContent(String auth, String folderUrl);
+
+    /**
+     * Get the details of a file or folder.
+     * @param auth The access token needed to call the service.
+     * @param seUrl The link to the file or folder to det details of.
+     * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
+     */
+    public abstract Uni<StorageElement> getStorageElementInfo(@RestHeader("Authorization") String auth, String seUrl);
 }

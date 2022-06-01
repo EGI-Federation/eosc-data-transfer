@@ -1,5 +1,6 @@
 package egi.fts.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,8 +27,10 @@ public class ObjectInfo {
     static int S_IFDIR = 0x4000; // Directory
     static int S_IFREG = 0x8000; // Regular file
 
+    @JsonIgnore
     private URL url;
 
+    public String name;
     public String objectUrl; // Aka storage URL (surl)
     public long ctime;
     public long atime;
@@ -47,7 +50,10 @@ public class ObjectInfo {
      * @return The name of the object
      */
     public String getName() {
-        if(null == objectUrl || objectUrl.isEmpty() && objectUrl.isBlank())
+        if(null != this.name && !this.name.isEmpty() && !objectUrl.isBlank())
+            return this.name;
+
+        if(null == this.objectUrl || this.objectUrl.isEmpty() || this.objectUrl.isBlank())
             return null;
 
         if(null == this.url) {
@@ -69,8 +75,10 @@ public class ObjectInfo {
         // Get last path segment
         p = Pattern.compile("^(.*)/(.+)$");
         m = p.matcher(path);
-        if(m.matches())
-            return m.group(2);
+        if(m.matches()) {
+            this.name = m.group(2);
+            return this.name;
+        }
 
         return null;
     }

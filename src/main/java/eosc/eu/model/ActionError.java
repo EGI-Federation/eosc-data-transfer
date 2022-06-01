@@ -253,10 +253,8 @@ public class ActionError {
                             this.id = "fieldNotFound";
                         else if(keys.contains("jobId"))
                             this.id = "transferNotFound";
-                        else if(keys.contains("fileId"))
-                            this.id = "fileNotFound";
-                        else if(keys.contains("folderId"))
-                            this.id = "folderNotFound";
+                        else if(keys.contains("seUrl"))
+                            this.id = "storageElementNotFound";
                     } break;
             }
         }

@@ -325,7 +325,7 @@ public class EgiDataTransfer implements TransferService {
                 // Determine if field is an object or a primitive type
                 var entity = response.getEntity();
                 String rawField = (null != entity) ? entity.toString() : "null";
-                Pattern p = Pattern.compile("^\\{.+\\}$", Pattern.CASE_INSENSITIVE);
+                Pattern p = Pattern.compile("^\\{.+\\}$");
                 Matcher m = p.matcher(rawField);
                 if(!m.matches()) {
                     // Not an object, force return as text/plain
@@ -364,6 +364,37 @@ public class EgiDataTransfer implements TransferService {
             .chain(jobInfoExt -> {
                 // Transfer canceled, got updated transfer info
                 result.set(Uni.createFrom().item(new TransferInfoExtended(jobInfoExt)));
+                return Uni.createFrom().nullItem();
+            })
+            .onFailure().invoke(e -> {
+                LOG.error(e);
+                result.set(Uni.createFrom().failure(e));
+            })
+            .await().indefinitely();
+
+        return result.get();
+    }
+
+    /**
+     * List all files and sub-folders in a folder.
+     * @param auth The access token needed to call the service.
+     * @param folderUrl The link to the folder to list content of.
+     * @return API Response, wraps an ActionSuccess(StorageContent) or an ActionError entity
+     */
+    public Uni<StorageContent> listFolderContent(String auth, String folderUrl) {
+        if(null == this.fts)
+            throw new TransferServiceException("invalidConfig");
+
+        AtomicReference<Uni<StorageContent>> result = new AtomicReference<>();
+
+        var content = this.fts.listFolderContentAsync(auth, folderUrl);
+        content
+            .ifNoItem()
+                .after(Duration.ofMillis(this.timeout))
+                .failWith(new TransferServiceException("listFolderContentTimeout"))
+            .chain(contentList -> {
+                // Got folder listing
+                result.set(Uni.createFrom().item(new StorageContent(folderUrl, contentList)));
                 return Uni.createFrom().nullItem();
             })
             .onFailure().invoke(e -> {

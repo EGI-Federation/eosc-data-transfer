@@ -3,6 +3,7 @@ package eosc.eu;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -73,17 +74,20 @@ public class DataTransfer extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "403", description="Not authenticated",
+            @APIResponse(responseCode = "403", description="Permission denied",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response startTransfer(@RestHeader("Authorization") String auth, Transfer transfer) {
+    public Response startTransfer(@RestHeader("Authorization") String auth, Transfer transfer,
+                                  @RestQuery("dest") @DefaultValue(defaultDestination)
+                                  @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                  String destination) {
 
         LOG.info("Start new data transfer");
 
         try {
-            ActionParameters ap = new ActionParameters();
+            ActionParameters ap = new ActionParameters(destination);
             CompletableFuture<Response> response = new CompletableFuture<>();
             Uni<ActionParameters> start = Uni.createFrom().item(ap);
             start
@@ -92,7 +96,7 @@ public class DataTransfer extends DataTransferBase {
                     if (!getTransferService(params)) {
                         // Could not get REST client
                         response.complete(new ActionError("invalidServiceConfig",
-                                                Tuple2.of("destination", params.destination)).toResponse());
+                                                Tuple2.of("destination", destination)).toResponse());
                         return Uni.createFrom().failure(new RuntimeException());
                     }
 
@@ -114,7 +118,7 @@ public class DataTransfer extends DataTransferBase {
                     LOG.error("Failed to start new transfer");
                     if (!response.isDone())
                         response.complete(new ActionError(e,
-                                                Tuple2.of("destination", config.destination())).toResponse());
+                                                Tuple2.of("destination", destination)).toResponse());
                 })
                 .subscribe().with(unused -> {});
 
@@ -157,7 +161,7 @@ public class DataTransfer extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "403", description="Not authenticated",
+            @APIResponse(responseCode = "403", description="Permission denied",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="No matching transfer",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
@@ -182,7 +186,10 @@ public class DataTransfer extends DataTransferBase {
                                   @RestQuery("vo_name") @Parameter(description = "Filter by virtual organization of user who started the transfer")
                                   String voName,
                                   @RestQuery("user_dn") @Parameter(description = "Filter by user who started the transfer")
-                                  String userDN) {
+                                  String userDN,
+                                  @RestQuery("dest") @DefaultValue(defaultDestination)
+                                  @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                  String destination) {
 
         final String criteriaPrefix = "\n\t\t";
         String filters = String.format("%slimit = %s", criteriaPrefix, limit);
@@ -207,7 +214,7 @@ public class DataTransfer extends DataTransferBase {
         LOG.infof("Find data transfers matching criteria: %s", filters);
 
         try {
-            ActionParameters ap = new ActionParameters();
+            ActionParameters ap = new ActionParameters(destination);
             CompletableFuture<Response> response = new CompletableFuture<>();
             Uni<ActionParameters> start = Uni.createFrom().item(ap);
             start
@@ -216,8 +223,7 @@ public class DataTransfer extends DataTransferBase {
                     if (!getTransferService(params)) {
                         // Could not get REST client
                         response.complete(new ActionError("invalidServiceConfig",
-                                Tuple2.of("destination", params.destination))
-                                .toResponse());
+                                Tuple2.of("destination", params.destination)).toResponse());
                         return Uni.createFrom().failure(new RuntimeException());
                     }
 
@@ -241,6 +247,7 @@ public class DataTransfer extends DataTransferBase {
                     LOG.error("Failed to find matching transfers");
                     if (!response.isDone()) {
                         List<Tuple2<String, String>> details = new ArrayList<>();
+                        details.add(Tuple2.of("destination", destination));
                         details.add(Tuple2.of("limit", String.format("%d", limit)));
                         if(null != fields && !fields.isEmpty())
                             details.add(Tuple2.of("filter:fields", fields));
@@ -295,19 +302,22 @@ public class DataTransfer extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "403", description="Not authenticated",
+            @APIResponse(responseCode = "403", description="Permission denied",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Transfer not found",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response getTransferInfo(@RestHeader("Authorization") String auth, String jobId) {
+    public Response getTransferInfo(@RestHeader("Authorization") String auth, String jobId,
+                                    @RestQuery("dest") @DefaultValue(defaultDestination)
+                                    @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                    String destination) {
 
         LOG.infof("Retrieve details of transfer %s", jobId);
 
         try {
-            ActionParameters ap = new ActionParameters();
+            ActionParameters ap = new ActionParameters(destination);
             CompletableFuture<Response> response = new CompletableFuture<>();
             Uni<ActionParameters> start = Uni.createFrom().item(ap);
             start
@@ -316,7 +326,7 @@ public class DataTransfer extends DataTransferBase {
                     if (!getTransferService(params)) {
                         // Could not get REST client
                         response.complete(new ActionError("invalidServiceConfig",
-                                                Tuple2.of("destination", params.destination)).toResponse());
+                                                Tuple2.of("destination", destination)).toResponse());
                         return Uni.createFrom().failure(new RuntimeException());
                     }
 
@@ -337,7 +347,9 @@ public class DataTransfer extends DataTransferBase {
                 .onFailure().invoke(e -> {
                     LOG.errorf("Failed to get details of transfer %s", jobId);
                     if (!response.isDone())
-                        response.complete(new ActionError(e, Tuple2.of("jobId", jobId)).toResponse());
+                        response.complete(new ActionError(e, Arrays.asList(
+                                                Tuple2.of("jobId", jobId),
+                                                Tuple2.of("destination", destination)) ).toResponse());
                 })
                 .subscribe().with(unused -> {});
 
@@ -372,19 +384,22 @@ public class DataTransfer extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "403", description="Not authenticated",
+            @APIResponse(responseCode = "403", description="Permission denied",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Transfer not found or field does not exist",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response getTransferInfoField(@RestHeader("Authorization") String auth, String jobId, String fieldName) {
+    public Response getTransferInfoField(@RestHeader("Authorization") String auth, String jobId, String fieldName,
+                                         @RestQuery("dest") @DefaultValue(defaultDestination)
+                                         @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                         String destination) {
 
         LOG.infof("Retrieve field '%s' from details of transfer %s", fieldName, jobId);
 
         try {
-            ActionParameters ap = new ActionParameters();
+            ActionParameters ap = new ActionParameters(destination);
             CompletableFuture<Response> response = new CompletableFuture<>();
             Uni<ActionParameters> start = Uni.createFrom().item(ap);
             start
@@ -393,7 +408,7 @@ public class DataTransfer extends DataTransferBase {
                     if (!getTransferService(params)) {
                         // Could not get REST client
                         response.complete(new ActionError("invalidServiceConfig",
-                                                Tuple2.of("destination", params.destination)).toResponse());
+                                                Tuple2.of("destination", destination)).toResponse());
                         return Uni.createFrom().failure(new RuntimeException());
                     }
 
@@ -418,7 +433,8 @@ public class DataTransfer extends DataTransferBase {
                     if (!response.isDone())
                         response.complete(new ActionError(e, Arrays.asList(
                                                 Tuple2.of("jobId", jobId),
-                                                Tuple2.of("fieldName", fieldName)) ).toResponse());
+                                                Tuple2.of("fieldName", fieldName),
+                                                Tuple2.of("destination", destination)) ).toResponse());
                 })
                 .subscribe().with(unused -> {});
 
@@ -454,19 +470,22 @@ public class DataTransfer extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "403", description="Not authenticated",
+            @APIResponse(responseCode = "403", description="Permission denied",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Transfer not found",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response cancelTransfer(@RestHeader("Authorization") String auth, String jobId) {
+    public Response cancelTransfer(@RestHeader("Authorization") String auth, String jobId,
+                                   @RestQuery("dest") @DefaultValue(defaultDestination)
+                                   @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                   String destination) {
 
         LOG.infof("Cancel transfer %s", jobId);
 
         try {
-            ActionParameters ap = new ActionParameters();
+            ActionParameters ap = new ActionParameters(destination);
             CompletableFuture<Response> response = new CompletableFuture<>();
             Uni<ActionParameters> start = Uni.createFrom().item(ap);
             start
@@ -475,7 +494,7 @@ public class DataTransfer extends DataTransferBase {
                     if (!getTransferService(params)) {
                         // Could not get REST client
                         response.complete(new ActionError("invalidServiceConfig",
-                                                Tuple2.of("destination", params.destination)).toResponse());
+                                                Tuple2.of("destination", destination)).toResponse());
                         return Uni.createFrom().failure(new RuntimeException());
                     }
 
@@ -496,7 +515,9 @@ public class DataTransfer extends DataTransferBase {
                 .onFailure().invoke(e -> {
                     LOG.errorf("Failed to cancel transfer %s", jobId);
                     if (!response.isDone())
-                        response.complete(new ActionError(e, Tuple2.of("jobId", jobId)).toResponse());
+                        response.complete(new ActionError(e, Arrays.asList(
+                                                Tuple2.of("jobId", jobId),
+                                                Tuple2.of("destination", destination)) ).toResponse());
                 })
                 .subscribe().with(unused -> {});
 

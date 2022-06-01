@@ -1,5 +1,6 @@
 package eosc.eu;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
 import java.lang.reflect.InvocationTargetException;
 import javax.annotation.PostConstruct;
@@ -13,6 +14,19 @@ import eosc.eu.model.*;
  * Dynamically selects the appropriate data transfer service, depending on the desired destination.
  */
 public class DataTransferBase {
+
+    public enum Destination
+    {
+        dcache("dcache");
+
+        private String destination;
+
+        Destination(String destination) { this.destination = destination; }
+
+        public String getDestination() { return this.destination; }
+    }
+
+    static public final String defaultDestination = "dcache";
 
     @Inject
     protected ServicesConfig config;
@@ -41,7 +55,11 @@ public class DataTransferBase {
         if (null != params.ts)
             return true;
 
-        params.destination = config.destination();
+        if(null == params.destination || params.destination.isEmpty()) {
+            LOG.error("No destination specified");
+            return false;
+        }
+
         LOG.infof("Destination is <%s>", params.destination);
 
         String serviceId = config.destinations().get(params.destination);

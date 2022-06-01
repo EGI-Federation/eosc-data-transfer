@@ -33,6 +33,14 @@ public class ActionParameters {
     }
 
     /**
+     * Construct with destination
+     */
+    public ActionParameters(String destination) {
+        this.destination = destination;
+        this.response = Response.ok().build();
+    }
+
+    /**
      * Copy constructor
      */
     public ActionParameters(ActionParameters ap) {

@@ -99,7 +99,7 @@ public interface TransferService {
      * @param folderUrl The link to the folder to list content of.
      * @return API Response, wraps an ActionSuccess(StorageContent) or an ActionError entity
      */
-    //public abstract Uni<StorageContent> listFolderContent(String auth, String folderUrl);
+    public abstract Uni<StorageContent> listFolderContent(String auth, String folderUrl);
 
     /**
      * Get the details of a file or folder.

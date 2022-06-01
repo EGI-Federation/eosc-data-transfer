@@ -15,6 +15,7 @@ import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestHeader;
 
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
@@ -54,6 +55,90 @@ public class DataStorage extends DataTransferBase {
     }
 
     /**
+     * List the content of a folder.
+     * @param auth The access token needed to call the service.
+     * @param seUrl The link to the file to get details of.
+     * @return API Response, wraps an ActionSuccess(StorageContent) or an ActionError entity
+     */
+    @GET
+    @Path("/storage/folder/list")
+    @SecurityRequirement(name = "bearer")
+    @Operation(operationId = "listFolderContent",  summary = "List the content of a folder from a storage system")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "Success",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = StorageContent.class))),
+            @APIResponse(responseCode = "400", description="Invalid parameters/configuration or the storage element is not a folder",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "401", description="Not authorized",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "403", description="Permission denied",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "404", description="Storage element not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "419", description="Re-delegate credentials",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "503", description="Try again later",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+    })
+    public Response listFolderContent(@RestHeader("Authorization") String auth,
+                                @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to list content of")
+                                String seUrl,
+                                @RestQuery("dest") @DefaultValue(defaultDestination)
+                                @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                String destination) {
+
+        LOG.infof("List content of folder %s", seUrl);
+
+        try {
+            ActionParameters ap = new ActionParameters(destination);
+            CompletableFuture<Response> response = new CompletableFuture<>();
+            Uni<ActionParameters> start = Uni.createFrom().item(ap);
+            start
+                    .chain(params -> {
+                        // Pick transfer service and create REST client for it
+                        if (!getTransferService(params)) {
+                            // Could not get REST client
+                            response.complete(new ActionError("invalidServiceConfig",
+                                    Tuple2.of("destination", destination)).toResponse());
+                            return Uni.createFrom().failure(new RuntimeException());
+                        }
+
+                        return Uni.createFrom().item(params);
+                    })
+                    .chain(params -> {
+                        // List folder content
+                        return params.ts.listFolderContent(auth, seUrl);
+                    })
+                    .chain(content -> {
+                        // Got folder content
+                        LOG.infof("Found %d element(s) in folder %s", content.count, seUrl);
+
+                        // Success
+                        response.complete(Response.ok(content).build());
+                        return Uni.createFrom().nullItem();
+                    })
+                    .onFailure().invoke(e -> {
+                        LOG.errorf("Failed to list content of folder %s", seUrl);
+                        if (!response.isDone())
+                            response.complete(new ActionError(e, Arrays.asList(
+                                    Tuple2.of("seUrl", seUrl),
+                                    Tuple2.of("destination", destination)) ).toResponse());
+                    })
+                    .subscribe().with(unused -> {});
+
+            // Wait until folder content is listed (possibly with error)
+            Response r = response.get();
+            return r;
+        } catch (InterruptedException e) {
+            // Cancelled
+            return new ActionError("listFolderContentInterrupted").toResponse();
+        } catch (ExecutionException e) {
+            // Execution error
+            return new ActionError("listFolderContentExecutionError").toResponse();
+        }
+    }
+
+    /**
      * Get the details of a file.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the file to get details of.
@@ -70,9 +155,9 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "403", description="Not authenticated",
+            @APIResponse(responseCode = "403", description="Permission denied",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "403", description="Storage element not found",
+            @APIResponse(responseCode = "404", description="Storage element not found",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
@@ -81,12 +166,15 @@ public class DataStorage extends DataTransferBase {
     })
     public Response getFileInfo(@RestHeader("Authorization") String auth,
                                 @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to get stats for")
-                                String seUrl) {
+                                String seUrl,
+                                @RestQuery("dest") @DefaultValue(defaultDestination)
+                                @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                String destination) {
 
         LOG.infof("Get details of storage element %s", seUrl);
 
         try {
-            ActionParameters ap = new ActionParameters();
+            ActionParameters ap = new ActionParameters(destination);
             CompletableFuture<Response> response = new CompletableFuture<>();
             Uni<ActionParameters> start = Uni.createFrom().item(ap);
             start
@@ -95,18 +183,18 @@ public class DataStorage extends DataTransferBase {
                     if (!getTransferService(params)) {
                         // Could not get REST client
                         response.complete(new ActionError("invalidServiceConfig",
-                                                Tuple2.of("destination", params.destination)).toResponse());
+                                                Tuple2.of("destination", destination)).toResponse());
                         return Uni.createFrom().failure(new RuntimeException());
                     }
 
                     return Uni.createFrom().item(params);
                 })
                 .chain(params -> {
-                    // Get user info
+                    // Get storage element info
                     return params.ts.getStorageElementInfo(auth, seUrl);
                 })
                 .chain(seinfo -> {
-                    // Got file info
+                    // Got storage element info
                     LOG.infof("Got info for %s %s", seinfo.isFolder ? "folder" : "file", seUrl);
 
                     // Success
@@ -114,14 +202,15 @@ public class DataStorage extends DataTransferBase {
                     return Uni.createFrom().nullItem();
                 })
                 .onFailure().invoke(e -> {
-                    LOG.error("Failed to get user info");
+                    LOG.errorf("Failed to get info about storage element %s", seUrl);
                     if (!response.isDone())
-                        response.complete(new ActionError(e,
-                                                Tuple2.of("destination", config.destination())).toResponse());
+                        response.complete(new ActionError(e, Arrays.asList(
+                                                Tuple2.of("seUrl", seUrl),
+                                                Tuple2.of("destination", destination)) ).toResponse());
                 })
                 .subscribe().with(unused -> {});
 
-            // Wait until user info is retrieved (possibly with error)
+            // Wait until storage element info is retrieved (possibly with error)
             Response r = response.get();
             return r;
         } catch (InterruptedException e) {
@@ -150,9 +239,9 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "403", description="Not authenticated",
+            @APIResponse(responseCode = "403", description="Permission denied",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "403", description="Storage element not found",
+            @APIResponse(responseCode = "404", description="Storage element not found",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
@@ -160,10 +249,13 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
     public Response getFolderInfo(@RestHeader("Authorization") String auth,
-                                @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to get stats for")
-                                String seUrl) {
+                                  @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to get stats for")
+                                  String seUrl,
+                                  @RestQuery("dest") @DefaultValue(defaultDestination)
+                                  @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                  String destination) {
         // This is the same for files and folders
-        return getFileInfo(auth, seUrl);
+        return getFileInfo(auth, seUrl, destination);
     }
 
 }

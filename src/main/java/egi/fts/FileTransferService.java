@@ -9,6 +9,7 @@ import org.jboss.resteasy.reactive.RestQuery;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
+import java.util.Map;
 
 import egi.fts.model.*;
 
@@ -56,7 +57,7 @@ public interface FileTransferService {
 
     @GET
     @Path("/dm/list")
-    Uni<List<ObjectInfo>> listFolderContentAsync(@RestHeader("Authorization") String auth, String folderUrl);
+    Uni<Map<String, ObjectInfo>> listFolderContentAsync(@RestHeader("Authorization") String auth, @RestQuery("surl") String folderUrl);
 
     @GET
     @Path("/dm/stat")

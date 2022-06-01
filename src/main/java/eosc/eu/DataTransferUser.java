@@ -6,6 +6,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
@@ -22,6 +23,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import eosc.eu.model.*;
+import org.jboss.resteasy.reactive.RestQuery;
 
 
 /***
@@ -66,19 +68,22 @@ public class DataTransferUser extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "403", description="Not authenticated",
+            @APIResponse(responseCode = "403", description="Permission denied",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response getUserInfo(@RestHeader("Authorization") String auth) {
+    public Response getUserInfo(@RestHeader("Authorization") String auth,
+                                @RestQuery("dest") @DefaultValue(defaultDestination)
+                                @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                String destination) {
 
         LOG.info("Get current user info");
 
         try {
-            ActionParameters ap = new ActionParameters();
+            ActionParameters ap = new ActionParameters(destination);
             CompletableFuture<Response> response = new CompletableFuture<>();
             Uni<ActionParameters> start = Uni.createFrom().item(ap);
             start
@@ -87,7 +92,7 @@ public class DataTransferUser extends DataTransferBase {
                     if (!getTransferService(params)) {
                         // Could not get REST client
                         response.complete(new ActionError("invalidServiceConfig",
-                                                Tuple2.of("destination", params.destination)).toResponse());
+                                                Tuple2.of("destination", destination)).toResponse());
                         return Uni.createFrom().failure(new RuntimeException());
                     }
 
@@ -109,7 +114,7 @@ public class DataTransferUser extends DataTransferBase {
                     LOG.error("Failed to get user info");
                     if (!response.isDone())
                         response.complete(new ActionError(e,
-                                                Tuple2.of("destination", config.destination())).toResponse());
+                                                Tuple2.of("destination", destination)).toResponse());
                 })
                 .subscribe().with(unused -> {});
 

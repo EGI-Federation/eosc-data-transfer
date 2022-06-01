@@ -2,7 +2,6 @@ proxy:
   parsers:
     zenodo: https://zenodo.org
   transfer:
-    destination: dcache
     destinations:
       dcache: fts
       datahub: another
@@ -38,7 +37,6 @@ quarkus:
       default: /openapi
       production: https://eosc-data-transfer.vm.fedcloud.eu/openapi
     urls-primary-name: default
-
   smallrye-openapi:
     path: /openapi
     info-version: 1.0.4

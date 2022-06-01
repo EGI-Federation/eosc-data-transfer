@@ -126,6 +126,14 @@ public interface TransferService {
     public abstract Uni<String> deleteFolder(String auth, String folderUrl);
 
     /**
+     * Delete existing file.
+     * @param auth The access token needed to call the service.
+     * @param fileUrl The link to the file to delete.
+     * @return Confirmation message.
+     */
+    public abstract Uni<String> deleteFile(String auth, String fileUrl);
+
+    /**
      * Rename a folder or file.
      * @param auth The access token needed to call the service.
      * @param seOld The link to the storage element to rename.
@@ -133,5 +141,4 @@ public interface TransferService {
      * @return Confirmation message.
      */
     public abstract Uni<String> renameStorageElement(String auth, String seOld, String seNew);
-
 }

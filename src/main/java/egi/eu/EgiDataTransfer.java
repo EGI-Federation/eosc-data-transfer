@@ -503,6 +503,38 @@ public class EgiDataTransfer implements TransferService {
     }
 
     /**
+     * Delete existing file.
+     * @param auth The access token needed to call the service.
+     * @param fileUrl The link to the file to delete.
+     * @return Confirmation message.
+     */
+    public Uni<String> deleteFile(String auth, String fileUrl) {
+        if(null == this.fts)
+            throw new TransferServiceException("invalidConfig");
+
+        AtomicReference<Uni<String>> result = new AtomicReference<>();
+
+        var operation = new ObjectOperation(fileUrl);
+        var start = this.fts.deleteFileAsync(auth, operation);
+        start
+            .ifNoItem()
+                .after(Duration.ofMillis(this.timeout))
+                .failWith(new TransferServiceException("deleteFileTimeout"))
+            .chain(code -> {
+                // Got success code
+                result.set(Uni.createFrom().item(code));
+                return Uni.createFrom().nullItem();
+            })
+            .onFailure().invoke(e -> {
+                LOG.error(e);
+                result.set(Uni.createFrom().failure(e));
+            })
+            .await().indefinitely();
+
+        return result.get();
+    }
+
+    /**
      * Rename a folder or file.
      * @param auth The access token needed to call the service.
      * @param seOld The link to the storage element to rename.
@@ -518,21 +550,20 @@ public class EgiDataTransfer implements TransferService {
         var operation = new ObjectOperation(seOld, seNew);
         var start = this.fts.renameObjectAsync(auth, operation);
         start
-            .ifNoItem()
+                .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("renameStorageElementTimeout"))
-            .chain(code -> {
-                // Got success code
-                result.set(Uni.createFrom().item(code));
-                return Uni.createFrom().nullItem();
-            })
-            .onFailure().invoke(e -> {
-                LOG.error(e);
-                result.set(Uni.createFrom().failure(e));
-            })
-            .await().indefinitely();
+                .chain(code -> {
+                    // Got success code
+                    result.set(Uni.createFrom().item(code));
+                    return Uni.createFrom().nullItem();
+                })
+                .onFailure().invoke(e -> {
+                    LOG.error(e);
+                    result.set(Uni.createFrom().failure(e));
+                })
+                .await().indefinitely();
 
         return result.get();
     }
-
 }

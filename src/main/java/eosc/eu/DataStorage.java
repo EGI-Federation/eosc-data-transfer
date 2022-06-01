@@ -351,7 +351,7 @@ public class DataStorage extends DataTransferBase {
     @Operation(operationId = "deleteFolder",  summary = "Delete existing folder from a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success"),
-            @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
+            @APIResponse(responseCode = "400", description="Invalid parameters/configuration or storage element is not a folder",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
@@ -419,6 +419,89 @@ public class DataStorage extends DataTransferBase {
         } catch (ExecutionException e) {
             // Execution error
             return new ActionError("deleteFolderExecutionError").toResponse();
+        }
+    }
+
+    /**
+     * Delete existing file.
+     * @param auth The access token needed to call the service.
+     * @param seUrl The link to the file to delete.
+     * @return API Response, wraps an ActionError entity in case of error
+     */
+    @DELETE
+    @Path("/storage/file")
+    @SecurityRequirement(name = "bearer")
+    @Operation(operationId = "deleteFile",  summary = "Delete existing file from a storage system")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "Success"),
+            @APIResponse(responseCode = "400", description="Invalid parameters/configuration or storage element is not a file",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "401", description="Not authorized",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "403", description="Permission denied",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "404", description="File not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "419", description="Re-delegate credentials",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "503", description="Try again later",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+    })
+    public Response deleteFile(@RestHeader("Authorization") String auth,
+                               @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to delete")
+                               String seUrl,
+                               @RestQuery("dest") @DefaultValue(defaultDestination)
+                               @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                               String destination) {
+
+        LOG.infof("Delete file %s", seUrl);
+
+        try {
+            ActionParameters ap = new ActionParameters(destination);
+            CompletableFuture<Response> response = new CompletableFuture<>();
+            Uni<ActionParameters> start = Uni.createFrom().item(ap);
+            start
+                .chain(params -> {
+                    // Pick transfer service and create REST client for it
+                    if (!getTransferService(params)) {
+                        // Could not get REST client
+                        response.complete(new ActionError("invalidServiceConfig",
+                                Tuple2.of("destination", destination)).toResponse());
+                        return Uni.createFrom().failure(new RuntimeException());
+                    }
+
+                    return Uni.createFrom().item(params);
+                })
+                .chain(params -> {
+                    // Delete file
+                    return params.ts.deleteFile(auth, seUrl);
+                })
+                .chain(deleted -> {
+                    // File got deleted
+                    LOG.infof("Deleted file %s (%s)", seUrl, deleted);
+
+                    // Success
+                    response.complete(Response.ok().build());
+                    return Uni.createFrom().nullItem();
+                })
+                .onFailure().invoke(e -> {
+                    LOG.errorf("Failed to delete file %s", seUrl);
+                    if (!response.isDone())
+                        response.complete(new ActionError(e, Arrays.asList(
+                                Tuple2.of("seUrl", seUrl),
+                                Tuple2.of("destination", destination)) ).toResponse());
+                })
+                .subscribe().with(unused -> {});
+
+            // Wait until file is deleted (possibly with error)
+            Response r = response.get();
+            return r;
+        } catch (InterruptedException e) {
+            // Cancelled
+            return new ActionError("deleteFileInterrupted").toResponse();
+        } catch (ExecutionException e) {
+            // Execution error
+            return new ActionError("deleteFileExecutionError").toResponse();
         }
     }
 

@@ -74,4 +74,8 @@ public interface FileTransferService {
     @POST
     @Path("/dm/rename")
     Uni<String> renameObjectAsync(@RestHeader("Authorization") String auth, ObjectOperation objects);
+
+    @POST
+    @Path("/dm/unlink")
+    Uni<String> deleteFileAsync(@RestHeader("Authorization") String auth, ObjectOperation file);
 }

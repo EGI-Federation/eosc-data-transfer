@@ -70,4 +70,8 @@ public interface FileTransferService {
     @POST
     @Path("/dm/rmdir")
     Uni<String> deleteFolderAsync(@RestHeader("Authorization") String auth, ObjectOperation folder);
+
+    @POST
+    @Path("/dm/rename")
+    Uni<String> renameObjectAsync(@RestHeader("Authorization") String auth, ObjectOperation objects);
 }

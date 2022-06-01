@@ -144,7 +144,7 @@ public class EgiDataTransfer implements TransferService {
     /**
      * Retrieve information about current user.
      * @param auth The access token that authorizes calling the service.
-     * @return API Response, wraps an ActionSuccess(UserInfo) or an ActionError entity
+     * @return User information.
      */
     public Uni<eosc.eu.model.UserInfo> getUserInfo(String auth) {
         if(null == this.fts)
@@ -175,7 +175,7 @@ public class EgiDataTransfer implements TransferService {
      * Initiate new transfer of multiple sets of files.
      * @param auth The access token that authorizes calling the service.
      * @param transfer The details of the transfer (source and destination files, parameters).
-     * @return API Response, wraps an ActionSuccess(TransferInfo) or an ActionError entity
+     * @return Identification for the new transfer.
      */
     public Uni<TransferInfo> startTransfer(String auth, Transfer transfer) {
         if(null == this.fts)
@@ -214,7 +214,7 @@ public class EgiDataTransfer implements TransferService {
      * @param delegationId Filter by delegation ID of user who started the transfer
      * @param voName Filter by VO of user who started the transfer
      * @param userDN Filter by user who started the transfer
-     * @return API Response, wraps an ActionSuccess(TransferList) or an ActionError entity
+     * @return Matching transfers.
      */
     public Uni<TransferList> findTransfers(String auth,
                                            String fields, int limit,
@@ -269,7 +269,7 @@ public class EgiDataTransfer implements TransferService {
      * Request information about a transfer.
      * @param auth The access token that authorizes calling the service.
      * @param jobId The ID of the transfer to request info about.
-     * @return API Response, wraps an ActionSuccess(TransferInfoExtended) or an ActionError entity
+     * @return Details of the transfer.
      */
     public Uni<TransferInfoExtended> getTransferInfo(String auth, String jobId) {
         if(null == this.fts)
@@ -301,7 +301,7 @@ public class EgiDataTransfer implements TransferService {
      * @param auth The access token that authorizes calling the service.
      * @param jobId The ID of the transfer to request info about.
      * @param fieldName The name of the TransferInfoExtended field to retrieve.
-     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     * @return The value of the requested field from a transfer's information.
      */
     public Uni<Response> getTransferInfoField(String auth, String jobId, String fieldName) {
         if(null == this.fts)
@@ -348,7 +348,7 @@ public class EgiDataTransfer implements TransferService {
      * Cancel a transfer.
      * @param auth The access token that authorizes calling the service.
      * @param jobId The ID of the transfer to cancel.
-     * @return API Response, wraps an ActionSuccess(TransferInfoExtended) or an ActionError entity
+     * @return Details of the cancelled transfer.
      */
     public Uni<TransferInfoExtended> cancelTransfer(String auth, String jobId) {
         if(null == this.fts)
@@ -379,7 +379,7 @@ public class EgiDataTransfer implements TransferService {
      * List all files and sub-folders in a folder.
      * @param auth The access token needed to call the service.
      * @param folderUrl The link to the folder to list content of.
-     * @return API Response, wraps an ActionSuccess(StorageContent) or an ActionError entity
+     * @return List of folder content.
      */
     public Uni<StorageContent> listFolderContent(String auth, String folderUrl) {
         if(null == this.fts)
@@ -410,7 +410,7 @@ public class EgiDataTransfer implements TransferService {
      * Get the details of a file or folder.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the file or folder to det details of.
-     * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
+     * @return Details about the storage element.
      */
     public Uni<StorageElement> getStorageElementInfo(@RestHeader("Authorization") String auth, String seUrl) {
         if(null == this.fts)
@@ -442,7 +442,7 @@ public class EgiDataTransfer implements TransferService {
      * Create new folder.
      * @param auth The access token needed to call the service.
      * @param folderUrl The link to the folder to create.
-     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     * @return Confirmation message.
      */
     public Uni<String> createFolder(String auth, String folderUrl) {
         if(null == this.fts)
@@ -474,7 +474,7 @@ public class EgiDataTransfer implements TransferService {
      * Delete existing folder.
      * @param auth The access token needed to call the service.
      * @param folderUrl The link to the folder to delete.
-     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     * @return Confirmation message.
      */
     public Uni<String> deleteFolder(String auth, String folderUrl) {
         if(null == this.fts)
@@ -488,6 +488,39 @@ public class EgiDataTransfer implements TransferService {
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("deleteFolderTimeout"))
+            .chain(code -> {
+                // Got success code
+                result.set(Uni.createFrom().item(code));
+                return Uni.createFrom().nullItem();
+            })
+            .onFailure().invoke(e -> {
+                LOG.error(e);
+                result.set(Uni.createFrom().failure(e));
+            })
+            .await().indefinitely();
+
+        return result.get();
+    }
+
+    /**
+     * Rename a folder or file.
+     * @param auth The access token needed to call the service.
+     * @param seOld The link to the storage element to rename.
+     * @param seNew The link to the new name/location of the storage element.
+     * @return Confirmation message.
+     */
+    public Uni<String> renameStorageElement(String auth, String seOld, String seNew) {
+        if(null == this.fts)
+            throw new TransferServiceException("invalidConfig");
+
+        AtomicReference<Uni<String>> result = new AtomicReference<>();
+
+        var operation = new ObjectOperation(seOld, seNew);
+        var start = this.fts.renameObjectAsync(auth, operation);
+        start
+            .ifNoItem()
+                .after(Duration.ofMillis(this.timeout))
+                .failWith(new TransferServiceException("renameStorageElementTimeout"))
             .chain(code -> {
                 // Got success code
                 result.set(Uni.createFrom().item(code));

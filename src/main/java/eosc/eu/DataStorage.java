@@ -393,9 +393,9 @@ public class DataStorage extends DataTransferBase {
                     // Delete folder
                     return params.ts.deleteFolder(auth, seUrl);
                 })
-                .chain(created -> {
+                .chain(deleted -> {
                     // Folder got deleted
-                    LOG.infof("Deleted folder %s (%s)", seUrl, created);
+                    LOG.infof("Deleted folder %s (%s)", seUrl, deleted);
 
                     // Success
                     response.complete(Response.ok().build());
@@ -420,6 +420,125 @@ public class DataStorage extends DataTransferBase {
             // Execution error
             return new ActionError("deleteFolderExecutionError").toResponse();
         }
+    }
+
+    /**
+     * Rename a file.
+     * @param auth The access token needed to call the service.
+     * @param operation The links to the old and new storage element URLs.
+     * @return API Response, wraps an ActionError entity in case of error
+     */
+    @PUT
+    @Path("/storage/file")
+    @SecurityRequirement(name = "bearer")
+    @Operation(operationId = "renameFile",  summary = "Rename existing file in a storage system")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "Success"),
+            @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "401", description="Not authorized",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "403", description="Permission denied",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "404", description="File not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "419", description="Re-delegate credentials",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "503", description="Try again later",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+    })
+    public Response renameFile(@RestHeader("Authorization") String auth, StorageRenameOperation operation,
+                               @RestQuery("dest") @DefaultValue(defaultDestination)
+                               @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                               String destination) {
+
+        if(null != operation.seUrlOld && null != operation.seUrlNew)
+            LOG.infof("Renaming storage element %s to %s", operation.seUrlOld, operation.seUrlNew);
+
+        try {
+            ActionParameters ap = new ActionParameters(destination);
+            CompletableFuture<Response> response = new CompletableFuture<>();
+            Uni<ActionParameters> start = Uni.createFrom().item(ap);
+            start
+                .chain(params -> {
+                    // Pick transfer service and create REST client for it
+                    if (!getTransferService(params)) {
+                        // Could not get REST client
+                        response.complete(new ActionError("invalidServiceConfig",
+                                Tuple2.of("destination", destination)).toResponse());
+                        return Uni.createFrom().failure(new RuntimeException());
+                    }
+
+                    return Uni.createFrom().item(params);
+                })
+                .chain(params -> {
+                    // Rename storage element
+                    return params.ts.renameStorageElement(auth, operation.seUrlOld, operation.seUrlNew);
+                })
+                .chain(renamed -> {
+                    // Storage element got renamed
+                    LOG.infof("Renamed storage element %s to %s (%s)", operation.seUrlOld, operation.seUrlNew, renamed);
+
+                    // Success
+                    response.complete(Response.ok().build());
+                    return Uni.createFrom().nullItem();
+                })
+                .onFailure().invoke(e -> {
+                    LOG.errorf("Failed to rename storage element %s", operation.seUrlOld);
+                    if (!response.isDone())
+                        response.complete(new ActionError(e, Arrays.asList(
+                                Tuple2.of("seUrl", operation.seUrlOld),
+                                Tuple2.of("seUrlNew", operation.seUrlNew),
+                                Tuple2.of("destination", destination)) ).toResponse());
+                })
+                .subscribe().with(unused -> {});
+
+            // Wait until storage element is renamed (possibly with error)
+            Response r = response.get();
+            return r;
+        } catch (InterruptedException e) {
+            // Cancelled
+            return new ActionError("renameFileInterrupted").toResponse();
+        } catch (ExecutionException e) {
+            // Execution error
+            return new ActionError("renameFileExecutionError").toResponse();
+        }
+    }
+
+    /**
+     * Rename a folder.
+     * @param auth The access token needed to call the service.
+     * @param operation The links to the old and new storage element URLs.
+     * @return API Response, wraps an ActionError entity in case of error
+     */
+    @PUT
+    @Path("/storage/folder")
+    @SecurityRequirement(name = "bearer")
+    @Operation(operationId = "renameFolder",  summary = "Rename existing folder in a storage system")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "Success"),
+            @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "401", description="Not authorized",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "403", description="Permission denied",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "404", description="Folder not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "419", description="Re-delegate credentials",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "503", description="Try again later",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+    })
+    public Response renameFolder(@RestHeader("Authorization") String auth,
+                                 StorageRenameOperation operation,
+                                 @RestQuery("dest") @DefaultValue(defaultDestination)
+                                 @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                 String destination) {
+        // This is the same for files and folders
+        return renameFile(auth, operation, destination);
     }
 
 }

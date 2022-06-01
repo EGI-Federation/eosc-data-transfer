@@ -37,7 +37,7 @@ public interface TransferService {
     /**
      * Retrieve information about current user.
      * @param auth The access token needed to call the service.
-     * @return API Response, wraps an ActionSuccess(UserInfo) or an ActionError entity
+     * @return User information.
      */
     public abstract Uni<UserInfo> getUserInfo(String auth);
 
@@ -45,7 +45,7 @@ public interface TransferService {
      * Initiate new transfer of multiple sets of files.
      * @param auth The access token needed to call the service.
      * @param transfer The details of the transfer (source and destination files, parameters).
-     * @return API Response, wraps an ActionSuccess(TransferInfo) or an ActionError entity
+     * @return Identification for the new transfer.
      */
     public abstract Uni<TransferInfo> startTransfer(String auth, Transfer transfer);
 
@@ -61,7 +61,7 @@ public interface TransferService {
      * @param delegationId Filter by delegation ID of user who started the transfer
      * @param voName Filter by VO of user who started the transfer
      * @param userDN Filter by user who started the transfer
-     * @return API Response, wraps an ActionSuccess(TransferList) or an ActionError entity
+     * @return Matching transfers.
      */
     public abstract Uni<TransferList> findTransfers(String auth, String fields, int limit,
                                                     String timeWindow, String stateIn,
@@ -72,7 +72,7 @@ public interface TransferService {
      * Request information about a transfer.
      * @param auth The access token needed to call the service.
      * @param jobId The ID of the transfer to request info about.
-     * @return API Response, wraps an ActionSuccess(TransferInfoExtended) or an ActionError entity
+     * @return Details of the transfer.
      */
     public abstract Uni<TransferInfoExtended> getTransferInfo(String auth, String jobId);
 
@@ -81,7 +81,7 @@ public interface TransferService {
      * @param auth The access token needed to call the service.
      * @param jobId The ID of the transfer to request info about.
      * @param fieldName The name of the TransferInfoExtended field to retrieve.
-     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     * @return The value of the requested field from a transfer's information.
      */
     public abstract Uni<Response> getTransferInfoField(String auth, String jobId, String fieldName);
 
@@ -89,7 +89,7 @@ public interface TransferService {
      * Cancel a transfer.
      * @param auth The access token needed to call the service.
      * @param jobId The ID of the transfer to cancel.
-     * @return API Response, wraps an ActionSuccess(TransferInfoExtended) or an ActionError entity
+     * @return Details of the cancelled transfer.
      */
     public abstract Uni<TransferInfoExtended> cancelTransfer(String auth, String jobId);
 
@@ -97,7 +97,7 @@ public interface TransferService {
      * List all files and sub-folders in a folder.
      * @param auth The access token needed to call the service.
      * @param folderUrl The link to the folder to list content of.
-     * @return API Response, wraps an ActionSuccess(StorageContent) or an ActionError entity
+     * @return List of the folder content.
      */
     public abstract Uni<StorageContent> listFolderContent(String auth, String folderUrl);
 
@@ -105,7 +105,7 @@ public interface TransferService {
      * Get the details of a file or folder.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the file or folder to det details of.
-     * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
+     * @return Details about the storage element.
      */
     public abstract Uni<StorageElement> getStorageElementInfo(@RestHeader("Authorization") String auth, String seUrl);
 
@@ -113,7 +113,7 @@ public interface TransferService {
      * Create new folder.
      * @param auth The access token needed to call the service.
      * @param folderUrl The link to the folder to create.
-     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     * @return Confirmation message.
      */
     public abstract Uni<String> createFolder(String auth, String folderUrl);
 
@@ -121,8 +121,17 @@ public interface TransferService {
      * Delete existing folder.
      * @param auth The access token needed to call the service.
      * @param folderUrl The link to the folder to delete.
-     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     * @return Confirmation message.
      */
     public abstract Uni<String> deleteFolder(String auth, String folderUrl);
+
+    /**
+     * Rename a folder or file.
+     * @param auth The access token needed to call the service.
+     * @param seOld The link to the storage element to rename.
+     * @param seNew The link to the new name/location of the storage element.
+     * @return Confirmation message.
+     */
+    public abstract Uni<String> renameStorageElement(String auth, String seOld, String seNew);
 
 }

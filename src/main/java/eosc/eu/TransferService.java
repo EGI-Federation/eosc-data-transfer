@@ -108,4 +108,21 @@ public interface TransferService {
      * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
      */
     public abstract Uni<StorageElement> getStorageElementInfo(@RestHeader("Authorization") String auth, String seUrl);
+
+    /**
+     * Create new folder.
+     * @param auth The access token needed to call the service.
+     * @param folderUrl The link to the folder to create.
+     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     */
+    public abstract Uni<String> createFolder(String auth, String folderUrl);
+
+    /**
+     * Delete existing folder.
+     * @param auth The access token needed to call the service.
+     * @param folderUrl The link to the folder to delete.
+     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     */
+    public abstract Uni<String> deleteFolder(String auth, String folderUrl);
+
 }

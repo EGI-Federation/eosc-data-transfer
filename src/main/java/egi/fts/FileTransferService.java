@@ -62,4 +62,12 @@ public interface FileTransferService {
     @GET
     @Path("/dm/stat")
     Uni<ObjectInfo> getObjectInfoAsync(@RestHeader("Authorization") String auth, @RestQuery("surl") String objectUrl);
+
+    @POST
+    @Path("/dm/mkdir")
+    Uni<String> createFolderAsync(@RestHeader("Authorization") String auth, ObjectOperation folder);
+
+    @POST
+    @Path("/dm/rmdir")
+    Uni<String> deleteFolderAsync(@RestHeader("Authorization") String auth, ObjectOperation folder);
 }

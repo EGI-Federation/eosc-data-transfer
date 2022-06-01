@@ -28,6 +28,11 @@ public class ActionSuccess {
     public ActionSuccess() {}
 
     /**
+     * Construct from message
+     */
+    public ActionSuccess(String message) { this.message = Optional.of(message); }
+
+    /**
      * Convert to Response that can be returned by a REST endpoint
      */
     public Response toResponse() {

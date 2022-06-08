@@ -17,6 +17,7 @@ import org.jboss.resteasy.reactive.RestHeader;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -75,59 +76,42 @@ public class DataTransferUser extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response getUserInfo(@RestHeader("Authorization") String auth,
-                                @RestQuery("dest") @DefaultValue(defaultDestination)
-                                @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                                String destination) {
+    public Uni<Response> getUserInfo(@RestHeader("Authorization") String auth,
+                                     @RestQuery("dest") @DefaultValue(defaultDestination)
+                                     @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                     String destination) {
 
         LOG.info("Get current user info");
 
-        try {
-            ActionParameters ap = new ActionParameters(destination);
-            CompletableFuture<Response> response = new CompletableFuture<>();
-            Uni<ActionParameters> start = Uni.createFrom().item(ap);
-            start
-                .chain(params -> {
-                    // Pick transfer service and create REST client for it
-                    if (!getTransferService(params)) {
-                        // Could not get REST client
-                        response.complete(new ActionError("invalidServiceConfig",
-                                                Tuple2.of("destination", destination)).toResponse());
-                        return Uni.createFrom().failure(new RuntimeException());
-                    }
+        Uni<Response> result = Uni.createFrom().nullItem()
 
-                    return Uni.createFrom().item(params);
-                })
-                .chain(params -> {
-                    // Get user info
-                    return params.ts.getUserInfo(auth);
-                })
-                .chain(userinfo -> {
-                    // Got user info
-                    LOG.infof("Got user info for user_dn:%s", userinfo.user_dn);
+            .chain(unused -> {
+                // Pick transfer service and create REST client for it
+                var params = new ActionParameters(destination);
+                if (!getTransferService(params)) {
+                    // Could not get REST client
+                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
+                }
 
-                    // Success
-                    response.complete(Response.ok(userinfo).build());
-                    return Uni.createFrom().nullItem();
-                })
-                .onFailure().invoke(e -> {
-                    LOG.error("Failed to get user info");
-                    if (!response.isDone())
-                        response.complete(new ActionError(e,
-                                                Tuple2.of("destination", destination)).toResponse());
-                })
-                .subscribe().with(unused -> {});
+                return Uni.createFrom().item(params);
+            })
+            .chain(params -> {
+                // Get user info
+                return params.ts.getUserInfo(auth);
+            })
+            .chain(userinfo -> {
+                // Got user info
+                LOG.infof("Got user info for user_dn:%s", userinfo.user_dn);
 
-            // Wait until user info is retrieved (possibly with error)
-            Response r = response.get();
-            return r;
-        } catch (InterruptedException e) {
-            // Cancelled
-            return new ActionError("getUserInfoInterrupted").toResponse();
-        } catch (ExecutionException e) {
-            // Execution error
-            return new ActionError("getUserInfoExecutionError").toResponse();
-        }
+                // Success
+                return Uni.createFrom().item(Response.ok(userinfo).build());
+            })
+            .onFailure().recoverWithItem(e -> {
+                LOG.error("Failed to get user info");
+                return new ActionError(e, Tuple2.of("destination", destination)).toResponse();
+            });
+
+        return result;
     }
 
 }

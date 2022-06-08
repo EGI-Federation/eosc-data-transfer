@@ -1,9 +1,8 @@
-package eosc.eu.model;
+package eosc.eu;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status.Family;
 
-import eosc.eu.TransferService;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.Multi;
 

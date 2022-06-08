@@ -26,7 +26,7 @@ quarkus:
       format: "%d{HH:mm:ss} %-5p [%c{2.}]] (%t) %s%e%n"
     file:
       enable: true
-      path: ./dat-transfer.log
+      path: ./data-transfer.log
       level: INFO
       format: "%d{HH:mm:ss} %-5p [%c{2.}]] (%t) %s%e%n"
   swagger-ui:
@@ -43,6 +43,7 @@ quarkus:
   jackson:
     fail-on-unknown-properties: false
   http:
+    port: 8080
     cors: true
   tls:
     trust-all: true

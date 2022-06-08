@@ -16,12 +16,11 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestHeader;
 
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import eosc.eu.model.*;
 import org.jboss.resteasy.reactive.RestPath;
@@ -80,62 +79,46 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response listFolderContent(@RestHeader("Authorization") String auth,
-                                @RestQuery("folderUrl") @Parameter(required = true, description = "URL to the storage element (folder) to list content of")
-                                String folderUrl,
-                                @RestQuery("dest") @DefaultValue(defaultDestination)
-                                @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                                String destination) {
+    public Uni<Response> listFolderContent(@RestHeader("Authorization") String auth,
+                            @RestQuery("folderUrl") @Parameter(required = true, description = "URL to the storage element (folder) to list content of")
+                            String folderUrl,
+                            @RestQuery("dest") @DefaultValue(defaultDestination)
+                            @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                            String destination) {
 
         LOG.infof("List content of folder %s", folderUrl);
 
-        try {
-            ActionParameters ap = new ActionParameters(destination);
-            CompletableFuture<Response> response = new CompletableFuture<>();
-            Uni<ActionParameters> start = Uni.createFrom().item(ap);
-            start
-                    .chain(params -> {
-                        // Pick transfer service and create REST client for it
-                        if (!getTransferService(params)) {
-                            // Could not get REST client
-                            response.complete(new ActionError("invalidServiceConfig",
-                                    Tuple2.of("destination", destination)).toResponse());
-                            return Uni.createFrom().failure(new RuntimeException());
-                        }
+        Uni<Response> result = Uni.createFrom().nullItem()
 
-                        return Uni.createFrom().item(params);
-                    })
-                    .chain(params -> {
-                        // List folder content
-                        return params.ts.listFolderContent(auth, folderUrl);
-                    })
-                    .chain(content -> {
-                        // Got folder content
-                        LOG.infof("Found %d element(s) in folder %s", content.count, folderUrl);
+            .chain(unused -> {
+                // Pick transfer service and create REST client for it
+                var params = new ActionParameters(destination);
+                if (!getTransferService(params)) {
+                    // Could not get REST client
+                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
+                }
 
-                        // Success
-                        response.complete(Response.ok(content).build());
-                        return Uni.createFrom().nullItem();
-                    })
-                    .onFailure().invoke(e -> {
-                        LOG.errorf("Failed to list content of folder %s", folderUrl);
-                        if (!response.isDone())
-                            response.complete(new ActionError(e, Arrays.asList(
-                                    Tuple2.of("folderUrl", folderUrl),
-                                    Tuple2.of("destination", destination)) ).toResponse());
-                    })
-                    .subscribe().with(unused -> {});
+                return Uni.createFrom().item(params);
+            })
+            .chain(params -> {
+                // List folder content
+                return params.ts.listFolderContent(auth, folderUrl);
+            })
+            .chain(content -> {
+                // Got folder content
+                LOG.infof("Found %d element(s) in folder %s", content.count, folderUrl);
 
-            // Wait until folder content is listed (possibly with error)
-            Response r = response.get();
-            return r;
-        } catch (InterruptedException e) {
-            // Cancelled
-            return new ActionError("listFolderContentInterrupted").toResponse();
-        } catch (ExecutionException e) {
-            // Execution error
-            return new ActionError("listFolderContentExecutionError").toResponse();
-        }
+                // Success
+                return Uni.createFrom().item(Response.ok(content).build());
+            })
+            .onFailure().recoverWithItem(e -> {
+                LOG.errorf("Failed to list content of folder %s", folderUrl);
+                return new ActionError(e, Arrays.asList(
+                             Tuple2.of("folderUrl", folderUrl),
+                             Tuple2.of("destination", destination)) ).toResponse();
+            });
+
+        return result;
     }
 
     /**
@@ -164,62 +147,46 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response getFileInfo(@RestHeader("Authorization") String auth,
-                                @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to get stats for")
-                                String seUrl,
-                                @RestQuery("dest") @DefaultValue(defaultDestination)
-                                @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                                String destination) {
+    public Uni<Response> getFileInfo(@RestHeader("Authorization") String auth,
+                            @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to get stats for")
+                            String seUrl,
+                            @RestQuery("dest") @DefaultValue(defaultDestination)
+                            @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                            String destination) {
 
         LOG.infof("Get details of storage element %s", seUrl);
 
-        try {
-            ActionParameters ap = new ActionParameters(destination);
-            CompletableFuture<Response> response = new CompletableFuture<>();
-            Uni<ActionParameters> start = Uni.createFrom().item(ap);
-            start
-                .chain(params -> {
-                    // Pick transfer service and create REST client for it
-                    if (!getTransferService(params)) {
-                        // Could not get REST client
-                        response.complete(new ActionError("invalidServiceConfig",
-                                                Tuple2.of("destination", destination)).toResponse());
-                        return Uni.createFrom().failure(new RuntimeException());
-                    }
+        Uni<Response> result = Uni.createFrom().nullItem()
 
-                    return Uni.createFrom().item(params);
-                })
-                .chain(params -> {
-                    // Get storage element info
-                    return params.ts.getStorageElementInfo(auth, seUrl);
-                })
-                .chain(seinfo -> {
-                    // Got storage element info
-                    LOG.infof("Got info for %s %s", seinfo.isFolder ? "folder" : "file", seUrl);
+            .chain(unused -> {
+                // Pick transfer service and create REST client for it
+                var params = new ActionParameters(destination);
+                if (!getTransferService(params)) {
+                    // Could not get REST client
+                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
+                }
 
-                    // Success
-                    response.complete(Response.ok(seinfo).build());
-                    return Uni.createFrom().nullItem();
-                })
-                .onFailure().invoke(e -> {
-                    LOG.errorf("Failed to get info about storage element %s", seUrl);
-                    if (!response.isDone())
-                        response.complete(new ActionError(e, Arrays.asList(
-                                                Tuple2.of("seUrl", seUrl),
-                                                Tuple2.of("destination", destination)) ).toResponse());
-                })
-                .subscribe().with(unused -> {});
+                return Uni.createFrom().item(params);
+            })
+            .chain(params -> {
+                // Get storage element info
+                return params.ts.getStorageElementInfo(auth, seUrl);
+            })
+            .chain(seinfo -> {
+                // Got storage element info
+                LOG.infof("Got info for %s %s", seinfo.isFolder ? "folder" : "file", seUrl);
 
-            // Wait until storage element info is retrieved (possibly with error)
-            Response r = response.get();
-            return r;
-        } catch (InterruptedException e) {
-            // Cancelled
-            return new ActionError("getFileInfoInterrupted").toResponse();
-        } catch (ExecutionException e) {
-            // Execution error
-            return new ActionError("getFileInfoExecutionError").toResponse();
-        }
+                // Success
+                return Uni.createFrom().item(Response.ok(seinfo).build());
+            })
+            .onFailure().recoverWithItem(e -> {
+                LOG.errorf("Failed to get info about storage element %s", seUrl);
+                return new ActionError(e, Arrays.asList(
+                             Tuple2.of("seUrl", seUrl),
+                             Tuple2.of("destination", destination)) ).toResponse();
+            });
+
+        return result;
     }
 
     /**
@@ -248,12 +215,12 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response getFolderInfo(@RestHeader("Authorization") String auth,
-                                  @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to get stats for")
-                                  String seUrl,
-                                  @RestQuery("dest") @DefaultValue(defaultDestination)
-                                  @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                                  String destination) {
+    public Uni<Response> getFolderInfo(@RestHeader("Authorization") String auth,
+                              @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to get stats for")
+                              String seUrl,
+                              @RestQuery("dest") @DefaultValue(defaultDestination)
+                              @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                              String destination) {
         // This is the same for files and folders
         return getFileInfo(auth, seUrl, destination);
     }
@@ -281,62 +248,46 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response createFolder(@RestHeader("Authorization") String auth,
-                                 @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to create")
-                                 String seUrl,
-                                 @RestQuery("dest") @DefaultValue(defaultDestination)
-                                 @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                                 String destination) {
+    public Uni<Response> createFolder(@RestHeader("Authorization") String auth,
+                             @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to create")
+                             String seUrl,
+                             @RestQuery("dest") @DefaultValue(defaultDestination)
+                             @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                             String destination) {
 
         LOG.infof("Create folder %s", seUrl);
 
-        try {
-            ActionParameters ap = new ActionParameters(destination);
-            CompletableFuture<Response> response = new CompletableFuture<>();
-            Uni<ActionParameters> start = Uni.createFrom().item(ap);
-            start
-                .chain(params -> {
-                    // Pick transfer service and create REST client for it
-                    if (!getTransferService(params)) {
-                        // Could not get REST client
-                        response.complete(new ActionError("invalidServiceConfig",
-                                Tuple2.of("destination", destination)).toResponse());
-                        return Uni.createFrom().failure(new RuntimeException());
-                    }
+        Uni<Response> result = Uni.createFrom().nullItem()
 
-                    return Uni.createFrom().item(params);
-                })
-                .chain(params -> {
-                    // Create folder
-                    return params.ts.createFolder(auth, seUrl);
-                })
-                .chain(created -> {
-                    // Folder got created
-                    LOG.infof("Created folder %s (%s)", seUrl, created);
+            .chain(unused -> {
+                // Pick transfer service and create REST client for it
+                var params = new ActionParameters(destination);
+                if (!getTransferService(params)) {
+                    // Could not get REST client
+                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
+                }
 
-                    // Success
-                    response.complete(Response.ok().build());
-                    return Uni.createFrom().nullItem();
-                })
-                .onFailure().invoke(e -> {
-                    LOG.errorf("Failed to create folder %s", seUrl);
-                    if (!response.isDone())
-                        response.complete(new ActionError(e, Arrays.asList(
-                                Tuple2.of("seUrl", seUrl),
-                                Tuple2.of("destination", destination)) ).toResponse());
-                })
-                .subscribe().with(unused -> {});
+                return Uni.createFrom().item(params);
+            })
+            .chain(params -> {
+                // Create folder
+                return params.ts.createFolder(auth, seUrl);
+            })
+            .chain(created -> {
+                // Folder got created
+                LOG.infof("Created folder %s (%s)", seUrl, created);
 
-            // Wait until folder is created (possibly with error)
-            Response r = response.get();
-            return r;
-        } catch (InterruptedException e) {
-            // Cancelled
-            return new ActionError("createFolderInterrupted").toResponse();
-        } catch (ExecutionException e) {
-            // Execution error
-            return new ActionError("createFolderExecutionError").toResponse();
-        }
+                // Success
+                return Uni.createFrom().item(Response.ok().build());
+            })
+            .onFailure().recoverWithItem(e -> {
+                LOG.errorf("Failed to create folder %s", seUrl);
+                return new ActionError(e, Arrays.asList(
+                             Tuple2.of("seUrl", seUrl),
+                             Tuple2.of("destination", destination)) ).toResponse();
+            });
+
+        return result;
     }
 
     /**
@@ -364,62 +315,46 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response deleteFolder(@RestHeader("Authorization") String auth,
-                                 @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to delete")
-                                 String seUrl,
-                                 @RestQuery("dest") @DefaultValue(defaultDestination)
-                                 @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                                 String destination) {
+    public Uni<Response> deleteFolder(@RestHeader("Authorization") String auth,
+                             @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to delete")
+                             String seUrl,
+                             @RestQuery("dest") @DefaultValue(defaultDestination)
+                             @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                             String destination) {
 
         LOG.infof("Delete folder %s", seUrl);
 
-        try {
-            ActionParameters ap = new ActionParameters(destination);
-            CompletableFuture<Response> response = new CompletableFuture<>();
-            Uni<ActionParameters> start = Uni.createFrom().item(ap);
-            start
-                .chain(params -> {
-                    // Pick transfer service and create REST client for it
-                    if (!getTransferService(params)) {
-                        // Could not get REST client
-                        response.complete(new ActionError("invalidServiceConfig",
-                                Tuple2.of("destination", destination)).toResponse());
-                        return Uni.createFrom().failure(new RuntimeException());
-                    }
+        Uni<Response> result = Uni.createFrom().nullItem()
 
-                    return Uni.createFrom().item(params);
-                })
-                .chain(params -> {
-                    // Delete folder
-                    return params.ts.deleteFolder(auth, seUrl);
-                })
-                .chain(deleted -> {
-                    // Folder got deleted
-                    LOG.infof("Deleted folder %s (%s)", seUrl, deleted);
+            .chain(unused -> {
+                // Pick transfer service and create REST client for it
+                var params = new ActionParameters(destination);
+                if (!getTransferService(params)) {
+                    // Could not get REST client
+                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
+                }
 
-                    // Success
-                    response.complete(Response.ok().build());
-                    return Uni.createFrom().nullItem();
-                })
-                .onFailure().invoke(e -> {
-                    LOG.errorf("Failed to delete folder %s", seUrl);
-                    if (!response.isDone())
-                        response.complete(new ActionError(e, Arrays.asList(
-                                Tuple2.of("seUrl", seUrl),
-                                Tuple2.of("destination", destination)) ).toResponse());
-                })
-                .subscribe().with(unused -> {});
+                return Uni.createFrom().item(params);
+            })
+            .chain(params -> {
+                // Delete folder
+                return params.ts.deleteFolder(auth, seUrl);
+            })
+            .chain(deleted -> {
+                // Folder got deleted
+                LOG.infof("Deleted folder %s (%s)", seUrl, deleted);
 
-            // Wait until folder is deleted (possibly with error)
-            Response r = response.get();
-            return r;
-        } catch (InterruptedException e) {
-            // Cancelled
-            return new ActionError("deleteFolderInterrupted").toResponse();
-        } catch (ExecutionException e) {
-            // Execution error
-            return new ActionError("deleteFolderExecutionError").toResponse();
-        }
+                // Success
+                return Uni.createFrom().item(Response.ok().build());
+            })
+            .onFailure().recoverWithItem(e -> {
+                LOG.errorf("Failed to delete folder %s", seUrl);
+                return new ActionError(e, Arrays.asList(
+                             Tuple2.of("seUrl", seUrl),
+                             Tuple2.of("destination", destination)) ).toResponse();
+            });
+
+        return result;
     }
 
     /**
@@ -447,62 +382,46 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response deleteFile(@RestHeader("Authorization") String auth,
-                               @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to delete")
-                               String seUrl,
-                               @RestQuery("dest") @DefaultValue(defaultDestination)
-                               @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                               String destination) {
+    public Uni<Response> deleteFile(@RestHeader("Authorization") String auth,
+                            @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to delete")
+                            String seUrl,
+                            @RestQuery("dest") @DefaultValue(defaultDestination)
+                            @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                            String destination) {
 
         LOG.infof("Delete file %s", seUrl);
 
-        try {
-            ActionParameters ap = new ActionParameters(destination);
-            CompletableFuture<Response> response = new CompletableFuture<>();
-            Uni<ActionParameters> start = Uni.createFrom().item(ap);
-            start
-                .chain(params -> {
-                    // Pick transfer service and create REST client for it
-                    if (!getTransferService(params)) {
-                        // Could not get REST client
-                        response.complete(new ActionError("invalidServiceConfig",
-                                Tuple2.of("destination", destination)).toResponse());
-                        return Uni.createFrom().failure(new RuntimeException());
-                    }
+        Uni<Response> result = Uni.createFrom().nullItem()
 
-                    return Uni.createFrom().item(params);
-                })
-                .chain(params -> {
-                    // Delete file
-                    return params.ts.deleteFile(auth, seUrl);
-                })
-                .chain(deleted -> {
-                    // File got deleted
-                    LOG.infof("Deleted file %s (%s)", seUrl, deleted);
+            .chain(unused -> {
+                // Pick transfer service and create REST client for it
+                var params = new ActionParameters(destination);
+                if (!getTransferService(params)) {
+                    // Could not get REST client
+                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
+                }
 
-                    // Success
-                    response.complete(Response.ok().build());
-                    return Uni.createFrom().nullItem();
-                })
-                .onFailure().invoke(e -> {
-                    LOG.errorf("Failed to delete file %s", seUrl);
-                    if (!response.isDone())
-                        response.complete(new ActionError(e, Arrays.asList(
-                                Tuple2.of("seUrl", seUrl),
-                                Tuple2.of("destination", destination)) ).toResponse());
-                })
-                .subscribe().with(unused -> {});
+                return Uni.createFrom().item(params);
+            })
+            .chain(params -> {
+                // Delete file
+                return params.ts.deleteFile(auth, seUrl);
+            })
+            .chain(deleted -> {
+                // File got deleted
+                LOG.infof("Deleted file %s (%s)", seUrl, deleted);
 
-            // Wait until file is deleted (possibly with error)
-            Response r = response.get();
-            return r;
-        } catch (InterruptedException e) {
-            // Cancelled
-            return new ActionError("deleteFileInterrupted").toResponse();
-        } catch (ExecutionException e) {
-            // Execution error
-            return new ActionError("deleteFileExecutionError").toResponse();
-        }
+                // Success
+                return Uni.createFrom().item(Response.ok().build());
+            })
+            .onFailure().recoverWithItem(e -> {
+                LOG.errorf("Failed to delete file %s", seUrl);
+                return new ActionError(e, Arrays.asList(
+                             Tuple2.of("seUrl", seUrl),
+                             Tuple2.of("destination", destination)) ).toResponse();
+            });
+
+        return result;
     }
 
     /**
@@ -531,62 +450,51 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response renameFile(@RestHeader("Authorization") String auth, StorageRenameOperation operation,
-                               @RestQuery("dest") @DefaultValue(defaultDestination)
-                               @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                               String destination) {
+    public Uni<Response> renameFile(@RestHeader("Authorization") String auth, StorageRenameOperation operation,
+                            @RestQuery("dest") @DefaultValue(defaultDestination)
+                            @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                            String destination) {
 
-        if(null != operation.seUrlOld && null != operation.seUrlNew)
+        if(null != operation && null != operation.seUrlOld && null != operation.seUrlNew)
             LOG.infof("Renaming storage element %s to %s", operation.seUrlOld, operation.seUrlNew);
+        else
+            return Uni.createFrom().item(new ActionError("missingOperationParameters",
+                                               Tuple2.of("destination", destination) )
+                                                    .setStatus(Status.BAD_REQUEST)
+                                                    .toResponse());
 
-        try {
-            ActionParameters ap = new ActionParameters(destination);
-            CompletableFuture<Response> response = new CompletableFuture<>();
-            Uni<ActionParameters> start = Uni.createFrom().item(ap);
-            start
-                .chain(params -> {
-                    // Pick transfer service and create REST client for it
-                    if (!getTransferService(params)) {
-                        // Could not get REST client
-                        response.complete(new ActionError("invalidServiceConfig",
-                                Tuple2.of("destination", destination)).toResponse());
-                        return Uni.createFrom().failure(new RuntimeException());
-                    }
+        Uni<Response> result = Uni.createFrom().nullItem()
 
-                    return Uni.createFrom().item(params);
-                })
-                .chain(params -> {
-                    // Rename storage element
-                    return params.ts.renameStorageElement(auth, operation.seUrlOld, operation.seUrlNew);
-                })
-                .chain(renamed -> {
-                    // Storage element got renamed
-                    LOG.infof("Renamed storage element %s to %s (%s)", operation.seUrlOld, operation.seUrlNew, renamed);
+            .chain(unused -> {
+                // Pick transfer service and create REST client for it
+                var params = new ActionParameters(destination);
+                if (!getTransferService(params)) {
+                    // Could not get REST client
+                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
+                }
 
-                    // Success
-                    response.complete(Response.ok().build());
-                    return Uni.createFrom().nullItem();
-                })
-                .onFailure().invoke(e -> {
-                    LOG.errorf("Failed to rename storage element %s", operation.seUrlOld);
-                    if (!response.isDone())
-                        response.complete(new ActionError(e, Arrays.asList(
-                                Tuple2.of("seUrl", operation.seUrlOld),
-                                Tuple2.of("seUrlNew", operation.seUrlNew),
-                                Tuple2.of("destination", destination)) ).toResponse());
-                })
-                .subscribe().with(unused -> {});
+                return Uni.createFrom().item(params);
+            })
+            .chain(params -> {
+                // Rename storage element
+                return params.ts.renameStorageElement(auth, operation.seUrlOld, operation.seUrlNew);
+            })
+            .chain(renamed -> {
+                // Storage element got renamed
+                LOG.infof("Renamed storage element %s to %s (%s)", operation.seUrlOld, operation.seUrlNew, renamed);
 
-            // Wait until storage element is renamed (possibly with error)
-            Response r = response.get();
-            return r;
-        } catch (InterruptedException e) {
-            // Cancelled
-            return new ActionError("renameFileInterrupted").toResponse();
-        } catch (ExecutionException e) {
-            // Execution error
-            return new ActionError("renameFileExecutionError").toResponse();
-        }
+                // Success
+                return Uni.createFrom().item(Response.ok().build());
+            })
+            .onFailure().recoverWithItem(e -> {
+                LOG.errorf("Failed to rename storage element %s", operation.seUrlOld);
+                return new ActionError(e, Arrays.asList(
+                             Tuple2.of("seUrlOld", operation.seUrlOld),
+                             Tuple2.of("seUrlNew", operation.seUrlNew),
+                             Tuple2.of("destination", destination)) ).toResponse();
+            });
+
+        return result;
     }
 
     /**
@@ -615,11 +523,11 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response renameFolder(@RestHeader("Authorization") String auth,
-                                 StorageRenameOperation operation,
-                                 @RestQuery("dest") @DefaultValue(defaultDestination)
-                                 @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                                 String destination) {
+    public Uni<Response> renameFolder(@RestHeader("Authorization") String auth,
+                             StorageRenameOperation operation,
+                             @RestQuery("dest") @DefaultValue(defaultDestination)
+                             @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                             String destination) {
         // This is the same for files and folders
         return renameFile(auth, operation, destination);
     }

@@ -1,7 +1,6 @@
 package egi.fts;
 
 import io.smallrye.mutiny.Uni;
-import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
@@ -18,7 +17,6 @@ import egi.fts.model.*;
  * REST client for File Transfer Service (that powers EGI Data Transfer)
  */
 @Produces(MediaType.APPLICATION_JSON)
-@RegisterProvider(value = FileTransferServiceExceptionMapper.class)
 public interface FileTransferService {
 
     @GET

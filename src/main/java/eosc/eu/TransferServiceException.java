@@ -3,7 +3,11 @@ package eosc.eu;
 
 import io.smallrye.mutiny.tuples.Tuple2;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 
 /**
  * Exception class for generic transfer service
@@ -18,6 +22,14 @@ public class TransferServiceException extends RuntimeException {
      * Construct with error id
      */
     public TransferServiceException(String id) {
+        this.id = id;
+    }
+
+    /**
+     * Construct with error id and message
+     */
+    public TransferServiceException(String id, String message) {
+        super(message);
         this.id = id;
     }
 

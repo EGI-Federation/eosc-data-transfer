@@ -1,6 +1,5 @@
-package eosc.eu.model;
+package eosc.eu;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -8,7 +7,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 
 
 /**

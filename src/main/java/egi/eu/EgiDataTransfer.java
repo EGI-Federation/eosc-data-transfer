@@ -1,5 +1,6 @@
 package egi.eu;
 
+import eosc.eu.model.UserInfo;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
@@ -148,27 +149,26 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<eosc.eu.model.UserInfo> getUserInfo(String auth) {
         if(null == this.fts)
-            throw new TransferServiceException("invalidConfig");
+            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
-        AtomicReference<Uni<eosc.eu.model.UserInfo>> result = new AtomicReference<>();
+        Uni<eosc.eu.model.UserInfo> result = Uni.createFrom().nullItem()
 
-        var start = this.fts.getUserInfoAsync(auth);
-        start
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("getUserInfoTimeout"))
+            .chain(unused -> {
+                // Get user info
+                return this.fts.getUserInfoAsync(auth);
+            })
             .chain(userInfo -> {
                 // Got user info
-                result.set(Uni.createFrom().item(new eosc.eu.model.UserInfo(userInfo)));
-                return Uni.createFrom().nullItem();
+                return Uni.createFrom().item(new eosc.eu.model.UserInfo(userInfo));
             })
             .onFailure().invoke(e -> {
                 LOG.error(e);
-                result.set(Uni.createFrom().failure(e));
-            })
-            .await().indefinitely();
+            });
 
-        return result.get();
+        return result;
     }
 
     /**
@@ -179,27 +179,26 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<TransferInfo> startTransfer(String auth, Transfer transfer) {
         if(null == this.fts)
-            throw new TransferServiceException("invalidConfig");
+            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
-        AtomicReference<Uni<TransferInfo>> result = new AtomicReference<>();
+        Uni<TransferInfo> result = Uni.createFrom().nullItem()
 
-        var start = this.fts.startTransferAsync(auth, new Job(transfer));
-        start
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("startTransferTimeout"))
+            .chain(unused -> {
+                // Start new transfer
+                return this.fts.startTransferAsync(auth, new Job(transfer));
+            })
             .chain(jobInfo -> {
                 // Transfer started
-                result.set(Uni.createFrom().item(new TransferInfo(jobInfo)));
-                return Uni.createFrom().nullItem();
+                return Uni.createFrom().item(new TransferInfo(jobInfo));
             })
             .onFailure().invoke(e -> {
                 LOG.error(e);
-                result.set(Uni.createFrom().failure(e));
-            })
-            .await().indefinitely();
+            });
 
-        return result.get();
+        return result;
     }
 
     /***
@@ -222,7 +221,7 @@ public class EgiDataTransfer implements TransferService {
                                            String srcStorageElement, String dstStorageElement,
                                            String delegationId, String voName, String userDN) {
         if(null == this.fts)
-            throw new TransferServiceException("invalidConfig");
+            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
         // Translate field names
         String jobFields = null;
@@ -236,33 +235,33 @@ public class EgiDataTransfer implements TransferService {
                 String jf = this.translateTransferInfoFieldName(tf);
                 if(null == jf)
                     // Found unsupported field
-                    throw new TransferServiceException("fieldNotSupported", Tuple2.of("fieldName", tf));
+                    return Uni.createFrom().failure(new TransferServiceException("fieldNotSupported", Tuple2.of("fieldName", tf)));
 
                 jobFields += jf;
             }
         }
 
-        AtomicReference<Uni<TransferList>> result = new AtomicReference<>();
+        AtomicReference<String> searchFields = new AtomicReference<>(jobFields);
+        Uni<TransferList> result = Uni.createFrom().nullItem()
 
-        var start = this.fts.findTransfersAsync(auth, jobFields, limit, timeWindow, stateIn,
-                                                                          srcStorageElement, dstStorageElement,
-                                                                          delegationId, voName, userDN);
-        start
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("findTransfersTimeout"))
+            .chain(unused -> {
+                // List matching transfers
+                return this.fts.findTransfersAsync(auth, searchFields.get(), limit, timeWindow, stateIn,
+                                                   srcStorageElement, dstStorageElement,
+                                                   delegationId, voName, userDN);
+            })
             .chain(jobs -> {
                 // Got matching transfers
-                result.set(Uni.createFrom().item(new TransferList(jobs)));
-                return Uni.createFrom().nullItem();
+                return Uni.createFrom().item(new TransferList(jobs));
             })
             .onFailure().invoke(e -> {
                 LOG.error(e);
-                result.set(Uni.createFrom().failure(e));
-            })
-            .await().indefinitely();
+            });
 
-        return result.get();
+        return result;
     }
 
     /**
@@ -273,27 +272,26 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<TransferInfoExtended> getTransferInfo(String auth, String jobId) {
         if(null == this.fts)
-            throw new TransferServiceException("invalidConfig");
+            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
-        AtomicReference<Uni<TransferInfoExtended>> result = new AtomicReference<>();
+        Uni<TransferInfoExtended> result = Uni.createFrom().nullItem()
 
-        var start = this.fts.getTransferInfoAsync(auth, jobId);
-        start
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("getTransferInfoTimeout"))
+            .chain(unused -> {
+                // Get transfer info
+                return this.fts.getTransferInfoAsync(auth, jobId);
+            })
             .chain(jobInfoExt -> {
                 // Got transfer info
-                result.set(Uni.createFrom().item(new TransferInfoExtended(jobInfoExt)));
-                return Uni.createFrom().nullItem();
+                return Uni.createFrom().item(new TransferInfoExtended(jobInfoExt));
             })
             .onFailure().invoke(e -> {
                 LOG.error(e);
-                result.set(Uni.createFrom().failure(e));
-            })
-            .await().indefinitely();
+            });
 
-        return result.get();
+        return result;
     }
 
     /**
@@ -305,19 +303,21 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<Response> getTransferInfoField(String auth, String jobId, String fieldName) {
         if(null == this.fts)
-            throw new TransferServiceException("invalidConfig");
-
-        AtomicReference<Uni<Response>> result = new AtomicReference<>();
+            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
         String jobFieldName = translateTransferInfoFieldName(fieldName);
         if(null == jobFieldName)
-            throw new TransferServiceException("fieldNotSupported");
+            return Uni.createFrom().failure(new TransferServiceException("fieldNotSupported"));
 
-        var start = this.fts.getTransferFieldAsync(auth, jobId, jobFieldName);
-        start
+        Uni<Response> result = Uni.createFrom().nullItem()
+
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("getTransferInfoFieldTimeout"))
+            .chain(unused -> {
+                // Get field value
+                return this.fts.getTransferFieldAsync(auth, jobId, jobFieldName);
+            })
             .chain(jobField -> {
                 // Got field value
                 Response response = Response.ok(jobField).build();
@@ -332,16 +332,13 @@ public class EgiDataTransfer implements TransferService {
                     response = Response.ok(jobField).header(CONTENT_TYPE, MediaType.TEXT_PLAIN).build();
                 }
 
-                result.set(Uni.createFrom().item(response));
-                return Uni.createFrom().nullItem();
+                return Uni.createFrom().item(response);
             })
             .onFailure().invoke(e -> {
                 LOG.error(e);
-                result.set(Uni.createFrom().failure(e));
-            })
-            .await().indefinitely();
+            });
 
-        return result.get();
+        return result;
     }
 
     /**
@@ -352,27 +349,26 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<TransferInfoExtended> cancelTransfer(String auth, String jobId) {
         if(null == this.fts)
-            throw new TransferServiceException("invalidConfig");
+            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
-        AtomicReference<Uni<TransferInfoExtended>> result = new AtomicReference<>();
+        Uni<TransferInfoExtended> result = Uni.createFrom().nullItem()
 
-        var start = this.fts.cancelTransferAsync(auth, jobId);
-        start
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("cancelTransferTimeout"))
+            .chain(unused -> {
+                // Cancel transfer
+                return this.fts.cancelTransferAsync(auth, jobId);
+            })
             .chain(jobInfoExt -> {
                 // Transfer canceled, got updated transfer info
-                result.set(Uni.createFrom().item(new TransferInfoExtended(jobInfoExt)));
-                return Uni.createFrom().nullItem();
+                return Uni.createFrom().item(new TransferInfoExtended(jobInfoExt));
             })
             .onFailure().invoke(e -> {
                 LOG.error(e);
-                result.set(Uni.createFrom().failure(e));
-            })
-            .await().indefinitely();
+            });
 
-        return result.get();
+        return result;
     }
 
     /**
@@ -383,27 +379,26 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<StorageContent> listFolderContent(String auth, String folderUrl) {
         if(null == this.fts)
-            throw new TransferServiceException("invalidConfig");
+            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
-        AtomicReference<Uni<StorageContent>> result = new AtomicReference<>();
+        Uni<StorageContent> result = Uni.createFrom().nullItem()
 
-        var start = this.fts.listFolderContentAsync(auth, folderUrl);
-        start
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("listFolderContentTimeout"))
+            .chain(unused -> {
+                // List folder content
+                return this.fts.listFolderContentAsync(auth, folderUrl);
+            })
             .chain(contentList -> {
                 // Got folder listing
-                result.set(Uni.createFrom().item(new StorageContent(folderUrl, contentList)));
-                return Uni.createFrom().nullItem();
+                return Uni.createFrom().item(new StorageContent(folderUrl, contentList));
             })
             .onFailure().invoke(e -> {
                 LOG.error(e);
-                result.set(Uni.createFrom().failure(e));
-            })
-            .await().indefinitely();
+            });
 
-        return result.get();
+        return result;
     }
 
     /**
@@ -414,28 +409,27 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<StorageElement> getStorageElementInfo(@RestHeader("Authorization") String auth, String seUrl) {
         if(null == this.fts)
-            throw new TransferServiceException("invalidConfig");
+            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
-        AtomicReference<Uni<StorageElement>> result = new AtomicReference<>();
+        Uni<StorageElement> result = Uni.createFrom().nullItem()
 
-        var start = this.fts.getObjectInfoAsync(auth, seUrl);
-        start
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("getStorageElementInfoTimeout"))
+            .chain(unused -> {
+                // Get object info
+                return this.fts.getObjectInfoAsync(auth, seUrl);
+            })
             .chain(objInfo -> {
                 // Got object info
                 objInfo.objectUrl = seUrl;
-                result.set(Uni.createFrom().item(new StorageElement(objInfo)));
-                return Uni.createFrom().nullItem();
+                return Uni.createFrom().item(new StorageElement(objInfo));
             })
             .onFailure().invoke(e -> {
                 LOG.error(e);
-                result.set(Uni.createFrom().failure(e));
-            })
-            .await().indefinitely();
+            });
 
-        return result.get();
+        return result;
     }
 
     /**
@@ -446,28 +440,27 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<String> createFolder(String auth, String folderUrl) {
         if(null == this.fts)
-            throw new TransferServiceException("invalidConfig");
+            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
-        AtomicReference<Uni<String>> result = new AtomicReference<>();
+        Uni<String> result = Uni.createFrom().nullItem()
 
-        var operation = new ObjectOperation(folderUrl);
-        var start = this.fts.createFolderAsync(auth, operation);
-        start
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("createFolderTimeout"))
+            .chain(unused -> {
+                // Create folder
+                var operation = new ObjectOperation(folderUrl);
+                return this.fts.createFolderAsync(auth, operation);
+            })
             .chain(code -> {
                 // Got success code
-                result.set(Uni.createFrom().item(code));
-                return Uni.createFrom().nullItem();
+                return Uni.createFrom().item(code);
             })
             .onFailure().invoke(e -> {
                 LOG.error(e);
-                result.set(Uni.createFrom().failure(e));
-            })
-            .await().indefinitely();
+            });
 
-        return result.get();
+        return result;
     }
 
     /**
@@ -478,28 +471,27 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<String> deleteFolder(String auth, String folderUrl) {
         if(null == this.fts)
-            throw new TransferServiceException("invalidConfig");
+            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
-        AtomicReference<Uni<String>> result = new AtomicReference<>();
+        Uni<String> result = Uni.createFrom().nullItem()
 
-        var operation = new ObjectOperation(folderUrl);
-        var start = this.fts.deleteFolderAsync(auth, operation);
-        start
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("deleteFolderTimeout"))
+            .chain(unused -> {
+                // Delete folder
+                var operation = new ObjectOperation(folderUrl);
+                return this.fts.deleteFolderAsync(auth, operation);
+            })
             .chain(code -> {
                 // Got success code
-                result.set(Uni.createFrom().item(code));
-                return Uni.createFrom().nullItem();
+                return Uni.createFrom().item(code);
             })
             .onFailure().invoke(e -> {
                 LOG.error(e);
-                result.set(Uni.createFrom().failure(e));
-            })
-            .await().indefinitely();
+            });
 
-        return result.get();
+        return result;
     }
 
     /**
@@ -510,28 +502,27 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<String> deleteFile(String auth, String fileUrl) {
         if(null == this.fts)
-            throw new TransferServiceException("invalidConfig");
+            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
-        AtomicReference<Uni<String>> result = new AtomicReference<>();
+        Uni<String> result = Uni.createFrom().nullItem()
 
-        var operation = new ObjectOperation(fileUrl);
-        var start = this.fts.deleteFileAsync(auth, operation);
-        start
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("deleteFileTimeout"))
+            .chain(unused -> {
+                // Delete file
+                var operation = new ObjectOperation(fileUrl);
+                return this.fts.deleteFileAsync(auth, operation);
+            })
             .chain(code -> {
                 // Got success code
-                result.set(Uni.createFrom().item(code));
-                return Uni.createFrom().nullItem();
+                return Uni.createFrom().item(code);
             })
             .onFailure().invoke(e -> {
                 LOG.error(e);
-                result.set(Uni.createFrom().failure(e));
-            })
-            .await().indefinitely();
+            });
 
-        return result.get();
+        return result;
     }
 
     /**
@@ -545,25 +536,24 @@ public class EgiDataTransfer implements TransferService {
         if(null == this.fts)
             throw new TransferServiceException("invalidConfig");
 
-        AtomicReference<Uni<String>> result = new AtomicReference<>();
+        Uni<String> result = Uni.createFrom().nullItem()
 
-        var operation = new ObjectOperation(seOld, seNew);
-        var start = this.fts.renameObjectAsync(auth, operation);
-        start
-                .ifNoItem()
+            .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("renameStorageElementTimeout"))
-                .chain(code -> {
-                    // Got success code
-                    result.set(Uni.createFrom().item(code));
-                    return Uni.createFrom().nullItem();
-                })
-                .onFailure().invoke(e -> {
-                    LOG.error(e);
-                    result.set(Uni.createFrom().failure(e));
-                })
-                .await().indefinitely();
+            .chain(unused -> {
+                // Rename storage element
+                var operation = new ObjectOperation(seOld, seNew);
+                return this.fts.renameObjectAsync(auth, operation);
+            })
+            .chain(code -> {
+                // Got success code
+                return Uni.createFrom().item(code);
+            })
+            .onFailure().invoke(e -> {
+                LOG.error(e);
+            });
 
-        return result.get();
+        return result;
     }
 }

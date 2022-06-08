@@ -1,4 +1,4 @@
-package eosc.eu.model;
+package eosc.eu;
 
 import java.util.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -15,8 +15,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import egi.fts.FileTransferServiceException;
-import eosc.eu.TransferServiceException;
 import parser.zenodo.ZenodoException;
 
 
@@ -151,8 +149,7 @@ public class ActionError {
             this.description = Optional.empty();
 
         var type = t.getClass();
-        if (type.equals(FileTransferServiceException.class) ||
-            type.equals(ZenodoException.class) ||
+        if (type.equals(ZenodoException.class) ||
             type.equals(ClientWebApplicationException.class) ||
             type.equals(WebApplicationException.class) ) {
             // Build from web exception
@@ -240,8 +237,7 @@ public class ActionError {
 
         // Adjust id for some statuses
         var type = t.getClass();
-        if (type.equals(FileTransferServiceException.class) ||
-            type.equals(ClientWebApplicationException.class) ||
+        if (type.equals(ClientWebApplicationException.class) ||
             type.equals(WebApplicationException.class) ) {
             // Refine the id for NOT_FOUND errors
             switch(this.status) {

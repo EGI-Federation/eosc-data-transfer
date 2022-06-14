@@ -156,8 +156,10 @@ The application, packaged as an _über-jar_, is now runnable using `java -jar ta
 You can use Docker Compose to easily deploy and run the EOSC Data Transfer API.
 This will run two containers:
 
-- This application that implements the API over HTTP
+- This application that implements the API and serves it over HTTP on port 8080 ([configurable](#configuration))
 - HTTPS frontend that will forward REST API requests to the API application
+
+Steps to run the API in a container:
 
 1. Copy the file `src/main/docker/.env.template` to `src/main/docker/.env` and edit the
 environment variables `SERVICE_DOMAIN` and `SERVICE_URL` to be the domain name and the

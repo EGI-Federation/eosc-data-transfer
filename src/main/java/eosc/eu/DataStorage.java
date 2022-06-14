@@ -54,6 +54,63 @@ public class DataStorage extends DataTransferBase {
     }
 
     /**
+     * Check if browsing destination storage is supported.
+     * @return API Response, wraps an ActionSuccess(boolean) or an ActionError entity
+     */
+    @GET
+    @Path("/storage/info")
+    @SecurityRequirement(name = "bearer")
+    @Operation(operationId = "canBrowseDestination",  summary = "Check if browsing destination storage is supported")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "Browsing of destination storage supported",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = StorageInfo.class))),
+            @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "401", description="Not authorized",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "403", description="Permission denied",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "419", description="Re-delegate credentials",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "501", description="Browsing of destination storage not supported",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+    })
+    public Uni<Response> canBrowseDestination(@RestQuery("dest") @DefaultValue(defaultDestination)
+                                              @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                              String destination) {
+
+        LOG.infof("Can browse destination storage %s?", destination);
+
+        Uni<Response> result = Uni.createFrom().nullItem()
+
+            .chain(unused -> {
+                // Pick transfer service and create REST client for it
+                var params = new ActionParameters(destination);
+                if (!getTransferService(params)) {
+                    // Could not get REST client
+                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
+                }
+
+                return Uni.createFrom().item(params);
+            })
+            .chain(params -> {
+                // Check if browsing storage is supported
+                var storageInfo = new StorageInfo(destination, params.ts.canBrowseStorage());
+
+                LOG.infof("Destination storage %s%s does support browsing", destination, storageInfo.canBrowse ? "" : " not");
+
+                return Uni.createFrom().item(storageInfo.toResponse());
+            })
+            .onFailure().recoverWithItem(e -> {
+                LOG.errorf("Failed to check if browsing storage destination %s is supported", destination);
+                return new ActionError(e, Tuple2.of("destination", destination)).toResponse();
+            });
+
+        return result;
+    }
+
+    /**
      * List the content of a folder.
      * @param auth The access token needed to call the service.
      * @param folderUrl The link to the folder to list content of.

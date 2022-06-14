@@ -19,6 +19,7 @@ bin/
 *.log
 *.log.*
 gen/
+log/
 
 # NetBeans
 nb-configuration.xml

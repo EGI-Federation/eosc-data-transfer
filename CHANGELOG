@@ -8,5 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
-## [X.X.XX]
-- Change description (#PR_NUMBER) (AUTHOR)
+## [1.0.8]
+- Implemented endpoints to start, cancel, query, search transfers
+- Implemented endpoints to create, rename, delete, query folders
+- Implemented endpoints to rename, delete, query files
+- Refactored all endpoints to return Uni<Response>

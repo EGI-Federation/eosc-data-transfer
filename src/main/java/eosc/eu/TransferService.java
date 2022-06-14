@@ -28,6 +28,12 @@ public interface TransferService {
     public abstract String getServiceName();
 
     /***
+     * Signal if this browsing the destination is supported
+     * @return true if creating and managing storage elements is supported in associated destination storage(s)
+     */
+    public abstract boolean canBrowseStorage();
+
+    /***
      * Translates name of a generic information field to the name specific to the transfer service.
      * @param genericFieldName is the name of a TransferInfoExtended field.
      * @return Name of the field specific to this transfer service, null if requested field not supported.

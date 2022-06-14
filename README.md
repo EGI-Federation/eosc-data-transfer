@@ -1,42 +1,139 @@
-# EOSC Future Data Transfer
+# EOSC Data Transfer Service
 
-This project builds a proxy component that can initiate data transfers to multiple
-storage backends. Initially, [EGI Transfer Service](https://docs.egi.eu/users/datahub/)
-will be supported.
+[EOSC Future](https://eoscfuture.eu) is an EU-funded Horizon 2020 project that is implementing
+the [European Open Science Cloud](https://eosc-portal.eu) (EOSC). EOSC will give European
+researchers access to a wide web of [FAIR data](https://en.wikipedia.org/wiki/FAIR_data)
+and related services.
 
-A space in EGI DataHub is just a hierarchical structure of containers (folders) and objects (files).
-Publishing a space to an IDS connector means creating a catalog for the space, then in that
-catalog create a resource for each file. The adapter will not create resources for folders.
+This project builds a generic data transfer service that can be used in EOSC to transfer
+large amounts of data to cloud storage, by just indicating the source and destination.
+The EOSC Data Transfer Service features a [RESTful](https://restfulapi.net) Application
+Programming Interface (REST API). 
 
-The resources created by the adapter will contain the following custom properties:
+The API covers three sets of functionalities:
 
-- The unique identifier of the file in the OneData backend
-- The path of the file in the space, which allows consumers to reconstruct the
-  hierarchical structure if they wish to do so
+- [Parsing of digital object identifiers](#parsing-dois)
+- [Creating and managing data transfers](#creating-and-managing-data-transfers)
+- [Managing files and folders in a destination storage]()
 
-The adapter exposes a REST API through which users can publish data to a configured provider connector.
-When the application is running, the API is available at `http://localhost:8080/api`. There is also a
-Swagger UI available at `http://localhost:8080/api/doc`.
+This project uses [Quarkus](https://quarkus.io/), the Supersonic Subatomic Java Framework.
 
-The adapter endpoint `http://localhost:8080/api/action/publish` will take the passed in space ID
-and will create a catalog for it in the connector. For each file in that space it will also create
-a new resource in the connector, together with all required entities, so that (a representation of) the
-resource can be discovered and consumed (downloaded) by another (consumer) IDS connector.
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+## Authentication and authorization
 
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io.
+Both the parsing of DOIs and creating/managing data transfers can (and usually does) require
+authentication and authorization to perform operations and/or queries. But the generic
+data transfer service behind the EOSC Data Transfer API aims to be agnostic with regard to
+authentication and authorization, thus the HTTP header "Authorization" (if present) will be
+forwarded as received.
 
-## Running the application in dev mode
+> Note that the frontend using this API might have to do one or more authentications:
+> one for the parser service (determined by the DOI used as the source), and
+> one or more for the transfer service that is automatically selected when a destination
+> is chosen.
+
+> Parsing some DOIs does not require authentication, e.g. for Zenodo DOIs.  
+
+
+## Parsing DOIs
+
+The API supports parsing digital object identifier (DOIs) and will return a list of files
+in the storage indicated by the DOI. The endpoint `GET /parser` will identify the DOI type
+and will parse the source storage.
+
+> You can also use the endpoints specialized in a specific type of DOI if you prefer, e.g.
+> `GET /parser/zenodo` to parse Zenodo DOIs.
+
+### Supported DOIs
+
+For now, the only supported DOI type is Zenodo.
+
+
+### Integrating new DOI parsers
+
+TODO
+
+
+## Creating and managing data transfers
+
+The API supports creation of new data transfer jobs, finding data transfers, querying information
+about data transfers, and canceling data transfers.
+
+Every API endpoint that performs operations or queries on data transfers or on storage elements
+in a destination storage has to be passed a destination type. This selects the data transfer
+service that will be used to perform the data transfer, freeing the clients of the API from
+having to know which data transfer service to pick for each destination.
+
+> Note that if you do not supply the "dest" query parameter when making an API call
+> to perform a transfer or a storage element related operation or query, the default value
+> "_dcache_" will be supplied instead.
+
+### Supported transfer destinations
+
+Initially, [EGI Transfer Service](https://docs.egi.eu/users/datahub/) is integrated into the
+EOSC Data Transfer API, supporting the following destination storages:
+
+- [EGI dCache](https://www.dcache.org) by passing "_dcache_" as the "dest" query parameter to the API
+
+
+### Integrating new data transfer services
+
+The API for creating and managing data transfers is extensible. All you have to do is implement the
+generic data transfer interface for a specific data transfer service, then register your class
+implementing the interface as the handler for one or more destinations.
+
+
+#### 1. Implement the interface for a generic data transfer service
+
+Implement the interface `TransferService` in a class of your choice. 
+
+> The method `canBrowseStorage()` signals to the frontend whether browsing the
+> destination storage is supported for the destination(s) registered for this data transfer service.
+
+
+#### 2. Add configuration for the new data transfer service
+
+Add a new entry in the [configuration file](#configuration) under `proxy\transfer\services` for the
+new transfer service, with the following settings:
+
+- `name` is human-readable name of this transfer service. 
+- `url` is the base URL for the REST client that will be used to call the API of this transfer service. 
+- `class` is the canonical Java class name that implements the interface `TransferService` for this transfer service. 
+- `timeout` is the maximum timeout in milliseconds for calls to the transfer service.
+   If not supplied, the default value 5000 (5 seconds) is used.  
+ 
+
+#### 3. Register new destinations serviced by the new data transfer service 
+
+Add one or more entries in the [configuration file](#configuration) under `proxy\transfer\destinations`,
+one for each destination for which this transfer service will be used to perform data transfers.  
+
+
+#### 4. Add the new destinations in the enum of possible destination 
+
+In the enum `DataTransferBase.Destination` add new values for each of the destinations for which
+the new data transfer implementation shall be used. Use the same values as the names of the keys
+in the previous step (3).
+
+
+## Configuration
+
+The application configuration file is in `src/main/resources/application.yml`.
+
+> The settings that are supposed to be overridable with environment variables should also
+> be added to `src/main/resources/application.properties`.
+
+
+## Running the API in dev mode
 
 You can run your application in dev mode that enables live coding using:
 ```shell script
 ./mvnw compile quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+Then open the Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
 
-## Packaging and running the application
+## Packaging and running the API
 
 The application can be packaged using:
 ```shell script
@@ -54,21 +151,42 @@ If you want to build an _über-jar_, execute the following command:
 
 The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
 
-## Creating a native executable
+## Running the API using Docker Compose
 
-You can create a native executable using: 
-```shell script
-./mvnw package -Pnative
-```
+You can use Docker Compose to easily deploy and run the EOSC Data Transfer API.
+This will run two containers:
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using: 
-```shell script
-./mvnw package -Pnative -Dquarkus.native.container-build=true
-```
+- This application that implements the API over HTTP
+- HTTPS frontend that will forward REST API requests to the API application
 
-You can then execute your native executable with: `./target/data-transfer-1.0-runner`
+1. Copy the file `src/main/docker/.env.template` to `src/main/docker/.env` and edit the
+environment variables `SERVICE_DOMAIN` and `SERVICE_URL` to be the domain name and the
+fully qualified URL (including the protocol HTTPS, the domain name and the port) at which
+the API will be available. Also provide and email address that will be used, together with the domain name, to
+request an SSL certificate from the webserver serving the API.
 
-If you want to learn more about building native executables, please consult https://quarkus.io/guides/maven-tooling.
+2. Run the command `build.sh` (or `build.cmd` on Windows) to build and run the containers that implement
+the EOSC Data Transfer API.  
+
+3. The HTTPS frontend container will automatically use [Let's Encrypt](https://letsencrypt.org)
+to request an SSL certificate for HTTPS.
+
+After the HTTPS container is deployed and working properly, connect to the container and
+make sure it is requesting an actual HTTPS certificate. By default, it will use a self-signed
+certificate and will only do dry runs for requesting a certificate. This is so to avoid the
+[rate limits](https://letsencrypt.org/docs/rate-limits/) of Let's Encrypt:
+ 
+- Run the command `sudo docker exec -it data-transfer-cert /bin/sh` then
+- In the container change directory to `cd /opt`
+- Edit the file `request.sh` and remove the `certbot` parameter `--dry-run` 
+
 
 ## Related Guides
 
+- [REST client implementation](https://quarkus.io/guides/rest-client-reactive): REST client to easily call REST APIs
+- [REST server implementation](https://quarkus.io/guides/rest-json): REST endpoint framework to implement REST APIs
+- [REST Easy Reactive](https://quarkus.io/guides/resteasy-reactive) Writing reactive REST services
+- [YAML Configuration](https://quarkus.io/guides/config#yaml): Use YAML to configure your application
+- [Swagger UI](https://quarkus.io/guides/openapi-swaggerui): Add user-friendly UI to view and test your REST API
+- [Mutiny Guides](https://smallrye.io/smallrye-mutiny/guides): Reactive programming with Mutiny
+- [Optionals](https://dzone.com/articles/optional-in-java): How to use Optional in Java

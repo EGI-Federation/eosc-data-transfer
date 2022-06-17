@@ -96,7 +96,7 @@ Implement the interface `TransferService` in a class of your choice.
 Add a new entry in the [configuration file](#configuration) under `proxy\transfer\services` for the
 new transfer service, with the following settings:
 
-- `name` is human-readable name of this transfer service. 
+- `name` is the human-readable name of this transfer service. 
 - `url` is the base URL for the REST client that will be used to call the API of this transfer service. 
 - `class` is the canonical Java class name that implements the interface `TransferService` for this transfer service. 
 - `timeout` is the maximum timeout in milliseconds for calls to the transfer service.
@@ -179,8 +179,12 @@ certificate and will only do dry runs for requesting a certificate. This is so t
 [rate limits](https://letsencrypt.org/docs/rate-limits/) of Let's Encrypt:
  
 - Run the command `sudo docker exec -it data-transfer-cert /bin/sh` then
-- In the container change directory to `cd /opt`
+- In the container change directory `cd /opt`
 - Edit the file `request.sh` and remove the `certbot` parameter `--dry-run` 
+
+> In case you remove the containers of the EOSC Data Transfer API, retain the volume `data_transfer_cert`,
+> which contains the SSL certificate. This will avoid requesting a new one for the same domain, in case
+> you redeploy the API (prevents exceeding Let's Encrypt rate limit).
 
 
 ## Related Guides

@@ -39,7 +39,7 @@ public class EgiDataTransfer implements TransferService {
     private static Map<String, String> infoFieldsRenamed;
 
     private String name;
-    private FileTransferService fts;
+    private static FileTransferService fts;
     private int timeout;
 
 
@@ -57,11 +57,11 @@ public class EgiDataTransfer implements TransferService {
 
         LOG.debug("Obtaining REST client for File Transfer Service");
 
-        if (null != this.fts)
-            return true;
-
         this.name = serviceConfig.name();
         this.timeout = serviceConfig.timeout();
+
+        if (null != this.fts)
+            return true;
 
         // Check if transfer service base URL is valid
         URL urlTransferService;

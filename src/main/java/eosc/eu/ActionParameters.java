@@ -6,8 +6,6 @@ import javax.ws.rs.core.Response.Status.Family;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.Multi;
 
-import parser.zenodo.Zenodo;
-
 
 /**
  * The parameters of an action to perform.
@@ -16,11 +14,10 @@ import parser.zenodo.Zenodo;
  */
 public class ActionParameters {
 
-    public Zenodo zenodo;
-    public String parseService;
+    public ParserService parser;
     public TransferService ts;
-    public String source;
-    public String destination;
+    public String source;       // Parser key
+    public String destination;  // Destination key
     public Response response;
 
 
@@ -43,11 +40,10 @@ public class ActionParameters {
      * Copy constructor
      */
     public ActionParameters(ActionParameters ap) {
-        this.zenodo = ap.zenodo;
+        this.parser = ap.parser;
         this.ts = ap.ts;
         this.source = ap.source;
         this.destination = ap.destination;
-        this.parseService = ap.parseService;
         this.response = ap.response;
     }
 

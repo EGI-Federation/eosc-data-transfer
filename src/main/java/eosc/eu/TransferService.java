@@ -1,13 +1,11 @@
 package eosc.eu;
 
-import egi.fts.model.ObjectInfo;
 import io.smallrye.mutiny.Uni;
 
-import java.util.List;
 import javax.ws.rs.core.Response;
 
 import eosc.eu.model.*;
-import org.jboss.resteasy.reactive.RestHeader;
+import eosc.eu.TransfersConfig.TransferServiceConfig;
 
 
 /***
@@ -19,7 +17,7 @@ public interface TransferService {
      * Initialize the service, avoids the need to inject configuration.
      * @return true on success.
      */
-    public abstract boolean initService(ServicesConfig.TransferServiceConfig config);
+    public abstract boolean initService(TransferServiceConfig config);
 
     /***
      * Get the human-readable name of the service.
@@ -113,7 +111,7 @@ public interface TransferService {
      * @param seUrl The link to the file or folder to det details of.
      * @return Details about the storage element.
      */
-    public abstract Uni<StorageElement> getStorageElementInfo(@RestHeader("Authorization") String auth, String seUrl);
+    public abstract Uni<StorageElement> getStorageElementInfo(String auth, String seUrl);
 
     /**
      * Create new folder.

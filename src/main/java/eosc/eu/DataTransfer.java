@@ -3,7 +3,6 @@ package eosc.eu;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -19,14 +18,11 @@ import org.jboss.resteasy.reactive.RestQuery;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.Arrays;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import eosc.eu.model.*;
 
@@ -45,7 +41,7 @@ import eosc.eu.model.*;
 public class DataTransfer extends DataTransferBase {
 
     @Inject
-    ServicesConfig config;
+    TransfersConfig config;
 
     private static final Logger LOG = Logger.getLogger(DataTransfer.class);
 

@@ -12,17 +12,12 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
-import org.eclipse.microprofile.rest.client.RestClientBuilder;
-import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -30,7 +25,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import eosc.eu.model.*;
-import parser.zenodo.Zenodo;
 
 
 @Path("/")
@@ -43,46 +37,72 @@ import parser.zenodo.Zenodo;
 public class DigitalObjectIdentifier {
 
     @Inject
-    ParsersConfig parsers;
+    ParsersConfig config;
 
     private static final Logger LOG = Logger.getLogger(DigitalObjectIdentifier.class);
 
 
     /**
-     * Prepare REST client for Zenodo.
+     * Prepare a parser service that can parse the specified DOI.
      *
-     * @param params will receive the parser
-     * @return true on success, updates field "zenodo"
+     * @param params Will receive the parser
+     * @param doi The DOI for a data set
+     * @return true on success, updates field "parser"
      */
     @PostConstruct
-    private boolean getZenodoParser(ActionParameters params) {
+    private boolean getParser(ActionParameters params, String doi) {
 
-        LOG.info("Obtaining REST client for Zenodo");
+        LOG.debug("Selecting parser...");
 
-        if (null != params.zenodo)
+        if (null != params.parser)
             return true;
 
-        // Check if Zenodo base URL is valid
-        URL urlParser;
-        try {
-            urlParser = new URL(parsers.parsers().get("zenodo"));
-        } catch (MalformedURLException e) {
-            LOG.error(e.getMessage());
+        if(null == doi || doi.isEmpty()) {
+            LOG.error("No DOI specified");
             return false;
         }
 
-        // Create the REST client for the selected transfer service
         try {
-            params.zenodo = RestClientBuilder.newBuilder()
-                    .baseUrl(urlParser)
-                    .build(Zenodo.class);
+            // Try each registered parser
+            for(var pKey : this.config.parsers().keySet()) {
+                var parserConfig = this.config.parsers().get(pKey);
 
-            return true;
+                // Get the class of the parser
+                var classType = Class.forName(parserConfig.className());
+                params.parser = (ParserService)classType.getDeclaredConstructor().newInstance();
+                if(params.parser.initParser(parserConfig)) {
+                    LOG.infof("Trying parser <%s>", params.parser.getParserName());
+
+                    if(params.parser.canParseDOI(doi)) {
+                        params.source = pKey;
+                        return true;
+                    }
+                }
+
+                params.source = null;
+                params.parser = null;
+            }
         }
-        catch (RestClientDefinitionException e) {
+        catch (ClassNotFoundException e) {
+            LOG.error(e.getMessage());
+        }
+        catch (NoSuchMethodException e) {
+            LOG.error(e.getMessage());
+        }
+        catch (InstantiationException e) {
+            LOG.error(e.getMessage());
+        }
+        catch (InvocationTargetException e) {
+            LOG.error(e.getMessage());
+        }
+        catch (IllegalAccessException e) {
+            LOG.error(e.getMessage());
+        }
+        catch (IllegalArgumentException e) {
             LOG.error(e.getMessage());
         }
 
+        // None of the configured parsers supports this DOI
         return false;
     }
 
@@ -92,93 +112,51 @@ public class DigitalObjectIdentifier {
      * @return API Response, wraps an ActionSuccess or an ActionError entity
      */
     @GET
-    @Path("/parser/zenodo")
-    @SecurityRequirement(name = "none")
-    @Operation(operationId = "parseZenodo",  summary = "Extract source files from Zenodo record in DOI")
+    @Path("/parser")
+    @SecurityRequirement(name = "bearer")
+    @Operation(operationId = "parse",  summary = "Extract source files from DOI")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = StorageContent.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "404", description="Record not found",
+            @APIResponse(responseCode = "404", description="Source not found",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Response parseZenodoDOI(@Parameter(description = "The DOI to parse, must point to Zenodo",  required = true,
-                                              example = "https://doi.org/12.3456/zenodo.12345678")
-                                   @RestQuery String doi) {
+    public Uni<Response> parseDOI(@RestHeader("Authorization") String auth,
+                                  @Parameter(description = "The DOI to parse", required = true, example = "https://doi.org/12.3456/zenodo.12345678")
+                                  @RestQuery String doi) {
 
-        LOG.infof("Parse Zenodo DOI %s", doi);
+        LOG.infof("Parse DOI %s", doi);
 
-        try {
-            ActionParameters ap = new ActionParameters();
-            CompletableFuture<Response> response = new CompletableFuture<>();
-            Uni<ActionParameters> start = Uni.createFrom().item(ap);
-            start
-                .onItem().transformToUni(params -> {
-                    // Validate DOI
-                    boolean isValid = null != doi && !doi.isEmpty();
-                    if(isValid) {
-                        Pattern p = Pattern.compile("^https?://([\\w\\.]+)/([\\w\\.]+)/zenodo\\.(\\d+).*", Pattern.CASE_INSENSITIVE);
-                        Matcher m = p.matcher(doi);
-                        isValid = m.matches();
-                        if (isValid)
-                            params.source = m.group(3);
-                    }
+        Uni<Response> result = Uni.createFrom().nullItem()
 
-                    if(!isValid) {
-                        response.complete(new ActionError("invalidSource", Tuple2.of("doi", doi)).toResponse());
-                        return Uni.createFrom().failure(new RuntimeException());
+                .chain(unused -> {
+                    // Pick parser service that recognizes this DOI
+                    var params = new ActionParameters();
+                    if (!getParser(params, doi)) {
+                        // Could not find suitable parser
+                        return Uni.createFrom().failure(new TransferServiceException("invalidParserConfig"));
                     }
 
                     return Uni.createFrom().item(params);
                 })
-                .onItem().transformToUni(params -> {
-                    // Create REST client for Zenodo
-                    if (!getZenodoParser(params)) {
-                        // Could not get REST client
-                        response.complete(new ActionError("invalidParserConfig").toResponse());
-                        return Uni.createFrom().failure(new RuntimeException());
-                    }
-
-                    return Uni.createFrom().item(params);
+                .chain(params -> {
+                    // Parse DOI and get source files
+                    return params.parser.parseDOI(auth, doi);
                 })
-                .onItem().transformToUni(params -> {
-                    // Get Zenodo record details
-                    return params.zenodo.getRecordsAsync(params.source);
-                })
-                .onItem().transformToUni(record -> {
-                    // Got Zenodo record
-                    LOG.infof("Got Zenodo record %s", record.id);
-
-                    // Build list of source files
-                    StorageContent srcFiles = new StorageContent();
-                    for(var file : record.files) {
-                        srcFiles.elements.add(new StorageElement(file));
-                    }
-
-                    srcFiles.count = srcFiles.elements.size();
+                .chain(sourceFiles -> {
+                    // Got list of source files
+                    LOG.infof("Got %d source files", sourceFiles.count);
 
                     // Success
-                    response.complete(Response.ok(srcFiles).build());
-                    return Uni.createFrom().nullItem();
+                    return Uni.createFrom().item(Response.ok(sourceFiles).build());
                 })
-                .onFailure().invoke(e -> {
-                    LOG.errorf("Failed to parse Zenodo DOI %s", doi);
-                    if (!response.isDone())
-                        response.complete(new ActionError(e, Tuple2.of("doi", doi))
-                                .toResponse());
-                })
-                .subscribe().with(unused -> {});
+                .onFailure().recoverWithItem(e -> {
+                    LOG.errorf("Failed to parse DOI %s", doi);
+                    return new ActionError(e, Tuple2.of("doi", doi)).toResponse();
+                });
 
-            // Wait until parse completes (possibly with error)
-            Response r = response.get();
-            return r;
-        } catch (InterruptedException e) {
-            // Cancelled
-            return new ActionError("parseZenodoDOIInterrupted").toResponse();
-        } catch (ExecutionException e) {
-            // Execution error
-            return new ActionError("parseZenodoDOIExecutionError").toResponse();
-        }
+        return result;
     }
 }

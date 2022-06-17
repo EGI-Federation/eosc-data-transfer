@@ -1,12 +1,9 @@
 package eosc.eu;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
 import java.lang.reflect.InvocationTargetException;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-
-import eosc.eu.model.*;
 
 
 /***
@@ -15,6 +12,9 @@ import eosc.eu.model.*;
  */
 public class DataTransferBase {
 
+    /***
+     * The registered transfer destinations
+     */
     public enum Destination
     {
         dcache("dcache");
@@ -29,7 +29,7 @@ public class DataTransferBase {
     static public final String defaultDestination = "dcache";
 
     @Inject
-    protected ServicesConfig config;
+    protected TransfersConfig config;
 
     protected static Logger LOG;
 
@@ -69,7 +69,7 @@ public class DataTransferBase {
             return false;
         }
 
-        ServicesConfig.TransferServiceConfig serviceConfig = config.services().get(serviceId);
+        TransfersConfig.TransferServiceConfig serviceConfig = config.services().get(serviceId);
         if (null == serviceConfig) {
             // Unsupported transfer service
             LOG.errorf("No configuration found for transfer service <%s>", serviceId);

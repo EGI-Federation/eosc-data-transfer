@@ -15,9 +15,6 @@ import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestHeader;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -41,7 +38,7 @@ import org.jboss.resteasy.reactive.RestQuery;
 public class DataTransferUser extends DataTransferBase {
 
     @Inject
-    ServicesConfig config;
+    TransfersConfig config;
 
     private static final Logger LOG = Logger.getLogger(DataTransferUser.class);
 

@@ -23,7 +23,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import eosc.eu.model.*;
-import org.jboss.resteasy.reactive.RestPath;
 import org.jboss.resteasy.reactive.RestQuery;
 
 
@@ -41,7 +40,7 @@ import org.jboss.resteasy.reactive.RestQuery;
 public class DataStorage extends DataTransferBase {
 
     @Inject
-    ServicesConfig config;
+    TransfersConfig config;
 
     private static final Logger LOG = Logger.getLogger(DataStorage.class);
 

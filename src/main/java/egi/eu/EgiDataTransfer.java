@@ -1,11 +1,11 @@
 package egi.eu;
 
-import eosc.eu.model.UserInfo;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.RestHeader;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -20,13 +20,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import static javax.ws.rs.core.HttpHeaders.*;
 
-import eosc.eu.ServicesConfig;
+import eosc.eu.TransfersConfig.TransferServiceConfig;
 import eosc.eu.TransferService;
 import eosc.eu.TransferServiceException;
 import eosc.eu.model.*;
 import egi.fts.FileTransferService;
 import egi.fts.model.*;
-import org.jboss.resteasy.reactive.RestHeader;
 
 
 /***
@@ -53,15 +52,15 @@ public class EgiDataTransfer implements TransferService {
      * @return true on success
      */
     @PostConstruct
-    public boolean initService(ServicesConfig.TransferServiceConfig serviceConfig) {
-
-        LOG.debug("Obtaining REST client for File Transfer Service");
+    public boolean initService(TransferServiceConfig serviceConfig) {
 
         this.name = serviceConfig.name();
         this.timeout = serviceConfig.timeout();
 
         if (null != this.fts)
             return true;
+
+        LOG.debug("Obtaining REST client for File Transfer Service");
 
         // Check if transfer service base URL is valid
         URL urlTransferService;

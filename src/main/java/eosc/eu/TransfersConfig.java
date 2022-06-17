@@ -4,14 +4,13 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 
-import javax.enterprise.inject.Default;
 import java.util.*;
 
 /***
  * The configuration of the transfer services
  */
 @ConfigMapping(prefix = "proxy.transfer")
-public interface ServicesConfig {
+public interface TransfersConfig {
 
     // Selects a service based on the destination
     public Map<String, String> destinations();

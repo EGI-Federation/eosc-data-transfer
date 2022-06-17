@@ -14,7 +14,6 @@ The API covers three sets of functionalities:
 
 - [Parsing of digital object identifiers](#parsing-dois)
 - [Creating and managing data transfers](#creating-and-managing-data-transfers)
-- [Managing files and folders in a destination storage]()
 
 This project uses [Quarkus](https://quarkus.io/), the Supersonic Subatomic Java Framework.
 
@@ -38,26 +37,44 @@ forwarded as received.
 ## Parsing DOIs
 
 The API supports parsing digital object identifier (DOIs) and will return a list of files
-in the storage indicated by the DOI. The endpoint `GET /parser` will identify the DOI type
-and will parse the source storage.
+in the storage indicated by the DOI. It will automatically identify the DOI type and will
+use the correct service to retrieve the list of source files.
 
-> You can also use the endpoints specialized in a specific type of DOI if you prefer, e.g.
-> `GET /parser/zenodo` to parse Zenodo DOIs.
 
-### Supported DOIs
+### Supported data transfer sources
 
-For now, the only supported DOI type is Zenodo.
+For now, the only supported DOI type is [Zenodo](https://zenodo.org/).
 
 
 ### Integrating new DOI parsers
 
-TODO
+The API for parsing DOIs is extensible. All you have to do is implement the generic parser interface
+for a specific data source, then register your class implementing the interface in the configuration.
+
+#### 1. Implement the interface for a generic DOI parser
+
+Implement the interface `ParserService` in a class of your choice.
+
+#### 2. Add configuration for the new DOI parser
+
+Add a new entry in the [configuration file](#configuration) under `proxy/parsers` for the
+new parser service, with the following settings:
+
+- `name` is the human-readable name of this data source.
+- `url` is the base URL for the REST client that will be used to call the API of this data source.
+- `class` is the canonical Java class name that implements the interface `ParserService` for this data source.
+- `timeout` is the maximum timeout in milliseconds for calls to the data source.
+  If not supplied, the default value 5000 (5 seconds) is used.
 
 
 ## Creating and managing data transfers
 
 The API supports creation of new data transfer jobs, finding data transfers, querying information
 about data transfers, and canceling data transfers.
+
+The API also supports managing files and folders in a destination storage. Each data transfer service
+that gets integrated can optionally implement this functionality. Clients can query if this
+functionality is implemented for a destination storage by using the endpoint `GET /storage/info`.
 
 Every API endpoint that performs operations or queries on data transfers or on storage elements
 in a destination storage has to be passed a destination type. This selects the data transfer
@@ -82,18 +99,16 @@ The API for creating and managing data transfers is extensible. All you have to 
 generic data transfer interface for a specific data transfer service, then register your class
 implementing the interface as the handler for one or more destinations.
 
-
 #### 1. Implement the interface for a generic data transfer service
 
-Implement the interface `TransferService` in a class of your choice. 
+Implement the interface `TransferService` in a class of your choice.
 
 > The method `canBrowseStorage()` signals to the frontend whether browsing the
 > destination storage is supported for the destination(s) registered for this data transfer service.
 
-
 #### 2. Add configuration for the new data transfer service
 
-Add a new entry in the [configuration file](#configuration) under `proxy\transfer\services` for the
+Add a new entry in the [configuration file](#configuration) under `proxy/transfer/services` for the
 new transfer service, with the following settings:
 
 - `name` is the human-readable name of this transfer service. 
@@ -101,13 +116,11 @@ new transfer service, with the following settings:
 - `class` is the canonical Java class name that implements the interface `TransferService` for this transfer service. 
 - `timeout` is the maximum timeout in milliseconds for calls to the transfer service.
    If not supplied, the default value 5000 (5 seconds) is used.  
- 
 
 #### 3. Register new destinations serviced by the new data transfer service 
 
-Add one or more entries in the [configuration file](#configuration) under `proxy\transfer\destinations`,
+Add one or more entries in the [configuration file](#configuration) under `proxy/transfer/destinations`,
 one for each destination for which this transfer service will be used to perform data transfers.  
-
 
 #### 4. Add the new destinations in the enum of possible destination 
 

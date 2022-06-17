@@ -32,6 +32,14 @@ public class StorageContent {
     }
 
     /**
+     * Constructor with allocation
+     */
+    public StorageContent(int count) {
+        this.count = 0;
+        this.elements = new ArrayList<>(count);
+    }
+
+    /**
      * Construct from FTS folder listing
      */
     public StorageContent(String folderUrl, Map<String, ObjectInfo> folderContent) {

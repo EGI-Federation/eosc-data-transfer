@@ -178,7 +178,7 @@ Steps to run the API in a container:
 environment variables `SERVICE_DOMAIN` and `SERVICE_URL` to be the domain name and the
 fully qualified URL (including the protocol HTTPS, the domain name and the port) at which
 the API will be available. Also provide and email address that will be used, together with the domain name, to
-request an SSL certificate from the webserver serving the API.
+request an SSL certificate for the webserver serving the API.
 
 2. Run the command `build.sh` (or `build.cmd` on Windows) to build and run the containers that implement
 the EOSC Data Transfer API.  
@@ -189,7 +189,7 @@ to request an SSL certificate for HTTPS.
 After the HTTPS container is deployed and working properly, connect to the container and
 make sure it is requesting an actual HTTPS certificate. By default, it will use a self-signed
 certificate and will only do dry runs for requesting a certificate. This is so to avoid the
-[rate limits](https://letsencrypt.org/docs/rate-limits/) of Let's Encrypt:
+[rate limits](https://letsencrypt.org/docs/rate-limits/) of Let's Encrypt. To do this:
  
 - Run the command `sudo docker exec -it data-transfer-cert /bin/sh` then
 - In the container change directory `cd /opt`

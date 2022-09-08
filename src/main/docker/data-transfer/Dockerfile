@@ -10,7 +10,7 @@ RUN git clone https://github.com/EGI-Federation/eosc-future-data-transfer.git . 
     chmod a+x mvnw.sh
 
 # Build app
-RUN mvnw package --define skipTests
+RUN ./mvnw.sh package --define skipTests
 
 
 #

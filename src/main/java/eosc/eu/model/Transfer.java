@@ -21,4 +21,21 @@ public class Transfer {
      * Constructor
      */
     public Transfer() { this.files = new ArrayList<>(); }
+
+
+    /***
+     * The supported transfer destinations
+     */
+    public enum Destination
+    {
+        dcache("dcache"),
+        s3("s3"),
+        ftp("ftp");
+
+        private String destination;
+
+        Destination(String destination) { this.destination = destination; }
+
+        public String getDestination() { return this.destination; }
+    }
 }

@@ -9,6 +9,8 @@ proxy:
     destinations:
       dcache: fts
       storm: fts
+      s3: fts
+      ftp: fts
     services:
       fts:
         name: File Transfer Service
@@ -39,7 +41,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.0.10
+    info-version: 1.0.12
   jackson:
     fail-on-unknown-properties: false
   http:

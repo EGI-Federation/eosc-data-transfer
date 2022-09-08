@@ -21,6 +21,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import eosc.eu.model.*;
+import eosc.eu.model.Transfer.Destination;
 import org.jboss.resteasy.reactive.RestQuery;
 
 

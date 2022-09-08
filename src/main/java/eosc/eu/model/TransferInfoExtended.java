@@ -19,8 +19,8 @@ public class TransferInfoExtended extends TransferInfo {
 
     // NOTE: When adding/renaming fields, also update all translateTransferInfoFieldName() methods
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String jobState;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public TransferStatus jobState;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String jobType;
@@ -104,7 +104,7 @@ public class TransferInfoExtended extends TransferInfo {
 
         this.kind = "TransferInfoExtended";
         this.jobId = jie.job_id;
-        this.jobState = jie.job_state;
+        this.jobState = TransferStatus.fromString(jie.job_state);
         this.jobType = jie.job_type;
 
         this.jobMetadata = new HashMap<>();
@@ -136,5 +136,38 @@ public class TransferInfoExtended extends TransferInfo {
         this.vo_name = jie.vo_name;
         this.user_dn = jie.user_dn;
         this.cred_id = jie.cred_id;
+    }
+
+
+    /***
+     * The status of a transfer
+     */
+    public enum TransferStatus
+    {
+        unused("unused"),
+        active("active"),
+        succeeded("succeeded"),
+        failed("failed"),
+        canceled("canceled");
+
+        private String status;
+
+        TransferStatus(String status) { this.status = status; }
+
+        public static TransferStatus fromString(String status_) {
+            final String status = status_.toLowerCase();
+            if(status.contains("succes"))
+                return succeeded;
+            else if(status.contains("fail"))
+                return failed;
+            else if(status.contains("cancel"))
+                return canceled;
+            else if(status.contains("active") || status.contains("progress"))
+                return active;
+
+            return unused;
+        }
+
+        public String getStatus() { return this.status; }
     }
 }

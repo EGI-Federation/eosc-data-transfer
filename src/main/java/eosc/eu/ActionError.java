@@ -254,29 +254,6 @@ public class ActionError {
                     } break;
             }
         }
-        /*
-        else if(type.equals(ConnectorException.class)) {
-            switch(this.status) {
-                case NOT_FOUND:
-                    if(this.details.isPresent() && !this.details.get().isEmpty())
-                    {
-                        var keys = this.details.get().keySet();
-                        if(keys.contains("catalogId"))
-                            this.id = "catalogNotFound";
-                        else if(keys.contains("resourceId"))
-                            this.id = "resourceNotFound";
-                        else if(keys.contains("representationId"))
-                            this.id = "representationNotFound";
-                        else if(keys.contains("artifactId"))
-                            this.id = "artifactNotFound";
-                        else if(keys.contains("ruleId"))
-                            this.id = "ruleNotFound";
-                        else if(keys.contains("contractId"))
-                            this.id = "contractNotFound";
-                    } break;
-            }
-        }
-         */
     }
 
     /**

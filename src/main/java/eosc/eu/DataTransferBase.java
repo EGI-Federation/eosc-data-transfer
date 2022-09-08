@@ -1,5 +1,6 @@
 package eosc.eu;
 
+import eosc.eu.model.Transfer;
 import org.jboss.logging.Logger;
 import java.lang.reflect.InvocationTargetException;
 import javax.annotation.PostConstruct;
@@ -11,20 +12,6 @@ import javax.inject.Inject;
  * Dynamically selects the appropriate data transfer service, depending on the desired destination.
  */
 public class DataTransferBase {
-
-    /***
-     * The registered transfer destinations
-     */
-    public enum Destination
-    {
-        dcache("dcache");
-
-        private String destination;
-
-        Destination(String destination) { this.destination = destination; }
-
-        public String getDestination() { return this.destination; }
-    }
 
     static public final String defaultDestination = "dcache";
 

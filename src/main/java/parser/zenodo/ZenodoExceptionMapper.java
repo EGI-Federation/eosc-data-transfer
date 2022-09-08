@@ -20,8 +20,7 @@ public class ZenodoExceptionMapper implements ResponseExceptionMapper<ZenodoExce
     public ZenodoException toThrowable(Response response) {
         try {
             response.bufferEntity();
-        } catch(Exception ignored) {
-        }
+        } catch(Exception ignored) {}
 
         String msg = getBody(response);
         return new ZenodoException(response, msg);

@@ -23,6 +23,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import eosc.eu.model.*;
+import eosc.eu.model.Transfer.Destination;
 import org.jboss.resteasy.reactive.RestQuery;
 
 

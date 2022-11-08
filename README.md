@@ -12,48 +12,90 @@ Programming Interface (REST API).
 
 The API covers three sets of functionalities:
 
-- [Parsing of digital object identifiers](#parsing-dois)
+- [Parsing digital object identifiers](#parsing-dois)
 - [Creating and managing data transfers](#creating-and-managing-data-transfers)
+- [Managing storage elements](#managing-storage-elements)
 
 This project uses [Quarkus](https://quarkus.io/), the Supersonic Subatomic Java Framework.
 
 
 ## Authentication and authorization
 
-Both the parsing of DOIs and creating/managing data transfers can (and usually does) require
-authentication and authorization to perform operations and/or queries. But the generic
-data transfer service behind the EOSC Data Transfer API aims to be agnostic with regard to
-authentication and authorization, thus the HTTP header "Authorization" (if present) will be
+All three groups of API endpoints mentioned above support may require authorization.
+The generic data transfer service behind the EOSC Data Transfer API aims to be agnostic
+with regard to authorization, thus the HTTP header `Authorization` (if present) will be
 forwarded as received.
 
-> Note that the frontend using this API might have to do one or more authentications:
-> one for the parser service (determined by the DOI used as the source), and
-> one or more for the transfer service that is automatically selected when a destination
-> is chosen.
+> Note that the frontend using this API might have to supply more than one set of credentials:
+> (1) one for the data repository (determined by the DOI used as the source), (2) one for
+> the transfer service that is automatically selected when a destination is chosen, and (3) one
+> for the destination storage system. Only (2) is mandatory.
 
-> Parsing some DOIs does not require authentication, e.g. for Zenodo DOIs.  
+The API endpoints that parse DOIs usually call APIs that are open access, however the
+HTTP header `Authorization` (if present) will be forwarded as received. This ensures that
+the EOSC Data Transfer API can be [extended with new parsers](#integrating-new-doi-parsers)
+for data repositories that require authorization.
 
+The API endpoints that create and manage transfers, as well as the ones that manage storage
+elements, do require authorization, in the form of an access token passed via the HTTP
+header `Authorization`. This gets passed to the actual [transfer service registered to handle
+the selected destination storage](#register-new-destinations-serviced-by-the-new-data-transfer-service).
+The challenge is that some storage systems used as the target of the transfer may also
+require authentication and/or authorization. Thus, an additional set of credentials may be
+needed to be supplied to the endpoints in this group.
+
+> For example, for transfers to [EGI dCache](https://www.dcache.org), the configured transfer service
+> that handles the transfers is [EGI Data Transfer](https://www.egi.eu/service/data-transfer/).
+> These both can use the same EGI Check-in access token, thus no additional credentials are needed
+> besides the access token for the transfer service.
+
+TODO: Describe how FTP username/password and S3 keys are passed.
 
 ## Parsing DOIs
 
 The API supports parsing digital object identifier (DOIs) and will return a list of files
-in the storage indicated by the DOI. It will automatically identify the DOI type and will
+in the repository indicated by the DOI. It will automatically identify the DOI type and will
 use the correct service to retrieve the list of source files.
 
+> DOIs are persistent identifiers (PIDs) dedicated to identification of content over digital networks.
+> These are registered by one of the
+> [registration agencies of the International DOI Foundation](https://www.doi.org/registration_agencies.html).
+> Although in this documentation we refer to DOIs, the API endpoint that parses DOIs
+> supports any PID registered in the [global handle system](https://www.dona.net/handle-system)
+> of the [DONA Foundation](https://www.dona.net/digitalobjectarchitecture).
 
-### Supported data transfer sources
 
-For now, the only supported DOI type is [Zenodo](https://zenodo.org/).
+### Supported data repositories
+
+The API supports parsing DOIs, to the following data repositories:
+- [Zenodo](https://zenodo.org/)
+- [B2SHARE](https://eudat.eu/catalogue/B2SHARE)
+- Any repository that supports [Signposting](https://signposting.org) 
 
 
 ### Integrating new DOI parsers
 
-The API for parsing DOIs is extensible. All you have to do is implement the generic parser interface
-for a specific data source, then register your class implementing the interface in the configuration.
+The API endpoint `GET /parser` that parses DOIs is extensible. All you have to do is implement the
+generic parser interface for a specific data repository, then register your class implementing the
+interface in the configuration.
 
 #### 1. Implement the interface for a generic DOI parser
 
-Implement the interface `ParserService` in a class of your choice.
+Implement the interface `ParserService` in a class of your choice. 
+
+Your class must have a constructor that receives a `String id`, which must be returned by the method `getId()`.
+
+When the API `GET /parser` is called to parse a DOI, all configured parsers will be tried,
+by calling the method `canParseDOI()`, until one is identified that can parse the DOI. If no
+parser can handle the DOI, the API fails. In case you cannot determine if your parser can
+handle a DOI just from the URL, you can use the passed in `ParserHelper` to check if the URL
+redirects to the data repository your parser supports.
+
+After a parser is identified, the methods `init()` and `parseDOI()` are called in order.
+
+> The same `ParserHelper` is used when trying all parsers for a DOI. This helper caches the
+> redirects, so you should check with `getRedirectedToUrl()` before incurring one or more
+> network calls by calling `checkRedirect()`.
 
 #### 2. Add configuration for the new DOI parser
 
@@ -61,8 +103,8 @@ Add a new entry in the [configuration file](#configuration) under `proxy/parsers
 new parser service, with the following settings:
 
 - `name` is the human-readable name of this data source.
-- `url` is the base URL for the REST client that will be used to call the API of this data source.
 - `class` is the canonical Java class name that implements the interface `ParserService` for this data source.
+- `url` is the base URL for the REST client that will be used to call the API of this data source (optional).
 - `timeout` is the maximum timeout in milliseconds for calls to the data source.
   If not supplied, the default value 5000 (5 seconds) is used.
 
@@ -87,7 +129,7 @@ having to know which data transfer service to pick for each destination.
 
 ### Supported transfer destinations
 
-Initially, [EGI Transfer Service](https://docs.egi.eu/users/datahub/) is integrated into the
+Initially, [EGI Transfer Service](https://docs.egi.eu/users/data/management/data-transfer/) is integrated into the
 EOSC Data Transfer API, supporting the following destination storages:
 
 - [EGI dCache](https://www.dcache.org) by passing "_dcache_" as the "dest" query parameter to the API

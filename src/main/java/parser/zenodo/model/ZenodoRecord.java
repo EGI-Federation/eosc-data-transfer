@@ -30,22 +30,10 @@ public class ZenodoRecord {
         files = new ArrayList<>();
     }
 
-    public ZenodoRecord(ZenodoRecord record) {
-        this.files = new ArrayList<>();
-        this.files.addAll(record.files);
-        this.id = record.id;
-        this.doi = record.doi;
-        this.created = record.created;
-        this.modified = record.modified;
-        this.metadata = record.metadata;
-    }
-
     public class ZenodoMetadata {
         public String version;
         public String access_right;
         public String language;
         public String license;
-
-        public ZenodoMetadata() {}
     }
 }

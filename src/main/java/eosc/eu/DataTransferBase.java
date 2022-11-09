@@ -49,17 +49,17 @@ public class DataTransferBase {
 
         LOG.infof("Destination is <%s>", params.destination);
 
-        String serviceId = config.destinations().get(params.destination);
-        if (null == serviceId) {
+        var storageConfig = config.destinations().get(params.destination);
+        if (null == storageConfig) {
             // Unsupported destination
             LOG.errorf("No transfer service configured for destination <%s>", params.destination);
             return false;
         }
 
-        TransfersConfig.TransferServiceConfig serviceConfig = config.services().get(serviceId);
+        var serviceConfig = config.services().get(storageConfig.serviceId());
         if (null == serviceConfig) {
             // Unsupported transfer service
-            LOG.errorf("No configuration found for transfer service <%s>", serviceId);
+            LOG.errorf("No configuration found for transfer service <%s>", storageConfig.serviceId());
             return false;
         }
 

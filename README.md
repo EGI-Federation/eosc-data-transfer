@@ -34,7 +34,7 @@ forwarded as received.
 The API endpoints that parse DOIs usually call APIs that are open access, however the
 HTTP header `Authorization` (if present) will be forwarded as received. This ensures that
 the EOSC Data Transfer API can be [extended with new parsers](#integrating-new-doi-parsers)
-for data repositories that require authorization.
+for data repositories that require authentication.
 
 The API endpoints that create and manage transfers, as well as the ones that manage storage
 elements, do require authorization, in the form of an access token passed via the HTTP
@@ -42,7 +42,7 @@ header `Authorization`. This gets passed to the actual [transfer service registe
 the selected destination storage](#register-new-destinations-serviced-by-the-new-data-transfer-service).
 The challenge is that some storage systems used as the target of the transfer may also
 require authentication and/or authorization. Thus, an additional set of credentials may be
-needed to be supplied to the endpoints in this group.
+required to be supplied to the endpoints in this group.
 
 > For example, for transfers to [EGI dCache](https://www.dcache.org), the configured transfer service
 > that handles the transfers is [EGI Data Transfer](https://www.egi.eu/service/data-transfer/).
@@ -55,7 +55,7 @@ TODO: Describe how FTP username/password and S3 keys are passed.
 
 The API supports parsing digital object identifier (DOIs) and will return a list of files
 in the repository indicated by the DOI. It will automatically identify the DOI type and will
-use the correct service to retrieve the list of source files.
+use the correct parser to retrieve the list of source files.
 
 > DOIs are persistent identifiers (PIDs) dedicated to identification of content over digital networks.
 > These are registered by one of the
@@ -67,45 +67,49 @@ use the correct service to retrieve the list of source files.
 
 ### Supported data repositories
 
-The API supports parsing DOIs, to the following data repositories:
+The API supports parsing DOIs to the following data repositories:
 - [Zenodo](https://zenodo.org/)
 - [B2SHARE](https://eudat.eu/catalogue/B2SHARE)
-- Any repository that supports [Signposting](https://signposting.org) 
+- Any data repository that supports [Signposting](https://signposting.org) 
 
 
 ### Integrating new DOI parsers
 
-The API endpoint `GET /parser` that parses DOIs is extensible. All you have to do is implement the
-generic parser interface for a specific data repository, then register your class implementing the
-interface in the configuration.
+The API endpoint `GET /parser` that parses DOIs is extensible. All you have to do is
+implement the parser interface for a specific data repository, then register
+the Java class implementing the interface in the configuration.
 
 #### 1. Implement the interface for a generic DOI parser
 
-Implement the interface `ParserService` in a class of your choice. 
+Implement the Java interface `ParserService` in a class of your choice. 
 
-Your class must have a constructor that receives a `String id`, which must be returned by the method `getId()`.
+Your class must have a constructor that receives a `String id`, which must be returned
+by the method `getId()`.
 
 When the API `GET /parser` is called to parse a DOI, all configured parsers will be tried,
 by calling the method `canParseDOI()`, until one is identified that can parse the DOI. If no
-parser can handle the DOI, the API fails. In case you cannot determine if your parser can
-handle a DOI just from the URL, you can use the passed in `ParserHelper` to check if the URL
-redirects to the data repository your parser supports.
+parser can handle the DOI, the API fails. In case your implementation of the method
+`canParseDOI()` cannot determine if your parser can handle a DOI just from the URL,
+you can use the passed in `ParserHelper` to check if the URL redirects to the data
+repository you support.
 
 After a parser is identified, the methods `init()` and `parseDOI()` are called in order.
 
 > The same `ParserHelper` is used when trying all parsers for a DOI. This helper caches the
-> redirects, so you should check with `getRedirectedToUrl()` before incurring one or more
+> redirects, so you should try `getRedirectedToUrl()` before incurring one or more
 > network calls by calling `checkRedirect()`.
 
 #### 2. Add configuration for the new DOI parser
 
 Add a new entry in the [configuration file](#configuration) under `proxy/parsers` for the
-new parser service, with the following settings:
+new parser, with the following settings:
 
-- `name` is the human-readable name of this data source.
-- `class` is the canonical Java class name that implements the interface `ParserService` for this data source.
-- `url` is the base URL for the REST client that will be used to call the API of this data source (optional).
-- `timeout` is the maximum timeout in milliseconds for calls to the data source.
+- `name` is the human-readable name of the data repository.
+- `class` is the canonical Java class name that implements the interface `ParserService`
+  for this data repository.
+- `url` is the base URL for the REST client that will be used to call the API of this 
+  data source (optional).
+- `timeout` is the maximum timeout in milliseconds for calls to the data repository.
   If not supplied, the default value 5000 (5 seconds) is used.
 
 

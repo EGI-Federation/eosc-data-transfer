@@ -25,12 +25,15 @@ public class Transfer {
 
     /***
      * The supported transfer destinations
+     * Used as list of values for "dest" parameter of the API endpoints
      */
     public enum Destination
     {
         dcache("dcache"),
         s3("s3"),
         ftp("ftp");
+
+        // TODO: Keep in sync with supported destinations in configuration file
 
         private String destination;
 

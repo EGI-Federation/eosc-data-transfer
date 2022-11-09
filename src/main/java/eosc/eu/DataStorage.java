@@ -18,6 +18,7 @@ import org.jboss.resteasy.reactive.RestHeader;
 import java.util.Arrays;
 import javax.inject.Inject;
 import javax.ws.rs.*;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -54,33 +55,66 @@ public class DataStorage extends DataTransferBase {
     }
 
     /**
-     * Check if browsing destination storage is supported.
+     * List all supported destination storage types, with info about each.
+     * @return API Response, wraps an ActionSuccess(boolean) or an ActionError entity
+     */
+    @GET
+    @Path("/storage/types")
+    //@SecurityRequirement(name = "none")
+    @Operation(operationId = "listSupportedStorages",  summary = "List all supported storage types")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "Success",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = StorageTypes.class))),
+            @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+    })
+    public Uni<Response> listStorageTypes() {
+
+        LOG.infof("List supported storage types");
+
+        Uni<Response> result = Uni.createFrom().nullItem()
+
+            .chain(unused -> {
+                // Iterate all configured storage types
+                var storageTypes = new StorageTypes();
+                for(var dKey : this.config.destinations().keySet()) {
+                    var storageConfig = this.config.destinations().get(dKey);
+                    var storageDescription = storageConfig.description().isPresent() ? storageConfig.description().get() :"";
+                    var storageInfo = new StorageInfo(dKey, storageConfig.authType(), storageDescription);
+                    storageTypes.add(storageInfo);
+                }
+
+                return Uni.createFrom().item(storageTypes.toResponse());
+            })
+            .onFailure().recoverWithItem(e -> {
+                LOG.error("Failed to list supported storage destinations");
+                return new ActionError(e).toResponse();
+            });
+
+        return result;
+    }
+
+    /**
+     * Check if browsing destination storage is supported and what auth type it requires.
      * @return API Response, wraps an ActionSuccess(boolean) or an ActionError entity
      */
     @GET
     @Path("/storage/info")
-    @SecurityRequirement(name = "bearer")
-    @Operation(operationId = "canBrowseDestination",  summary = "Check if browsing destination storage is supported")
+    //@SecurityRequirement(name = "none")
+    @Operation(operationId = "getStorageInfo",  summary = "Retrieve information about destination storage")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Browsing of destination storage supported",
+            @APIResponse(responseCode = "200", description = "Success",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = StorageInfo.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "501", description="Browsing of destination storage not supported",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> canBrowseDestination(@RestQuery("dest") @DefaultValue(defaultDestination)
-                                              @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                                              String destination) {
+    public Uni<Response> getStorageInfo(@RestQuery("dest") @DefaultValue(defaultDestination)
+                                        @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                        String destination) {
 
-        LOG.infof("Can browse destination storage %s?", destination);
+        LOG.infof("Retrieve information about a storage type %s?", destination);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -95,15 +129,27 @@ public class DataStorage extends DataTransferBase {
                 return Uni.createFrom().item(params);
             })
             .chain(params -> {
-                // Check if browsing storage is supported
-                var storageInfo = new StorageInfo(destination, params.ts.canBrowseStorage());
+                // Retrieve the authentication type of the destination storage
+                var storageConfig = config.destinations().get(params.destination);
+                if (null == storageConfig)
+                    // Unsupported destination
+                    return Uni.createFrom().failure(new TransferServiceException("invalidDestination"));
 
-                LOG.infof("Destination storage %s%s does support browsing", destination, storageInfo.canBrowse ? "" : " not");
+                // Check if browsing storage is supported
+                var storageDescription = storageConfig.description().isPresent() ? storageConfig.description().get() :"";
+                var storageInfo = new StorageInfo(destination,
+                                                  storageConfig.authType(),
+                                                  params.ts.canBrowseStorage(),
+                                                  params.ts.getServiceName(),
+                                                  storageDescription);
+
+                LOG.infof("Destination storage %s does%s support browsing", destination,
+                        (storageInfo.canBrowse.isPresent() && storageInfo.canBrowse.get()) ? "" : " not");
 
                 return Uni.createFrom().item(storageInfo.toResponse());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.errorf("Failed to check if browsing storage destination %s is supported", destination);
+                LOG.errorf("Failed to retrieve info about storage type %s", destination);
                 return new ActionError(e, Tuple2.of("destination", destination)).toResponse();
             });
 
@@ -114,6 +160,8 @@ public class DataStorage extends DataTransferBase {
      * List the content of a folder.
      * @param auth The access token needed to call the service.
      * @param folderUrl The link to the folder to list content of.
+     * @param destination The type of destination storage.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionSuccess(StorageContent) or an ActionError entity
      */
     @GET
@@ -136,12 +184,14 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> listFolderContent(@RestHeader("Authorization") String auth,
+    public Uni<Response> listFolderContent(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                             @RestQuery("folderUrl") @Parameter(required = true, description = "URL to the storage element (folder) to list content of")
                             String folderUrl,
                             @RestQuery("dest") @DefaultValue(defaultDestination)
                             @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                            String destination) {
+                            String destination,
+                            @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
+                            String storageAuth) {
 
         LOG.infof("List content of folder %s", folderUrl);
 
@@ -159,7 +209,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // List folder content
-                return params.ts.listFolderContent(auth, folderUrl);
+                return params.ts.listFolderContent(auth, storageAuth, folderUrl);
             })
             .chain(content -> {
                 // Got folder content
@@ -182,6 +232,8 @@ public class DataStorage extends DataTransferBase {
      * Get the details of a file.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the file to get details of.
+     * @param destination The type of destination storage.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
      */
     @GET
@@ -204,12 +256,14 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> getFileInfo(@RestHeader("Authorization") String auth,
+    public Uni<Response> getFileInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                             @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to get stats for")
                             String seUrl,
                             @RestQuery("dest") @DefaultValue(defaultDestination)
                             @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                            String destination) {
+                            String destination,
+                            @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
+                            String storageAuth) {
 
         LOG.infof("Get details of storage element %s", seUrl);
 
@@ -227,7 +281,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Get storage element info
-                return params.ts.getStorageElementInfo(auth, seUrl);
+                return params.ts.getStorageElementInfo(auth, storageAuth, seUrl);
             })
             .chain(seinfo -> {
                 // Got storage element info
@@ -250,6 +304,8 @@ public class DataStorage extends DataTransferBase {
      * Get the details of a folder.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the folder to get details of.
+     * @param destination The type of destination storage.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
      */
     @GET
@@ -272,20 +328,24 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> getFolderInfo(@RestHeader("Authorization") String auth,
+    public Uni<Response> getFolderInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                               @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to get stats for")
                               String seUrl,
                               @RestQuery("dest") @DefaultValue(defaultDestination)
                               @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                              String destination) {
+                              String destination,
+                              @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
+                              String storageAuth) {
         // This is the same for files and folders
-        return getFileInfo(auth, seUrl, destination);
+        return getFileInfo(auth, seUrl, destination, storageAuth);
     }
 
     /**
      * Create a new folder.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the folder to create.
+     * @param destination The type of destination storage.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
      */
     @POST
@@ -305,12 +365,14 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> createFolder(@RestHeader("Authorization") String auth,
+    public Uni<Response> createFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                              @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to create")
                              String seUrl,
                              @RestQuery("dest") @DefaultValue(defaultDestination)
                              @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                             String destination) {
+                             String destination,
+                             @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
+                             String storageAuth) {
 
         LOG.infof("Create folder %s", seUrl);
 
@@ -328,7 +390,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Create folder
-                return params.ts.createFolder(auth, seUrl);
+                return params.ts.createFolder(auth, storageAuth, seUrl);
             })
             .chain(created -> {
                 // Folder got created
@@ -351,6 +413,8 @@ public class DataStorage extends DataTransferBase {
      * Delete existing folder.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the folder to delete.
+     * @param destination The type of destination storage.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
      */
     @DELETE
@@ -372,12 +436,14 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> deleteFolder(@RestHeader("Authorization") String auth,
+    public Uni<Response> deleteFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                              @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to delete")
                              String seUrl,
                              @RestQuery("dest") @DefaultValue(defaultDestination)
                              @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                             String destination) {
+                             String destination,
+                             @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
+                             String storageAuth) {
 
         LOG.infof("Delete folder %s", seUrl);
 
@@ -395,7 +461,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Delete folder
-                return params.ts.deleteFolder(auth, seUrl);
+                return params.ts.deleteFolder(auth, storageAuth, seUrl);
             })
             .chain(deleted -> {
                 // Folder got deleted
@@ -418,6 +484,8 @@ public class DataStorage extends DataTransferBase {
      * Delete existing file.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the file to delete.
+     * @param destination The type of destination storage.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
      */
     @DELETE
@@ -439,12 +507,14 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> deleteFile(@RestHeader("Authorization") String auth,
+    public Uni<Response> deleteFile(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                             @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to delete")
                             String seUrl,
                             @RestQuery("dest") @DefaultValue(defaultDestination)
                             @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                            String destination) {
+                            String destination,
+                            @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
+                            String storageAuth) {
 
         LOG.infof("Delete file %s", seUrl);
 
@@ -462,7 +532,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Delete file
-                return params.ts.deleteFile(auth, seUrl);
+                return params.ts.deleteFile(auth, storageAuth, seUrl);
             })
             .chain(deleted -> {
                 // File got deleted
@@ -485,6 +555,8 @@ public class DataStorage extends DataTransferBase {
      * Rename a file.
      * @param auth The access token needed to call the service.
      * @param operation The links to the old and new storage element URLs.
+     * @param destination The type of destination storage.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
      */
     @PUT
@@ -507,18 +579,21 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> renameFile(@RestHeader("Authorization") String auth, StorageRenameOperation operation,
+    public Uni<Response> renameFile(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
+                            StorageRenameOperation operation,
                             @RestQuery("dest") @DefaultValue(defaultDestination)
                             @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                            String destination) {
+                            String destination,
+                            @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
+                            String storageAuth) {
 
         if(null != operation && null != operation.seUrlOld && null != operation.seUrlNew)
             LOG.infof("Renaming storage element %s to %s", operation.seUrlOld, operation.seUrlNew);
         else
             return Uni.createFrom().item(new ActionError("missingOperationParameters",
                                                Tuple2.of("destination", destination) )
-                                                    .setStatus(Status.BAD_REQUEST)
-                                                    .toResponse());
+                                                     .setStatus(Status.BAD_REQUEST)
+                                                     .toResponse());
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -534,7 +609,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Rename storage element
-                return params.ts.renameStorageElement(auth, operation.seUrlOld, operation.seUrlNew);
+                return params.ts.renameStorageElement(auth, storageAuth, operation.seUrlOld, operation.seUrlNew);
             })
             .chain(renamed -> {
                 // Storage element got renamed
@@ -558,6 +633,8 @@ public class DataStorage extends DataTransferBase {
      * Rename a folder.
      * @param auth The access token needed to call the service.
      * @param operation The links to the old and new storage element URLs.
+     * @param destination The type of destination storage.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
      */
     @PUT
@@ -580,13 +657,15 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> renameFolder(@RestHeader("Authorization") String auth,
+    public Uni<Response> renameFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                              StorageRenameOperation operation,
                              @RestQuery("dest") @DefaultValue(defaultDestination)
                              @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                             String destination) {
+                             String destination,
+                             @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
+                             String storageAuth) {
         // This is the same for files and folders
-        return renameFile(auth, operation, destination);
+        return renameFile(auth, operation, destination, storageAuth);
     }
 
 }

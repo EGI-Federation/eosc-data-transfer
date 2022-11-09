@@ -40,22 +40,23 @@ public interface TransferService {
 
     /**
      * Retrieve information about current user.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth The access token needed to call the service.
      * @return User information.
      */
-    public abstract Uni<UserInfo> getUserInfo(String auth);
+    public abstract Uni<UserInfo> getUserInfo(String tsAuth);
 
     /**
      * Initiate new transfer of multiple sets of files.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param transfer The details of the transfer (source and destination files, parameters).
      * @return Identification for the new transfer.
      */
-    public abstract Uni<TransferInfo> startTransfer(String auth, Transfer transfer);
+    public abstract Uni<TransferInfo> startTransfer(String tsAuth, String storageAuth, Transfer transfer);
 
     /***
      * Find transfers matching criteria.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth The access token needed to call the service.
      * @param fields Comma separated list of fields to return for each transfer
      * @param limit Maximum number of transfers to return
      * @param timeWindow For terminal states, limit results to 'hours[:minutes]' into the past
@@ -67,82 +68,88 @@ public interface TransferService {
      * @param userDN Filter by user who started the transfer
      * @return Matching transfers.
      */
-    public abstract Uni<TransferList> findTransfers(String auth, String fields, int limit,
+    public abstract Uni<TransferList> findTransfers(String tsAuth, String fields, int limit,
                                                     String timeWindow, String stateIn,
                                                     String srcStorageElement, String dstStorageElement,
                                                     String delegationId, String voName, String userDN);
 
     /**
      * Request information about a transfer.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth The access token needed to call the service.
      * @param jobId The ID of the transfer to request info about.
      * @return Details of the transfer.
      */
-    public abstract Uni<TransferInfoExtended> getTransferInfo(String auth, String jobId);
+    public abstract Uni<TransferInfoExtended> getTransferInfo(String tsAuth, String jobId);
 
     /**
      * Request specific field from information about a transfer.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth The access token needed to call the service.
      * @param jobId The ID of the transfer to request info about.
      * @param fieldName The name of the TransferInfoExtended field to retrieve.
      * @return The value of the requested field from a transfer's information.
      */
-    public abstract Uni<Response> getTransferInfoField(String auth, String jobId, String fieldName);
+    public abstract Uni<Response> getTransferInfoField(String tsAuth, String jobId, String fieldName);
 
     /**
      * Cancel a transfer.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth The access token needed to call the service.
      * @param jobId The ID of the transfer to cancel.
      * @return Details of the cancelled transfer.
      */
-    public abstract Uni<TransferInfoExtended> cancelTransfer(String auth, String jobId);
+    public abstract Uni<TransferInfoExtended> cancelTransfer(String tsAuth, String jobId);
 
     /**
      * List all files and sub-folders in a folder.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param folderUrl The link to the folder to list content of.
      * @return List of the folder content.
      */
-    public abstract Uni<StorageContent> listFolderContent(String auth, String folderUrl);
+    public abstract Uni<StorageContent> listFolderContent(String tsAuth, String storageAuth, String folderUrl);
 
     /**
      * Get the details of a file or folder.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param seUrl The link to the file or folder to det details of.
      * @return Details about the storage element.
      */
-    public abstract Uni<StorageElement> getStorageElementInfo(String auth, String seUrl);
+    public abstract Uni<StorageElement> getStorageElementInfo(String tsAuth, String storageAuth, String seUrl);
 
     /**
      * Create new folder.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param folderUrl The link to the folder to create.
      * @return Confirmation message.
      */
-    public abstract Uni<String> createFolder(String auth, String folderUrl);
+    public abstract Uni<String> createFolder(String tsAuth, String storageAuth, String folderUrl);
 
     /**
      * Delete existing folder.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param folderUrl The link to the folder to delete.
      * @return Confirmation message.
      */
-    public abstract Uni<String> deleteFolder(String auth, String folderUrl);
+    public abstract Uni<String> deleteFolder(String tsAuth, String storageAuth, String folderUrl);
 
     /**
      * Delete existing file.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param fileUrl The link to the file to delete.
      * @return Confirmation message.
      */
-    public abstract Uni<String> deleteFile(String auth, String fileUrl);
+    public abstract Uni<String> deleteFile(String tsAuth, String storageAuth, String fileUrl);
 
     /**
      * Rename a folder or file.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param seOld The link to the storage element to rename.
      * @param seNew The link to the new name/location of the storage element.
      * @return Confirmation message.
      */
-    public abstract Uni<String> renameStorageElement(String auth, String seOld, String seNew);
+    public abstract Uni<String> renameStorageElement(String tsAuth, String storageAuth, String seOld, String seNew);
 }

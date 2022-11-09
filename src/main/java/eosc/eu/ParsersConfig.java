@@ -21,7 +21,8 @@ public interface ParsersConfig {
      */
     public interface ParserConfig {
         public String name();
-        public String url();
+
+        public Optional<String> url();
 
         @WithDefault("5000")
         public int timeout(); // milliseconds

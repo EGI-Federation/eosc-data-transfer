@@ -17,6 +17,7 @@ import org.jboss.resteasy.reactive.RestHeader;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -74,7 +75,7 @@ public class DataTransferUser extends DataTransferBase {
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> getUserInfo(@RestHeader("Authorization") String auth,
+    public Uni<Response> getUserInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                      @RestQuery("dest") @DefaultValue(defaultDestination)
                                      @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
                                      String destination) {

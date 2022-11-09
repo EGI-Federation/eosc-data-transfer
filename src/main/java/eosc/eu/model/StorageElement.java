@@ -2,6 +2,7 @@ package eosc.eu.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import egi.fts.model.ObjectInfo;
+import parser.b2share.model.B2ShareFile;
 import parser.zenodo.model.ZenodoFile;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -56,6 +57,22 @@ public class StorageElement extends StorageElementBase {
         if(null != this.accessUrl && !this.accessUrl.isEmpty()) {
             this.downloadUrl = this.accessUrl + "?download=1";
         }
+    }
+
+    /**
+     * Construct from B2Share file
+     */
+    public StorageElement(B2ShareFile b2sf) {
+        super("StorageElement", b2sf.name);
+        this.size = b2sf.size;
+        this.mediaType = b2sf.getMediaType();
+        this.accessUrl = b2sf.links.get("self");
+
+        if(null != b2sf.created)
+            this.createdAt = b2sf.created;
+
+        if(null != b2sf.modified)
+            this.modifiedAt = b2sf.modified;
     }
 
     /**

@@ -5,12 +5,26 @@ proxy:
       url: https://zenodo.org
       class: parser.zenodo.ZenodoParser
       timeout: 5000
+    b2share:
+      name: B2Share
+      class: parser.b2share.B2ShareParser
   transfer:
     destinations:
-      dcache: fts
-      storm: fts
-      s3: fts
-      ftp: fts
+      dcache:
+        service: fts
+        auth: token
+        description: EGI dCache
+      s3:
+        service: fts
+        auth: keys
+        description: Amazon S3 compatible object storage
+      ftp:
+        service: fts
+        auth: password
+        description: FTP server
+      storm:
+        service: fts
+        auth: token
     services:
       fts:
         name: File Transfer Service
@@ -41,11 +55,11 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.0.12
+    info-version: 1.0.14
   jackson:
     fail-on-unknown-properties: false
   http:
     port: 8080
     cors: true
   tls:
-    trust-all: true
+    trust-all: false

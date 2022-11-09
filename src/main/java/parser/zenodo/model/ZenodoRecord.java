@@ -45,5 +45,7 @@ public class ZenodoRecord {
         public String access_right;
         public String language;
         public String license;
+
+        public ZenodoMetadata() {}
     }
 }

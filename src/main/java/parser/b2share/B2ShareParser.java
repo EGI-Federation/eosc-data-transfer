@@ -1,4 +1,4 @@
-package parser.zenodo;
+package parser.b2share;
 
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
@@ -20,55 +20,49 @@ import parser.ParserHelper;
 
 
 /***
- * Class for parsing Zenodo DOIs
+ * Class for parsing B2Share DOIs
  */
-public class ZenodoParser implements ParserService {
+public class B2ShareParser implements ParserService {
 
-    private static final Logger LOG = Logger.getLogger(ZenodoParser.class);
+    private static final Logger LOG = Logger.getLogger(B2ShareParser.class);
 
     private String id;
     private String name;
-    private int timeout;
+    private URL urlServer;
     private String recordId;
-    private static Zenodo parser;
+    private int timeout;
+    private B2Share parser;
 
 
     /***
      * Constructor
      */
-    public ZenodoParser(String id) { this.id = id; }
+    public B2ShareParser(String id) { this.id = id; }
 
     /***
-     * Initialize the REST client for B2Share.
-     * The hostname of the B2Share server should be already determined by a previous call to canParseDOI().
-     * @param config Configuration loaded from the config file.
+     * Initialize the REST client for B2Share
      * @return true on success
      */
-    public boolean init(ParserConfig config) {
+    public boolean init(ParserConfig serviceConfig) {
 
-        this.name = config.name();
-        this.timeout = config.timeout();
+        this.name = serviceConfig.name();
+        this.timeout = serviceConfig.timeout();
 
         if (null != this.parser)
             return true;
 
-        LOG.debug("Obtaining REST client for Zenodo");
-
-        // Check if base URL is valid
-        URL urlParserService;
-        try {
-            var url = config.url().isPresent() ? config.url().get() : "";
-            urlParserService = new URL(url);
-        } catch (MalformedURLException e) {
-            LOG.error(e.getMessage());
+        if(null == this.urlServer) {
+            LOG.error("Missing B2Share server, call canParseDOI() first");
             return false;
         }
+
+        LOG.debugf("Obtaining REST client for B2Share server %s", this.urlServer);
 
         try {
             // Create the REST client for the parser service
             this.parser = RestClientBuilder.newBuilder()
-                            .baseUrl(urlParserService)
-                            .build(Zenodo.class);
+                            .baseUrl(this.urlServer)
+                            .build(B2Share.class);
 
             return true;
         }
@@ -104,23 +98,11 @@ public class ZenodoParser implements ParserService {
      * @return Return true if the parser service can parse this DOI.
      */
     public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper) {
-        // Validate DOI without actually fetching the URL
         boolean isValid = null != doi && !doi.isBlank();
         if(!isValid)
             return Uni.createFrom().item(Tuple2.of(false, this));
-        else {
-            // Standard Zenodo DOI (e.g. https://doi.org/10.5281/zenodo.6511035)
-            Pattern p = Pattern.compile("^https?://([\\w\\.]+)/([\\w\\.]+)/zenodo\\.(\\d+).*", Pattern.CASE_INSENSITIVE);
-            Matcher m = p.matcher(doi);
-            isValid = m.matches();
 
-            this.recordId = isValid ? m.group(3) : null;
-
-            if(isValid)
-                return Uni.createFrom().item(Tuple2.of(true, this));
-        }
-
-        // DOI not in standard Zenodo format, but may still redirect to a Zenodo record
+        // Check if DOI redirects to a B2Share record
         var result = Uni.createFrom().item(helper.getRedirectedToUrl())
 
             .chain(redirectedToUrl -> {
@@ -133,17 +115,25 @@ public class ZenodoParser implements ParserService {
                 boolean redirectValid = (null != redirectedToUrl) && !doi.equals(redirectedToUrl);
                 if(redirectValid) {
                     // Redirected, validate redirection URL
-                    Pattern p = Pattern.compile("^https?://([\\w\\.]*zenodo.org)/record/(\\d+)", Pattern.CASE_INSENSITIVE);
+                    Pattern p = Pattern.compile("^(https?://[^/:]*b2share[^/:]*:?[\\d]*)/records/(.+)", Pattern.CASE_INSENSITIVE);
                     Matcher m = p.matcher(redirectedToUrl);
                     redirectValid = m.matches();
 
-                    this.recordId = redirectValid ? m.group(2) : null;
+                    if(redirectValid) {
+                        this.recordId = m.group(2);
+                        try {
+                            this.urlServer = new URL(m.group(1));
+                        } catch (MalformedURLException e) {
+                            LOG.error(e.getMessage());
+                            redirectValid = false;
+                        }
+                    }
                 }
 
                 return Uni.createFrom().item(Tuple2.of(redirectValid, (ParserService)this));
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Failed to check if DOI %s points to Zenodo record", doi);
+                LOG.errorf("Failed to check if DOI %s points to B2Share record", doi);
             });
 
         return result;
@@ -168,16 +158,31 @@ public class ZenodoParser implements ParserService {
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("doiParseTimeout"))
             .chain(unused -> {
-                // Get Zenodo record details
+                // Get B2Share record details
                 return this.parser.getRecordAsync(this.recordId);
             })
             .chain(record -> {
-                // Got Zenodo record
-                LOG.infof("Got Zenodo record %s", record.id);
+                // Got B2Share record
+                LOG.infof("Got B2Share record %s", record.id);
 
+                // Get bucket that holds the files
+                String linkToFiles = (null != record.links) ? record.links.get("files") : null;
+                if(null != linkToFiles) {
+                    Pattern p = Pattern.compile("^https?://[^/:]+/api/files/(.+)", Pattern.CASE_INSENSITIVE);
+                    Matcher m = p.matcher(linkToFiles);
+                    if(m.matches()) {
+                        // Get files in the bucket
+                        var bucket = m.group(1);
+                        return this.parser.getFilesInBucketAsync(bucket);
+                    }
+                }
+
+                return Uni.createFrom().failure(new TransferServiceException("noFilesLink"));
+            })
+            .chain(bucket -> {
                 // Build list of source files
-                StorageContent srcFiles = new StorageContent(record.files.size());
-                for(var file : record.files) {
+                StorageContent srcFiles = new StorageContent(bucket.contents.size());
+                for(var file : bucket.contents) {
                     srcFiles.elements.add(new StorageElement(file));
                 }
 

@@ -93,7 +93,7 @@ public class EgiDataTransfer implements TransferService {
     public String getServiceName() { return this.name; }
 
     /***
-     * Signal if this browsing the destination is supported
+     * Signal if browsing the destination is supported
      * @return true if creating and managing storage elements is supported in associated destination storage(s)
      */
     public boolean canBrowseStorage() { return true; }
@@ -179,10 +179,11 @@ public class EgiDataTransfer implements TransferService {
     /**
      * Initiate new transfer of multiple sets of files.
      * @param auth The access token that authorizes calling the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param transfer The details of the transfer (source and destination files, parameters).
      * @return Identification for the new transfer.
      */
-    public Uni<TransferInfo> startTransfer(String auth, Transfer transfer) {
+    public Uni<TransferInfo> startTransfer(String auth, String storageAuth, Transfer transfer) {
         if(null == this.fts)
             return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
@@ -192,6 +193,11 @@ public class EgiDataTransfer implements TransferService {
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("startTransferTimeout"))
             .chain(unused -> {
+                // If authentication info is provided for the storage, embed it in each destination URL
+                if(null != storageAuth && !storageAuth.isBlank()) {
+                    // TODO: Embed storage credentials in destination URLs
+                }
+
                 // Start new transfer
                 return this.fts.startTransferAsync(auth, new Job(transfer));
             })
@@ -379,10 +385,11 @@ public class EgiDataTransfer implements TransferService {
     /**
      * List all files and sub-folders in a folder.
      * @param auth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param folderUrl The link to the folder to list content of.
      * @return List of folder content.
      */
-    public Uni<StorageContent> listFolderContent(String auth, String folderUrl) {
+    public Uni<StorageContent> listFolderContent(String auth, String storageAuth, String folderUrl) {
         if(null == this.fts)
             return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
@@ -409,10 +416,11 @@ public class EgiDataTransfer implements TransferService {
     /**
      * Get the details of a file or folder.
      * @param auth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param seUrl The link to the file or folder to det details of.
      * @return Details about the storage element.
      */
-    public Uni<StorageElement> getStorageElementInfo(@RestHeader("Authorization") String auth, String seUrl) {
+    public Uni<StorageElement> getStorageElementInfo(String auth, String storageAuth, String seUrl) {
         if(null == this.fts)
             return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
@@ -440,10 +448,11 @@ public class EgiDataTransfer implements TransferService {
     /**
      * Create new folder.
      * @param auth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param folderUrl The link to the folder to create.
      * @return Confirmation message.
      */
-    public Uni<String> createFolder(String auth, String folderUrl) {
+    public Uni<String> createFolder(String auth, String storageAuth, String folderUrl) {
         if(null == this.fts)
             return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
@@ -471,10 +480,11 @@ public class EgiDataTransfer implements TransferService {
     /**
      * Delete existing folder.
      * @param auth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param folderUrl The link to the folder to delete.
      * @return Confirmation message.
      */
-    public Uni<String> deleteFolder(String auth, String folderUrl) {
+    public Uni<String> deleteFolder(String auth, String storageAuth, String folderUrl) {
         if(null == this.fts)
             return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
@@ -502,10 +512,11 @@ public class EgiDataTransfer implements TransferService {
     /**
      * Delete existing file.
      * @param auth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param fileUrl The link to the file to delete.
      * @return Confirmation message.
      */
-    public Uni<String> deleteFile(String auth, String fileUrl) {
+    public Uni<String> deleteFile(String auth, String storageAuth, String fileUrl) {
         if(null == this.fts)
             return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
 
@@ -533,11 +544,12 @@ public class EgiDataTransfer implements TransferService {
     /**
      * Rename a folder or file.
      * @param auth The access token needed to call the service.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param seOld The link to the storage element to rename.
      * @param seNew The link to the new name/location of the storage element.
      * @return Confirmation message.
      */
-    public Uni<String> renameStorageElement(String auth, String seOld, String seNew) {
+    public Uni<String> renameStorageElement(String auth, String storageAuth, String seOld, String seNew) {
         if(null == this.fts)
             throw new TransferServiceException("invalidConfig");
 

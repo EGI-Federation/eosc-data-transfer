@@ -16,7 +16,6 @@ public class ActionParameters {
 
     public ParserService parser;
     public TransferService ts;
-    public String source;       // Parser key
     public String destination;  // Destination key
     public Response response;
 
@@ -42,7 +41,6 @@ public class ActionParameters {
     public ActionParameters(ActionParameters ap) {
         this.parser = ap.parser;
         this.ts = ap.ts;
-        this.source = ap.source;
         this.destination = ap.destination;
         this.response = ap.response;
     }

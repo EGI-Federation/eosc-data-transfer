@@ -23,5 +23,5 @@ public interface Zenodo {
     @GET
     @Path("/records/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    Uni<ZenodoRecord> getRecordsAsync(@PathParam("id") String recordId);
+    Uni<ZenodoRecord> getRecordAsync(@PathParam("id") String recordId);
 }

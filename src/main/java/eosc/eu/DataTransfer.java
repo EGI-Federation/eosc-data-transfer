@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Arrays;
 import javax.inject.Inject;
 import javax.ws.rs.*;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -58,6 +59,8 @@ public class DataTransfer extends DataTransferBase {
      * Initiate new transfer of multiple sets of files.
      * @param auth The access token needed to call the service.
      * @param transfer The details of the transfer (source and destination files, parameters).
+     * @param destination The type of destination storage.
+     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionSuccess(TransferInfo) or an ActionError entity
      */
     @POST
@@ -77,10 +80,12 @@ public class DataTransfer extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> startTransfer(@RestHeader("Authorization") String auth, Transfer transfer,
+    public Uni<Response> startTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, Transfer transfer,
                                        @RestQuery("dest") @DefaultValue(defaultDestination)
                                        @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                                       String destination) {
+                                       String destination,
+                                       @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
+                                       String storageAuth) {
 
         LOG.info("Start new data transfer");
 
@@ -98,7 +103,7 @@ public class DataTransfer extends DataTransferBase {
             })
             .chain(params -> {
                 // Start transfer
-                return params.ts.startTransfer(auth, transfer);
+                return params.ts.startTransfer(auth, storageAuth, transfer);
             })
             .chain(transferInfo -> {
                 // Transfer started
@@ -149,7 +154,7 @@ public class DataTransfer extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> findTransfers(@RestHeader("Authorization") String auth,
+    public Uni<Response> findTransfers(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                        @RestQuery("fields") @Parameter(description = "Comma separated list of fields to return for each transfer")
                                        String fields,
                                        @RestQuery("limit") @DefaultValue("100") @Parameter(description = "Maximum number of transfers to return")
@@ -274,7 +279,7 @@ public class DataTransfer extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> getTransferInfo(@RestHeader("Authorization") String auth, String jobId,
+    public Uni<Response> getTransferInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, String jobId,
                                          @RestQuery("dest") @DefaultValue(defaultDestination)
                                          @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
                                          String destination) {
@@ -340,7 +345,7 @@ public class DataTransfer extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> getTransferInfoField(@RestHeader("Authorization") String auth, String jobId, String fieldName,
+    public Uni<Response> getTransferInfoField(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, String jobId, String fieldName,
                                               @RestQuery("dest") @DefaultValue(defaultDestination)
                                               @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
                                               String destination) {
@@ -410,7 +415,7 @@ public class DataTransfer extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> cancelTransfer(@RestHeader("Authorization") String auth, String jobId,
+    public Uni<Response> cancelTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, String jobId,
                                         @RestQuery("dest") @DefaultValue(defaultDestination)
                                         @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
                                         String destination) {

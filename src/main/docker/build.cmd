@@ -1,0 +1,3 @@
+@echo off
+echo Building API containers...
+docker compose -p eosc-data-transfer up -d --build --remove-orphans

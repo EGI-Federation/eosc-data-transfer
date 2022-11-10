@@ -27,9 +27,10 @@ public interface TransferService {
 
     /***
      * Signal if this browsing the destination is supported
+     * @param destination The key of the destination storage type from the configuration file
      * @return true if creating and managing storage elements is supported in associated destination storage(s)
      */
-    public abstract boolean canBrowseStorage();
+    public abstract boolean canBrowseStorage(String destination);
 
     /***
      * Translates name of a generic information field to the name specific to the transfer service.

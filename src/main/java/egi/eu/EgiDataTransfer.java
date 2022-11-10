@@ -94,9 +94,20 @@ public class EgiDataTransfer implements TransferService {
 
     /***
      * Signal if browsing the destination is supported
+     * @param destination The key of the destination storage type from the configuration file
      * @return true if creating and managing storage elements is supported in associated destination storage(s)
      */
-    public boolean canBrowseStorage() { return true; }
+    public boolean canBrowseStorage(String destination) {
+
+        if(destination.equals(Transfer.Destination.dcache))
+            return true;
+        else if(destination.equals(Transfer.Destination.ftp))
+            return true;
+        else if(destination.equals(Transfer.Destination.s3))
+            return true;
+
+        return false;
+    }
 
     /***
      * Translates name of a generic information field to the name specific to the transfer service.

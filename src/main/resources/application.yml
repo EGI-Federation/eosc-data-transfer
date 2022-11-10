@@ -19,7 +19,7 @@ proxy:
         auth: keys
         description: Amazon S3 compatible object storage
       ftp:
-        service: fts
+        service: globus
         auth: password
         description: FTP server
     services:

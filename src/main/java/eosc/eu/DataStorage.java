@@ -78,10 +78,21 @@ public class DataStorage extends DataTransferBase {
             .chain(unused -> {
                 // Iterate all configured storage types
                 var storageTypes = new StorageTypes();
-                for(var dKey : this.config.destinations().keySet()) {
-                    var storageConfig = this.config.destinations().get(dKey);
+                for(var destination : this.config.destinations().keySet()) {
+                    var storageConfig = this.config.destinations().get(destination);
                     var storageDescription = storageConfig.description().isPresent() ? storageConfig.description().get() :"";
-                    var storageInfo = new StorageInfo(dKey, storageConfig.authType(), storageDescription);
+
+                    var params = new ActionParameters(destination);
+                    if (!getTransferService(params))
+                        // Storage uses unsupported transfer service
+                        return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
+
+                    var storageInfo = new StorageInfo(destination,
+                            storageConfig.authType(),
+                            params.ts.canBrowseStorage(),
+                            params.ts.getServiceName(),
+                            storageDescription);
+
                     storageTypes.add(storageInfo);
                 }
 
@@ -144,7 +155,7 @@ public class DataStorage extends DataTransferBase {
                                                   storageDescription);
 
                 LOG.infof("Destination storage %s does%s support browsing", destination,
-                        (storageInfo.canBrowse.isPresent() && storageInfo.canBrowse.get()) ? "" : " not");
+                          storageInfo.canBrowse.get() ? "" : " not");
 
                 return Uni.createFrom().item(storageInfo.toResponse());
             })

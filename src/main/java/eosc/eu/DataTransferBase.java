@@ -14,6 +14,10 @@ import javax.inject.Inject;
 public class DataTransferBase {
 
     static public final String defaultDestination = "dcache";
+    static public final String HEADER_STORAGE_AUTH = "Authorization-Storage";
+
+    static public final String DESTINATION_STORAGE = "The destination storage";
+    static public final String STORAGE_AUTH = "Optional credentials for the destination storage, Base-64 encoded 'user:password' or 'access-key:secret-key'";
 
     @Inject
     protected TransfersConfig config;

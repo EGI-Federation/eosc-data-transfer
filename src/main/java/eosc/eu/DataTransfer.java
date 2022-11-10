@@ -82,9 +82,9 @@ public class DataTransfer extends DataTransferBase {
     })
     public Uni<Response> startTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, Transfer transfer,
                                        @RestQuery("dest") @DefaultValue(defaultDestination)
-                                       @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                       @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
                                        String destination,
-                                       @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
+                                       @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
                                        String storageAuth) {
 
         LOG.info("Start new data transfer");
@@ -174,7 +174,7 @@ public class DataTransfer extends DataTransferBase {
                                        @RestQuery("user_dn") @Parameter(description = "Filter by user who started the transfer")
                                        String userDN,
                                        @RestQuery("dest") @DefaultValue(defaultDestination)
-                                       @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                       @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
                                        String destination) {
 
         final String criteriaPrefix = "\n\t\t";
@@ -281,7 +281,7 @@ public class DataTransfer extends DataTransferBase {
     })
     public Uni<Response> getTransferInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, String jobId,
                                          @RestQuery("dest") @DefaultValue(defaultDestination)
-                                         @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                         @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
                                          String destination) {
 
         LOG.infof("Retrieve details of transfer %s", jobId);
@@ -347,7 +347,7 @@ public class DataTransfer extends DataTransferBase {
     })
     public Uni<Response> getTransferInfoField(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, String jobId, String fieldName,
                                               @RestQuery("dest") @DefaultValue(defaultDestination)
-                                              @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                              @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
                                               String destination) {
 
         LOG.infof("Retrieve field '%s' from details of transfer %s", fieldName, jobId);
@@ -417,7 +417,7 @@ public class DataTransfer extends DataTransferBase {
     })
     public Uni<Response> cancelTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, String jobId,
                                         @RestQuery("dest") @DefaultValue(defaultDestination)
-                                        @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                        @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
                                         String destination) {
 
         LOG.infof("Cancel transfer %s", jobId);

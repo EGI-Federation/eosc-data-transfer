@@ -122,7 +122,7 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getStorageInfo(@RestQuery("dest") @DefaultValue(defaultDestination)
-                                        @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
+                                        @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
                                         String destination) {
 
         LOG.infof("Retrieve information about a storage type %s?", destination);
@@ -196,13 +196,13 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> listFolderContent(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                            @RestQuery("folderUrl") @Parameter(required = true, description = "URL to the storage element (folder) to list content of")
-                            String folderUrl,
-                            @RestQuery("dest") @DefaultValue(defaultDestination)
-                            @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                            String destination,
-                            @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
-                            String storageAuth) {
+                                           @RestQuery("folderUrl") @Parameter(required = true, description = "URL to the storage element (folder) to list content of")
+                                           String folderUrl,
+                                           @RestQuery("dest") @DefaultValue(defaultDestination)
+                                           @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                           String destination,
+                                           @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                           String storageAuth) {
 
         LOG.infof("List content of folder %s", folderUrl);
 
@@ -268,13 +268,13 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getFileInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                            @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to get stats for")
-                            String seUrl,
-                            @RestQuery("dest") @DefaultValue(defaultDestination)
-                            @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                            String destination,
-                            @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
-                            String storageAuth) {
+                                     @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to get stats for")
+                                     String seUrl,
+                                     @RestQuery("dest") @DefaultValue(defaultDestination)
+                                     @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                     String destination,
+                                     @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                     String storageAuth) {
 
         LOG.infof("Get details of storage element %s", seUrl);
 
@@ -340,13 +340,13 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getFolderInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                              @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to get stats for")
-                              String seUrl,
-                              @RestQuery("dest") @DefaultValue(defaultDestination)
-                              @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                              String destination,
-                              @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
-                              String storageAuth) {
+                                       @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to get stats for")
+                                       String seUrl,
+                                       @RestQuery("dest") @DefaultValue(defaultDestination)
+                                       @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                       String destination,
+                                       @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                       String storageAuth) {
         // This is the same for files and folders
         return getFileInfo(auth, seUrl, destination, storageAuth);
     }
@@ -377,13 +377,13 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> createFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                             @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to create")
-                             String seUrl,
-                             @RestQuery("dest") @DefaultValue(defaultDestination)
-                             @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                             String destination,
-                             @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
-                             String storageAuth) {
+                                      @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to create")
+                                      String seUrl,
+                                      @RestQuery("dest") @DefaultValue(defaultDestination)
+                                      @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                      String destination,
+                                      @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                      String storageAuth) {
 
         LOG.infof("Create folder %s", seUrl);
 
@@ -448,13 +448,13 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> deleteFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                             @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to delete")
-                             String seUrl,
-                             @RestQuery("dest") @DefaultValue(defaultDestination)
-                             @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                             String destination,
-                             @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
-                             String storageAuth) {
+                                      @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to delete")
+                                      String seUrl,
+                                      @RestQuery("dest") @DefaultValue(defaultDestination)
+                                      @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                      String destination,
+                                      @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                      String storageAuth) {
 
         LOG.infof("Delete folder %s", seUrl);
 
@@ -519,13 +519,13 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> deleteFile(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                            @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to delete")
-                            String seUrl,
-                            @RestQuery("dest") @DefaultValue(defaultDestination)
-                            @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                            String destination,
-                            @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
-                            String storageAuth) {
+                                    @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to delete")
+                                    String seUrl,
+                                    @RestQuery("dest") @DefaultValue(defaultDestination)
+                                    @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                    String destination,
+                                    @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                    String storageAuth) {
 
         LOG.infof("Delete file %s", seUrl);
 
@@ -591,12 +591,12 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> renameFile(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                            StorageRenameOperation operation,
-                            @RestQuery("dest") @DefaultValue(defaultDestination)
-                            @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                            String destination,
-                            @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
-                            String storageAuth) {
+                                    StorageRenameOperation operation,
+                                    @RestQuery("dest") @DefaultValue(defaultDestination)
+                                    @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                    String destination,
+                                    @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                    String storageAuth) {
 
         if(null != operation && null != operation.seUrlOld && null != operation.seUrlNew)
             LOG.infof("Renaming storage element %s to %s", operation.seUrlOld, operation.seUrlNew);
@@ -669,12 +669,12 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> renameFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                             StorageRenameOperation operation,
-                             @RestQuery("dest") @DefaultValue(defaultDestination)
-                             @Parameter(schema = @Schema(implementation = Destination.class), description = "The destination storage")
-                             String destination,
-                             @RestQuery("storageAuth") @Parameter(required = false, description = "Credentials for the destination storage, Base-64 encoded 'user:password'")
-                             String storageAuth) {
+                                      StorageRenameOperation operation,
+                                      @RestQuery("dest") @DefaultValue(defaultDestination)
+                                      @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                      String destination,
+                                      @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                      String storageAuth) {
         // This is the same for files and folders
         return renameFile(auth, operation, destination, storageAuth);
     }

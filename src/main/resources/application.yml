@@ -22,9 +22,6 @@ proxy:
         service: fts
         auth: password
         description: FTP server
-      storm:
-        service: fts
-        auth: token
     services:
       fts:
         name: EGI Data Transfer
@@ -55,7 +52,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.0.14
+    info-version: 1.0.15
   jackson:
     fail-on-unknown-properties: false
   http:

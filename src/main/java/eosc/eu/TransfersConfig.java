@@ -45,5 +45,11 @@ public interface TransfersConfig {
 
         @WithName("class")
         public String className();
+
+        @WithName("trust-store-file")
+        public Optional<String> trustStoreFile();
+
+        @WithName("trust-store-password")
+        public Optional<String> trustStorePassword();
     }
 }

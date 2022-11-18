@@ -7,8 +7,15 @@ import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestHeader;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Security;
+import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,6 +55,43 @@ public class EgiDataTransfer implements TransferService {
     public EgiDataTransfer() {}
 
     /***
+     * Load a certificate store from a resource file.
+     * @param filePath File path relative to the "src/main/resource" folder
+     * @param password The password for the certificate store
+     * @return Loaded key store, empty optional on error
+     */
+    private Optional<KeyStore> loadKeyStore(String filePath, String password) {
+
+        Optional<KeyStore> oks = Optional.empty();
+        try {
+            var providers = Security.getProviders();
+
+            var classLoader = getClass().getClassLoader();
+            var ksf = classLoader.getResourceAsStream(filePath);
+            var ks = KeyStore.getInstance(KeyStore.getDefaultType());
+            ks.load(ksf, password.toCharArray());
+            oks = Optional.of(ks);
+        }
+        catch (FileNotFoundException e) {
+            LOG.error(e);
+        }
+        catch (KeyStoreException e) {
+            LOG.error(e);
+        }
+        catch (CertificateException e) {
+            LOG.error(e);
+        }
+        catch (IOException e) {
+            LOG.error(e);
+        }
+        catch (NoSuchAlgorithmException e) {
+            LOG.error(e);
+        }
+
+        return oks;
+    }
+
+    /***
      * Initialize the REST client for the File Transfer Service that powers EGI Data Transfer
      * @return true on success
      */
@@ -73,14 +117,23 @@ public class EgiDataTransfer implements TransferService {
 
         try {
             // Create the REST client for the transfer service
-            this.fts = RestClientBuilder.newBuilder()
-                        .baseUrl(urlTransferService)
-                        .build(FileTransferService.class);
+            var tsFile = serviceConfig.trustStoreFile().isPresent() ? serviceConfig.trustStoreFile().get() : "";
+            var tsPass = serviceConfig.trustStorePassword().isPresent() ? serviceConfig.trustStorePassword().get() : "";
+            var ots = loadKeyStore(tsFile, tsPass);
+            var rcb = RestClientBuilder.newBuilder().baseUrl(urlTransferService);
+
+            if(ots.isPresent())
+                rcb.trustStore(ots.get());
+
+            this.fts = rcb.build(FileTransferService.class);
 
             return true;
         }
-        catch (RestClientDefinitionException e) {
-            LOG.error(e.getMessage());
+        catch(IllegalStateException ise) {
+            LOG.error(ise.getMessage());
+        }
+        catch (RestClientDefinitionException rcde) {
+            LOG.error(rcde.getMessage());
         }
 
         return false;

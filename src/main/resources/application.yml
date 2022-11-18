@@ -31,6 +31,8 @@ proxy:
         url: https://fts3-public.cern.ch:8446
         class: egi.eu.EgiDataTransfer
         timeout: 5000
+        trust-store-file: cern-truststore.ks
+        trust-store-password: password
 
 quarkus:
   log:
@@ -52,6 +54,7 @@ quarkus:
     urls:
       default: /openapi
       production: https://eosc-data-transfer.vm.fedcloud.eu/openapi
+      development: https://eosc-data-transfer.test.fedcloud.eu/openapi
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi

@@ -8,6 +8,26 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [1.0.18]
+- Added truststore for EGI Data Transfer
+
+## [1.0.17]
+- Fixed misconfiguration causing endpoint GET /storage/types to fail
+
+## [1.0.16]
+- Added support to parse any PID that implements Signposting
+- Added "Authorization-Storage" header param for passing Base-64 encoded storage credentials
+
+## [1.0.15]
+- Added support to parse any PID that redirects to a Zenodo record
+- Added support to parse any PID that redirects to a B2Share record
+
+## [1.0.12]
+- Added endpoint to list all supported destination storages
+- Added endpoint to query details of a supported destination storage
+- Parsing now loads all configured parsers in order, queries them if they can parse DOI
+- Switched SSL to check validity of all certificates
+
 ## [1.0.8]
 - Implemented endpoints to start, cancel, query, search transfers
 - Implemented endpoints to create, rename, delete, query folders

@@ -99,11 +99,11 @@ public class EgiDataTransfer implements TransferService {
      */
     public boolean canBrowseStorage(String destination) {
 
-        if(destination.equals(Transfer.Destination.dcache))
+        if(destination.equals(Transfer.Destination.dcache.toString()))
             return true;
-        else if(destination.equals(Transfer.Destination.ftp))
+        else if(destination.equals(Transfer.Destination.ftp.toString()))
             return true;
-        else if(destination.equals(Transfer.Destination.s3))
+        else if(destination.equals(Transfer.Destination.s3.toString()))
             return true;
 
         return false;

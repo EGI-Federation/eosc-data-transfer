@@ -100,10 +100,10 @@ public class B2ShareParser implements ParserService {
     public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper) {
         boolean isValid = null != doi && !doi.isBlank();
         if(!isValid)
-            return Uni.createFrom().item(Tuple2.of(false, this));
+            return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
 
         // Check if DOI redirects to a B2Share record
-        var result = Uni.createFrom().item(helper.getRedirectedToUrl())
+        var result = Uni.createFrom().item(helper.redirectedToUrl())
 
             .chain(redirectedToUrl -> {
                 if(null != redirectedToUrl)
@@ -147,7 +147,7 @@ public class B2ShareParser implements ParserService {
      */
     public Uni<StorageContent> parseDOI(String auth, String doi) {
         if(null == this.parser)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         if(null == this.recordId || this.recordId.isEmpty())
             return Uni.createFrom().failure(new TransferServiceException("noRecordId"));
@@ -192,7 +192,7 @@ public class B2ShareParser implements ParserService {
                 return Uni.createFrom().item(srcFiles);
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                LOG.errorf("Failed to parse B2Share DOI %s", doi);
             });
 
         return result;

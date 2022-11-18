@@ -1,15 +1,17 @@
 package eosc.eu.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import egi.fts.model.ObjectInfo;
-import parser.b2share.model.B2ShareFile;
-import parser.zenodo.model.ZenodoFile;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Date;
 import javax.ws.rs.core.MediaType;
+
+import parser.zenodo.model.ZenodoFile;
+import parser.b2share.model.B2ShareFile;
+import egi.fts.model.ObjectInfo;
+
+
 
 
 /**
@@ -19,6 +21,8 @@ import javax.ws.rs.core.MediaType;
 public class StorageElement extends StorageElementBase {
 
     public boolean isFolder = false;
+
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public long size;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -45,6 +49,15 @@ public class StorageElement extends StorageElementBase {
      * Constructor
      */
     public StorageElement() { super("StorageElement"); }
+
+    /**
+     * Constructor
+     */
+    public StorageElement(String url, String type) {
+        super("StorageElement");
+        this.accessUrl = url;
+        this.mediaType = type;
+    }
 
     /**
      * Construct from Zenodo file

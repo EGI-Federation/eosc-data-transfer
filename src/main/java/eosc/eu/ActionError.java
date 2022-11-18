@@ -198,7 +198,9 @@ public class ActionError {
             TransferServiceException tse = (TransferServiceException)t;
             this.id = tse.getId();
             if(this.id.equals("fieldNotSupported") ||
-               this.id.equals("doiNotSupported"))
+               this.id.equals("doiNotSupported") ||
+               this.id.equals("doiInvalid") ||
+               this.id.equals("noFilesLink"))
                 // Return BAD_REQUEST instead of INTERNAL_ERROR
                 this.status = Status.BAD_REQUEST;
 

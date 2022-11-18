@@ -1,9 +1,17 @@
 package parser;
 
-import io.vertx.ext.web.client.WebClientOptions;
+import eosc.eu.model.StorageContent;
+import eosc.eu.model.StorageElement;
+import io.smallrye.mutiny.groups.UniCreate;
+import io.smallrye.mutiny.tuples.Tuple2;
+import io.vertx.mutiny.core.MultiMap;
+import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
+
+import java.util.Map;
+import java.util.HashMap;
 
 
 /***
@@ -14,6 +22,7 @@ public class ParserHelper {
     private static final Logger LOG = Logger.getLogger(ParserHelper.class);
     private WebClient client;
     private String redirectedToUrl;
+    private MultiMap headers;
 
 
     /***
@@ -23,16 +32,15 @@ public class ParserHelper {
         this.client = client;
     }
 
-    public String getRedirectedToUrl() { return redirectedToUrl; }
+    public String redirectedToUrl() { return this.redirectedToUrl; }
+
+    public MultiMap headers() { return this.headers; }
 
     /***
-     * Initialize the REST client for B2Share
-     * @return true on success
+     * Check if a URL is being redirected
+     * @return the URL where the passed in URL is redirected, null if not redirected
      */
     public Uni<String> checkRedirect(String url) {
-
-        var options = new WebClientOptions();
-        options.setFollowRedirects(false);
 
         var result = client.headAbs(url)
             .send()
@@ -40,12 +48,75 @@ public class ParserHelper {
                 var redirects = resp.followedRedirects();
                 if(!redirects.isEmpty()) {
                     // Redirected
+                    this.headers = resp.headers();
                     this.redirectedToUrl = redirects.get(redirects.size() - 1);
                     return Uni.createFrom().item(this.redirectedToUrl);
                 }
 
                 // Not redirected
                 return Uni.createFrom().nullItem();
+            })
+            .onFailure().invoke(e -> {
+                LOG.errorf("Error in request HEAD %s", url);
+            });
+
+        return result;
+    }
+
+    /***
+     * Fetch the response HTTP headers from passed in URL
+     * @return HTTP headers
+     */
+    public Uni<Tuple2<String, MultiMap>> fetchHeaders(String url) {
+
+        var result = client.headAbs(url)
+            .send()
+            .chain(resp -> {
+                var urlTarget = url;
+                var redirects = resp.followedRedirects();
+                if(!redirects.isEmpty()) {
+                    // Redirected
+                    this.redirectedToUrl = redirects.get(redirects.size() - 1);
+                    urlTarget = this.redirectedToUrl;
+                }
+
+                this.headers = resp.headers();
+
+                return Uni.createFrom().item(Tuple2.of(urlTarget, this.headers));
+            })
+            .onFailure().invoke(e -> {
+                LOG.errorf("Error in request HEAD %s", url);
+            });
+
+        return result;
+    }
+
+    /***
+     * Fetch the Linkset from passed in URL
+     * @return Parsed Linkset
+     */
+    public Uni<StorageContent> fetchLinkset(String url) {
+
+        var result = client.getAbs(url)
+            .send()
+            .onItem().transform(resp -> resp.bodyAsJsonObject())
+            .chain(json -> {
+                // Got a linkset
+                var content = new StorageContent();
+                var linkset = json.getJsonObject("linkset");
+                var items = (null != linkset) ? linkset.getJsonArray("item") : null;
+
+                if(null != items) {
+                    // Got items from the linkset
+                    for(int i = 0; i < items.size(); i++) {
+                        var item = items.getJsonObject(i);
+                        var href = item.getString("href");
+                        if(null != href)
+                            content.add(new StorageElement(href, item.getString("type")));
+                    }
+                }
+
+                return Uni.createFrom().item(content);
             })
             .onFailure().invoke(e -> {
                 LOG.errorf("Error in request HEAD %s", url);

@@ -8,6 +8,9 @@ proxy:
     b2share:
       name: B2Share
       class: parser.b2share.B2ShareParser
+    signpost:
+      name: Signposting
+      class: parser.generic.SignpostParser
   transfer:
     destinations:
       dcache:
@@ -19,7 +22,7 @@ proxy:
         auth: keys
         description: Amazon S3 compatible object storage
       ftp:
-        service: globus
+        service: fts
         auth: password
         description: FTP server
     services:
@@ -52,7 +55,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.0.15
+    info-version: 1.0.16
   jackson:
     fail-on-unknown-properties: false
   http:

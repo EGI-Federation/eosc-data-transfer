@@ -107,7 +107,7 @@ public class ZenodoParser implements ParserService {
         // Validate DOI without actually fetching the URL
         boolean isValid = null != doi && !doi.isBlank();
         if(!isValid)
-            return Uni.createFrom().item(Tuple2.of(false, this));
+            return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
         else {
             // Standard Zenodo DOI (e.g. https://doi.org/10.5281/zenodo.6511035)
             Pattern p = Pattern.compile("^https?://([\\w\\.]+)/([\\w\\.]+)/zenodo\\.(\\d+).*", Pattern.CASE_INSENSITIVE);
@@ -117,11 +117,12 @@ public class ZenodoParser implements ParserService {
             this.recordId = isValid ? m.group(3) : null;
 
             if(isValid)
+                // Supported
                 return Uni.createFrom().item(Tuple2.of(true, this));
         }
 
         // DOI not in standard Zenodo format, but may still redirect to a Zenodo record
-        var result = Uni.createFrom().item(helper.getRedirectedToUrl())
+        var result = Uni.createFrom().item(helper.redirectedToUrl())
 
             .chain(redirectedToUrl -> {
                 if(null != redirectedToUrl)
@@ -156,8 +157,11 @@ public class ZenodoParser implements ParserService {
      * @return List of files in the data set.
      */
     public Uni<StorageContent> parseDOI(String auth, String doi) {
+        if(null == doi || doi.isBlank())
+            return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
+
         if(null == this.parser)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         if(null == this.recordId || this.recordId.isEmpty())
             return Uni.createFrom().failure(new TransferServiceException("noRecordId"));
@@ -187,7 +191,7 @@ public class ZenodoParser implements ParserService {
                 return Uni.createFrom().item(srcFiles);
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                LOG.errorf("Failed to parse Zenodo DOI %s", doi);
             });
 
         return result;

@@ -165,7 +165,7 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<eosc.eu.model.UserInfo> getUserInfo(String auth) {
         if(null == this.fts)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<eosc.eu.model.UserInfo> result = Uni.createFrom().nullItem()
 
@@ -196,7 +196,7 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<TransferInfo> startTransfer(String auth, String storageAuth, Transfer transfer) {
         if(null == this.fts)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<TransferInfo> result = Uni.createFrom().nullItem()
 
@@ -243,7 +243,7 @@ public class EgiDataTransfer implements TransferService {
                                            String srcStorageElement, String dstStorageElement,
                                            String delegationId, String voName, String userDN) {
         if(null == this.fts)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         // Translate field names
         String jobFields = null;
@@ -294,7 +294,7 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<TransferInfoExtended> getTransferInfo(String auth, String jobId) {
         if(null == this.fts)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<TransferInfoExtended> result = Uni.createFrom().nullItem()
 
@@ -325,7 +325,7 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<Response> getTransferInfoField(String auth, String jobId, String fieldName) {
         if(null == this.fts)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         String jobFieldName = translateTransferInfoFieldName(fieldName);
         if(null == jobFieldName)
@@ -371,7 +371,7 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<TransferInfoExtended> cancelTransfer(String auth, String jobId) {
         if(null == this.fts)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<TransferInfoExtended> result = Uni.createFrom().nullItem()
 
@@ -402,7 +402,7 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<StorageContent> listFolderContent(String auth, String storageAuth, String folderUrl) {
         if(null == this.fts)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<StorageContent> result = Uni.createFrom().nullItem()
 
@@ -433,7 +433,7 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<StorageElement> getStorageElementInfo(String auth, String storageAuth, String seUrl) {
         if(null == this.fts)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<StorageElement> result = Uni.createFrom().nullItem()
 
@@ -465,7 +465,7 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<String> createFolder(String auth, String storageAuth, String folderUrl) {
         if(null == this.fts)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<String> result = Uni.createFrom().nullItem()
 
@@ -497,7 +497,7 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<String> deleteFolder(String auth, String storageAuth, String folderUrl) {
         if(null == this.fts)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<String> result = Uni.createFrom().nullItem()
 
@@ -529,7 +529,7 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<String> deleteFile(String auth, String storageAuth, String fileUrl) {
         if(null == this.fts)
-            return Uni.createFrom().failure(new TransferServiceException("invalidConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<String> result = Uni.createFrom().nullItem()
 
@@ -562,7 +562,7 @@ public class EgiDataTransfer implements TransferService {
      */
     public Uni<String> renameStorageElement(String auth, String storageAuth, String seOld, String seNew) {
         if(null == this.fts)
-            throw new TransferServiceException("invalidConfig");
+            throw new TransferServiceException("configInvalid");
 
         Uni<String> result = Uni.createFrom().nullItem()
 

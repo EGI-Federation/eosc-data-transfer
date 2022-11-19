@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added "Authorization-Storage" header param for passing Base-64 encoded storage credentials
 
 ## [1.0.15]
-- Added support to parse any PID that redirects to a Zenodo record
+- Extended Zenodo support to parse any PID that redirects to a Zenodo record
 - Added support to parse any PID that redirects to a B2Share record
 
 ## [1.0.12]

@@ -57,7 +57,7 @@
 
   <!-- Checks that a package-info.java file exists for each package.     -->
   <!-- See https://checkstyle.org/config_javadoc.html#JavadocPackage -->
-  <module name="JavadocPackage"/>
+  <!-- <module name="JavadocPackage"/> -->
 
   <!-- Checks whether files end with a new line.                        -->
   <!-- See https://checkstyle.org/config_misc.html#NewlineAtEndOfFile -->
@@ -104,8 +104,10 @@
     <module name="InvalidJavadocPosition"/>
     <module name="JavadocMethod"/>
     <module name="JavadocType"/>
+    <!--
     <module name="JavadocVariable"/>
     <module name="JavadocStyle"/>
+    -->
     <module name="MissingJavadocMethod"/>
     <!-- Enables @SuppressWarnings Support                -->
     <module name="SuppressWarningsHolder"/>
@@ -124,7 +126,7 @@
 
     <!-- Checks for imports                              -->
     <!-- See https://checkstyle.org/config_imports.html -->
-    <module name="AvoidStarImport"/>
+    <!-- <module name="AvoidStarImport"/> -->
     <module name="IllegalImport"/>
     <!-- defaults to sun.* packages -->
     <module name="RedundantImport"/>
@@ -147,8 +149,10 @@
     <module name="OperatorWrap"/>
     <module name="ParenPad"/>
     <module name="TypecastParenPad"/>
+    <!--
     <module name="WhitespaceAfter"/>
     <module name="WhitespaceAround"/>
+    -->
 
     <!-- Modifier Checks                                    -->
     <!-- See https://checkstyle.org/config_modifiers.html -->
@@ -159,9 +163,11 @@
     <!-- See https://checkstyle.org/config_blocks.html -->
     <module name="AvoidNestedBlocks"/>
     <module name="EmptyBlock"/>
+    <!--
     <module name="LeftCurly"/>
-    <!-- <module name="NeedBraces"/> -->
+    <module name="NeedBraces"/>
     <module name="RightCurly"/>
+    -->
 
     <!-- Checks for common coding problems               -->
     <!-- See https://checkstyle.org/config_coding.html -->

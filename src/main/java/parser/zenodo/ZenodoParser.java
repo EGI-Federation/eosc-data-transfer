@@ -35,6 +35,7 @@ public class ZenodoParser implements ParserService {
 
     /***
      * Constructor
+     * @param id The key of the parser in the config file
      */
     public ZenodoParser(String id) { this.id = id; }
 

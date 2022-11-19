@@ -14,7 +14,7 @@ import java.io.ByteArrayInputStream;
  * Custom exception mapper for B2Share API calls, allows access to response body in case of error
  */
 @Priority(Priorities.USER)
-public class B2ShareExceptionMapper implements ResponseExceptionMapper<B2ShareException> {
+public final class B2ShareExceptionMapper implements ResponseExceptionMapper<B2ShareException> {
 
     @Override
     public B2ShareException toThrowable(Response response) {

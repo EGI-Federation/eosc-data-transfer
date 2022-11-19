@@ -14,7 +14,7 @@ import java.io.ByteArrayInputStream;
  * Custom exception mapper for Zenodo API calls, allows access to response body in case of error
  */
 @Priority(Priorities.USER)
-public class ZenodoExceptionMapper implements ResponseExceptionMapper<ZenodoException> {
+public final class ZenodoExceptionMapper implements ResponseExceptionMapper<ZenodoException> {
 
     @Override
     public ZenodoException toThrowable(Response response) {

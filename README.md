@@ -8,7 +8,7 @@ and related services.
 This project builds a generic data transfer service that can be used in EOSC to transfer
 large amounts of data to cloud storage, by just indicating the source and destination.
 The EOSC Data Transfer Service features a [RESTful](https://restfulapi.net) Application
-Programming Interface (REST API). 
+Programming Interface (REST API).
 
 The API covers three sets of functionalities:
 
@@ -38,8 +38,8 @@ for data repositories that require authentication.
 
 The API endpoints that create and manage transfers, as well as the ones that manage storage
 elements, do require authorization, in the form of an access token passed via the HTTP
-header `Authorization`. This gets passed to the [transfer service registered to handle
-the selected destination storage](#register-new-destinations-serviced-by-the-new-data-transfer-service).
+header `Authorization`. This gets passed to the
+[transfer service registered to handle the selected destination storage](#register-new-destinations-serviced-by-the-new-data-transfer-service).
 The challenge is that some storage systems used as the target of the transfer may need
 a different authentication and/or authorization (than the one the transfer service uses).
 Thus, an additional set of credentials can be supplied to the endpoints in these groups
@@ -57,7 +57,7 @@ is [Base-64 encoded](https://en.wikipedia.org/wiki/Base64).
 > For example, to pass a username and password to the destination storage, you construct
 > a string like `username:password`, then Base-64 encoded it to `dXNlcm5hbWU6cGFzc3dvcmQ=`,
 > and finally pass this through the HTTP header `Authorization-Storage` when calling
-> e.g. the endpoint `GET /storage/folder/list`. 
+> e.g. the endpoint `GET /storage/folder/list`.
 
 ## Parsing DOIs
 
@@ -78,7 +78,7 @@ use the correct parser to retrieve the list of source files.
 The API supports parsing DOIs to the following data repositories:
 - [Zenodo](https://zenodo.org/)
 - [B2SHARE](https://eudat.eu/catalogue/B2SHARE)
-- Any data repository that supports [Signposting](https://signposting.org) 
+- Any data repository that supports [Signposting](https://signposting.org)
 
 
 ### Integrating new DOI parsers
@@ -89,7 +89,7 @@ the Java class implementing the interface in the configuration.
 
 #### 1. Implement the interface for a generic DOI parser
 
-Implement the Java interface `ParserService` in a class of your choice. 
+Implement the Java interface `ParserService` in a class of your choice.
 
 ```java
 public interface ParserService {
@@ -126,7 +126,7 @@ new parser, with the following settings:
 - `name` is the human-readable name of the data repository.
 - `class` is the canonical Java class name that implements the interface `ParserService`
   for the data repository.
-- `url` is the base URL for the REST client that will be used to call the API of this 
+- `url` is the base URL for the REST client that will be used to call the API of this
   data repository (optional).
 - `timeout` is the maximum timeout in milliseconds for calls to the data repository.
   If not supplied, the default value 5000 (5 seconds) is used.
@@ -215,7 +215,7 @@ The methods can be split into two groups:
 Add a new entry in the [configuration file](#configuration) under `proxy/transfer/services`
 for the new transfer service, with the following settings:
 
-- `name` is the human-readable name of this transfer service. 
+- `name` is the human-readable name of this transfer service.
 - `class` is the canonical Java class name that implements the interface `TransferService`
   for this transfer service.
 - `url` is the base URL for the REST client that will be used to call the API of this transfer service.
@@ -228,13 +228,13 @@ for the new transfer service, with the following settings:
   The path is relative to folder `src/main/resources`.
 - `trust-store-password` is the optional password to the keystore file.
 
-#### 3. Register new destinations serviced by the new data transfer service 
+#### 3. Register new destinations serviced by the new data transfer service
 
 Add entries in the [configuration file](#configuration) under `proxy/transfer/destinations`
 for each destination storage type you want to support, and map it to one of the registered
 transfer services.
 
-The configuration of each storage type consists of: 
+The configuration of each storage type consists of:
 
 - `service` is the key of the transfer service that will handle transfers to this storage type.
 - `description` is the human-readable name of this storage type.
@@ -247,7 +247,7 @@ For storage types that are configured with either `password` or `keys` as the au
 type, you will have to supply the HTTP header parameter `Authorization-Storage` when calling
 the API endpoints. See [here](#authentication-and-authorization) for details.
 
-#### 4. Add the new destinations in the enum of possible destination 
+#### 4. Add the new destinations in the enum of possible destination
 
 In the enum `DataTransferBase.Destination` add new values for each of the storage types
 you added in the previous step. Use the same values as the names of the keys.
@@ -269,12 +269,12 @@ service that gets integrated can optionally implement this functionality. Moreov
 transfer services that support multiple storage types can selectively implement this
 functionality for just a subset of the supported storage types (see the
 method `TransferService::canBrowseStorage()`
-[above](#1-Implement-the-interface-for-a-generic-data-transfer-service)).
+[above](#1-implement-the-interface-for-a-generic-data-transfer-service)).
 
 Clients can query if this functionality is implemented for a storage type by
 using the endpoint `GET /storage/info`.
 
-This functionality covers: 
+This functionality covers:
 
 - listing the content of a storage element
 - query information about a storage element
@@ -305,7 +305,9 @@ You can run your application in dev mode that enables live coding using:
 ./mvnw compile quarkus:dev
 ```
 
+<!-- markdownlint-disable no-bare-urls -->
 Then open the Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+<!-- markdownlint-enable no-bare-urls -->
 
 
 ## Packaging and running the API
@@ -353,10 +355,10 @@ After the HTTPS container is deployed and working properly, connect to the conta
 make sure it is requesting an actual HTTPS certificate. By default, it will use a self-signed
 certificate and will only do dry runs for requesting a certificate to avoid the
 [rate limits](https://letsencrypt.org/docs/rate-limits/) of Let's Encrypt. To do this:
- 
+
 - Run the command `sudo docker exec -it data-transfer-ssl /bin/sh` then
 - In the container change directory `cd /opt`
-- Edit the file `request.sh` and remove the `certbot` parameter `--dry-run` 
+- Edit the file `request.sh` and remove the `certbot` parameter `--dry-run`
 
 > In case you remove the containers of the EOSC Data Transfer API, retain the volume `certificates`,
 > which contains the SSL certificate. This will avoid requesting a new one for the same domain, in case

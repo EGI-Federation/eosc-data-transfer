@@ -13,7 +13,7 @@ in mind that contributions regarding how to best contribute are also welcome.
 
 If you wish to discuss anything related to the project, please open an issue or
 start a topic on the [EGI Community Forum](https://community.egi.eu).
-The maintainers will sometimes move issues off of GitHub to the community forum
+The maintainers will sometimes move issues off of Github to the community forum
 if it is thought that longer, more open-ended discussion would be beneficial,
 including a wider community scope.
 
@@ -24,7 +24,7 @@ issue describing the need for your contribution (refer to this issue number
 when you submit the pull request). We have a 3 steps process for contributions.
 
 1. Fork the project if you have not, and commit changes to a git branch
-1. Create a GitHub Pull Request for your change, following the instructions
+1. Create a Github Pull Request for your change, following the instructions
    in the pull request template.
 1. Perform a [Code Review](#code-review-process) with the maintainers on the
    pull request.
@@ -38,9 +38,9 @@ when you submit the pull request). We have a 3 steps process for contributions.
 
 ### Code Review Process
 
-Code review takes place in GitHub pull requests. See [this
+Code review takes place in Github pull requests. See [this
 article](https://help.github.com/articles/about-pull-requests/) if you're not
-familiar with GitHub Pull Requests.
+familiar with Github Pull Requests.
 
 Once you open a pull request, maintainers will review your code using the
 built-in code review process in Github PRs. The process at this point is as
@@ -53,9 +53,9 @@ follows:
 
 ## Using git
 
-For collaboration purposes, it is best if you create a GitHub account and fork
+For collaboration purposes, it is best if you create a Github account and fork
 the repository to your own account. Once you do this you will be able to push
-your changes to your GitHub repository for others to see and use, and it will
+your changes to your Github repository for others to see and use, and it will
 be easier to send pull requests.
 
 ### Branches and Commits

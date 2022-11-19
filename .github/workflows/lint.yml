@@ -23,6 +23,9 @@ jobs:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Only check new or edited files
-          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_ALL_CODEBASE: true
           # Fail on errors
           DISABLE_ERRORS: false
+          # Skip some linters
+          VALIDATE_JSCPD: false
+          VALIDATE_NATURAL_LANGUAGE: false

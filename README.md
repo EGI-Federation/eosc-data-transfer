@@ -266,7 +266,7 @@ and the entity that stores the data (file, object, etc.).
 
 The API supports managing storage elements in a destination storage. Each data transfer
 service that gets integrated can optionally implement this functionality. Moreover, data
-transfer services that support multiple storage types can selectively support this
+transfer services that support multiple storage types can selectively implement this
 functionality for just a subset of the supported storage types (see the
 method `TransferService::canBrowseStorage()`
 [above](#1-Implement-the-interface-for-a-generic-data-transfer-service)).
@@ -278,7 +278,7 @@ This functionality covers:
 
 - listing the content of a storage element
 - query information about a storage element
-- renaming a storage element (including its path, which means to move it)
+- rename a storage element (including its path, which means to move it)
 - delete a storage element
 - create a hierarchical storage element (folder/container/bucket)
 

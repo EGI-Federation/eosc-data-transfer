@@ -70,21 +70,28 @@ public class DataTransfer extends DataTransferBase {
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
             @APIResponse(responseCode = "202", description = "Accepted",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TransferInfo.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = TransferInfo.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> startTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, Transfer transfer,
                                        @RestQuery("dest") @DefaultValue(defaultDestination)
-                                       @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                       @Parameter(schema = @Schema(implementation = Destination.class),
+                                                  description = DESTINATION_STORAGE)
                                        String destination,
-                                       @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                       @RestHeader(HEADER_STORAGE_AUTH)
+                                       @Parameter(required = false, description = STORAGE_AUTH)
                                        String storageAuth) {
 
         LOG.info("Start new data transfer");
@@ -139,42 +146,65 @@ public class DataTransfer extends DataTransferBase {
     @SecurityRequirement(name = "bearer")
     @Operation(operationId = "findTransfers",  summary = "Find transfers matching search criteria",
                description = "To prevent heavy queries, only non-terminal (active) jobs are returned.\n" +
-                             "If the _state_in_ filter is used, make sure to also provide either _limit_ or _time_window_ to get completed jobs.")
+                             "If the _state_in_ filter is used, make sure to also provide either _limit_ " +
+                             "or _time_window_ to get completed jobs.")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TransferList.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = TransferList.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="No matching transfer",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> findTransfers(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                       @RestQuery("fields") @Parameter(description = "Comma separated list of fields to return for each transfer")
+                                       @RestQuery("fields")
+                                       @Parameter(description =
+                                               "Comma separated list of fields to return for each transfer")
                                        String fields,
-                                       @RestQuery("limit") @DefaultValue("100") @Parameter(description = "Maximum number of transfers to return")
+                                       @RestQuery("limit") @DefaultValue("100")
+                                       @Parameter(description = "Maximum number of transfers to return")
                                        int limit,
-                                       @RestQuery("time_window") @Parameter(description = "For terminal states, limit results to 'hours[:minutes]' into the past")
+                                       @RestQuery("time_window")
+                                       @Parameter(description =
+                                               "For terminal states, limit results to 'hours[:minutes]' into the past")
                                        String timeWindow,
-                                       @RestQuery("state_in") @Parameter(description = "Comma separated list of job states to match, by default only finds active transfers")
+                                       @RestQuery("state_in")
+                                       @Parameter(description =
+                                               "Comma separated list of job states to match, " +
+                                               "by default only finds active transfers")
                                        String stateIn,
-                                       @RestQuery("source_se") @Parameter(description = "Source storage element")
+                                       @RestQuery("source_se")
+                                       @Parameter(description = "Source storage element")
                                        String srcStorageElement,
-                                       @RestQuery("dest_se") @Parameter(description = "Destination storage element")
+                                       @RestQuery("dest_se")
+                                       @Parameter(description = "Destination storage element")
                                        String dstStorageElement,
-                                       @RestQuery("dlg_id") @Parameter(description = "Filter by delegation ID of user who started the transfer")
+                                       @RestQuery("dlg_id")
+                                       @Parameter(description =
+                                               "Filter by delegation ID of user who started the transfer")
                                        String delegationId,
-                                       @RestQuery("vo_name") @Parameter(description = "Filter by virtual organization of user who started the transfer")
+                                       @RestQuery("vo_name")
+                                       @Parameter(description =
+                                               "Filter by virtual organization of user who started the transfer")
                                        String voName,
-                                       @RestQuery("user_dn") @Parameter(description = "Filter by user who started the transfer")
+                                       @RestQuery("user_dn")
+                                       @Parameter(description = "Filter by user who started the transfer")
                                        String userDN,
                                        @RestQuery("dest") @DefaultValue(defaultDestination)
-                                       @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                       @Parameter(schema = @Schema(implementation = Destination.class),
+                                                  description = DESTINATION_STORAGE)
                                        String destination) {
 
         final String criteriaPrefix = "\n\t\t";
@@ -265,23 +295,31 @@ public class DataTransfer extends DataTransferBase {
     @Operation(operationId = "getTransferInfo",  summary = "Retrieve information about a transfer")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TransferInfoExtended.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = TransferInfoExtended.class))),
             @APIResponse(responseCode = "207", description="Transfer error",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Transfer not found",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getTransferInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, String jobId,
                                          @RestQuery("dest") @DefaultValue(defaultDestination)
-                                         @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                         @Parameter(schema = @Schema(implementation = Destination.class),
+                                                    description = DESTINATION_STORAGE)
                                          String destination) {
 
         LOG.infof("Retrieve details of transfer %s", jobId);
@@ -329,25 +367,34 @@ public class DataTransfer extends DataTransferBase {
     @GET
     @Path("/transfer/{jobId}/{fieldName}")
     @SecurityRequirement(name = "bearer")
-    @Operation(operationId = "getTransferInfoField",  summary = "Retrieve specific field from information about a transfer")
+    @Operation(operationId = "getTransferInfoField",
+               summary = "Retrieve specific field from information about a transfer")
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Object.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = Object.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Transfer not found or field does not exist",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> getTransferInfoField(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, String jobId, String fieldName,
+    public Uni<Response> getTransferInfoField(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
+                                              String jobId, String fieldName,
                                               @RestQuery("dest") @DefaultValue(defaultDestination)
-                                              @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                              @Parameter(schema = @Schema(implementation = Destination.class),
+                                                         description = DESTINATION_STORAGE)
                                               String destination) {
 
         LOG.infof("Retrieve field '%s' from details of transfer %s", fieldName, jobId);
@@ -398,26 +445,35 @@ public class DataTransfer extends DataTransferBase {
     @Path("/transfer/{jobId}")
     @SecurityRequirement(name = "bearer")
     @Operation(operationId = "cancelTransfer",  summary = "Cancel a transfer",
-               description = "Returns the canceled transfer with its current status (canceled or any other final status).")
+               description = "Returns the canceled transfer with its current status " +
+                             "(canceled or any other final status).")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TransferInfoExtended.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = TransferInfoExtended.class))),
             @APIResponse(responseCode = "207", description="Transfer error",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Transfer not found",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> cancelTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, String jobId,
                                         @RestQuery("dest") @DefaultValue(defaultDestination)
-                                        @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                        @Parameter(schema = @Schema(implementation = Destination.class),
+                                                   description = DESTINATION_STORAGE)
                                         String destination) {
 
         LOG.infof("Cancel transfer %s", jobId);

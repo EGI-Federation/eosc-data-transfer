@@ -15,9 +15,9 @@ public class ZenodoException extends WebApplicationException {
         super();
     }
 
-    public ZenodoException(Response response, String responseBody) {
-        super(response);
-        this.responseBody = responseBody;
+    public ZenodoException(Response resp, String body) {
+        super(resp);
+        this.responseBody = body;
     }
 
     String responseBody() { return responseBody; }

@@ -65,9 +65,11 @@ public class DataStorage extends DataTransferBase {
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = StorageTypes.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = StorageTypes.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> listStorageTypes() {
 
@@ -80,7 +82,8 @@ public class DataStorage extends DataTransferBase {
                 var storageTypes = new StorageTypes();
                 for(var destination : this.config.destinations().keySet()) {
                     var storageConfig = this.config.destinations().get(destination);
-                    var storageDescription = storageConfig.description().isPresent() ? storageConfig.description().get() :"";
+                    var storageDescription = storageConfig.description().isPresent() ?
+                                                    storageConfig.description().get() : "";
 
                     var params = new ActionParameters(destination);
                     if (!getTransferService(params))
@@ -117,12 +120,15 @@ public class DataStorage extends DataTransferBase {
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = StorageInfo.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = StorageInfo.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getStorageInfo(@RestQuery("dest") @DefaultValue(defaultDestination)
-                                        @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                        @Parameter(schema = @Schema(implementation = Destination.class),
+                                                   description = DESTINATION_STORAGE)
                                         String destination) {
 
         LOG.infof("Retrieve information about a storage type %s?", destination);
@@ -147,7 +153,8 @@ public class DataStorage extends DataTransferBase {
                     return Uni.createFrom().failure(new TransferServiceException("invalidDestination"));
 
                 // Check if browsing storage is supported
-                var storageDescription = storageConfig.description().isPresent() ? storageConfig.description().get() :"";
+                var storageDescription = storageConfig.description().isPresent() ?
+                                                storageConfig.description().get() : "";
                 var storageInfo = new StorageInfo(destination,
                                                   storageConfig.authType(),
                                                   params.ts.canBrowseStorage(destination),
@@ -181,27 +188,41 @@ public class DataStorage extends DataTransferBase {
     @Operation(operationId = "listFolderContent",  summary = "List the content of a folder from a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = StorageContent.class))),
-            @APIResponse(responseCode = "400", description="Invalid parameters/configuration or the storage element is not a folder",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = StorageContent.class))),
+            @APIResponse(responseCode = "400",
+                         description = "Invalid parameters/configuration or the storage element is not a folder",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Storage element not found",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> listFolderContent(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                           @RestQuery("folderUrl") @Parameter(required = true, description = "URL to the storage element (folder) to list content of")
+                                           @RestQuery("folderUrl")
+                                           @Parameter(required = true,
+                                                      description =
+                                                          "URL to the storage element (folder) to list content of")
                                            String folderUrl,
                                            @RestQuery("dest") @DefaultValue(defaultDestination)
-                                           @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                           @Parameter(schema = @Schema(implementation = Destination.class),
+                                                      description = DESTINATION_STORAGE)
                                            String destination,
-                                           @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                           @RestHeader(HEADER_STORAGE_AUTH)
+                                           @Parameter(required = false,
+                                                      description = STORAGE_AUTH)
                                            String storageAuth) {
 
         LOG.infof("List content of folder %s", folderUrl);
@@ -253,27 +274,38 @@ public class DataStorage extends DataTransferBase {
     @Operation(operationId = "getFileInfo",  summary = "Retrieve information about a file in a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = StorageElement.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = StorageElement.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Storage element not found",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getFileInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                     @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to get stats for")
+                                     @RestQuery("seUrl")
+                                     @Parameter(required = true,
+                                                description = "URL to the storage element (file) to get stats for")
                                      String seUrl,
                                      @RestQuery("dest") @DefaultValue(defaultDestination)
-                                     @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                     @Parameter(schema = @Schema(implementation = Destination.class),
+                                                description = DESTINATION_STORAGE)
                                      String destination,
-                                     @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                     @RestHeader(HEADER_STORAGE_AUTH)
+                                     @Parameter(required = false, description = STORAGE_AUTH)
                                      String storageAuth) {
 
         LOG.infof("Get details of storage element %s", seUrl);
@@ -325,27 +357,38 @@ public class DataStorage extends DataTransferBase {
     @Operation(operationId = "getFolderInfo",  summary = "Retrieve information about a folder in a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = StorageElement.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = StorageElement.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Storage element not found",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getFolderInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                       @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to get stats for")
+                                       @RestQuery("seUrl")
+                                       @Parameter(required = true,
+                                                  description = "URL to the storage element (folder) to get stats for")
                                        String seUrl,
                                        @RestQuery("dest") @DefaultValue(defaultDestination)
-                                       @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                       @Parameter(schema = @Schema(implementation = Destination.class),
+                                                  description = DESTINATION_STORAGE)
                                        String destination,
-                                       @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                       @RestHeader(HEADER_STORAGE_AUTH)
+                                       @Parameter(required = false, description = STORAGE_AUTH)
                                        String storageAuth) {
         // This is the same for files and folders
         return getFileInfo(auth, seUrl, destination, storageAuth);
@@ -366,23 +409,32 @@ public class DataStorage extends DataTransferBase {
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success"),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> createFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                      @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to create")
+                                      @RestQuery("seUrl")
+                                      @Parameter(required = true,
+                                                 description = "URL to the storage element (folder) to create")
                                       String seUrl,
                                       @RestQuery("dest") @DefaultValue(defaultDestination)
-                                      @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                      @Parameter(schema = @Schema(implementation = Destination.class),
+                                                 description = DESTINATION_STORAGE)
                                       String destination,
-                                      @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                      @RestHeader(HEADER_STORAGE_AUTH)
+                                      @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
 
         LOG.infof("Create folder %s", seUrl);
@@ -435,25 +487,35 @@ public class DataStorage extends DataTransferBase {
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success"),
             @APIResponse(responseCode = "400", description="Invalid parameters/configuration or storage element is not a folder",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Folder not found",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> deleteFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                      @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (folder) to delete")
+                                      @RestQuery("seUrl")
+                                      @Parameter(required = true,
+                                                 description = "URL to the storage element (folder) to delete")
                                       String seUrl,
                                       @RestQuery("dest") @DefaultValue(defaultDestination)
-                                      @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                      @Parameter(schema = @Schema(implementation = Destination.class),
+                                                 description = DESTINATION_STORAGE)
                                       String destination,
-                                      @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                      @RestHeader(HEADER_STORAGE_AUTH)
+                                      @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
 
         LOG.infof("Delete folder %s", seUrl);
@@ -506,25 +568,35 @@ public class DataStorage extends DataTransferBase {
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success"),
             @APIResponse(responseCode = "400", description="Invalid parameters/configuration or storage element is not a file",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="File not found",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> deleteFile(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                    @RestQuery("seUrl") @Parameter(required = true, description = "URL to the storage element (file) to delete")
+                                    @RestQuery("seUrl")
+                                    @Parameter(required = true,
+                                               description = "URL to the storage element (file) to delete")
                                     String seUrl,
                                     @RestQuery("dest") @DefaultValue(defaultDestination)
-                                    @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                    @Parameter(schema = @Schema(implementation = Destination.class),
+                                               description = DESTINATION_STORAGE)
                                     String destination,
-                                    @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                    @RestHeader(HEADER_STORAGE_AUTH)
+                                    @Parameter(required = false, description = STORAGE_AUTH)
                                     String storageAuth) {
 
         LOG.infof("Delete file %s", seUrl);
@@ -578,24 +650,32 @@ public class DataStorage extends DataTransferBase {
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success"),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="File not found",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> renameFile(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                     StorageRenameOperation operation,
                                     @RestQuery("dest") @DefaultValue(defaultDestination)
-                                    @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                    @Parameter(schema = @Schema(implementation = Destination.class),
+                                               description = DESTINATION_STORAGE)
                                     String destination,
-                                    @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                    @RestHeader(HEADER_STORAGE_AUTH)
+                                    @Parameter(required = false, description = STORAGE_AUTH)
                                     String storageAuth) {
 
         if(null != operation && null != operation.seUrlOld && null != operation.seUrlNew)
@@ -624,7 +704,8 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(renamed -> {
                 // Storage element got renamed
-                LOG.infof("Renamed storage element %s to %s (%s)", operation.seUrlOld, operation.seUrlNew, renamed);
+                LOG.infof("Renamed storage element %s to %s (%s)",
+                          operation.seUrlOld, operation.seUrlNew, renamed);
 
                 // Success
                 return Uni.createFrom().item(Response.ok().build());
@@ -639,6 +720,7 @@ public class DataStorage extends DataTransferBase {
 
         return result;
     }
+
 
     /**
      * Rename a folder.
@@ -656,27 +738,34 @@ public class DataStorage extends DataTransferBase {
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success"),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Folder not found",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> renameFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                       StorageRenameOperation operation,
                                       @RestQuery("dest") @DefaultValue(defaultDestination)
-                                      @Parameter(schema = @Schema(implementation = Destination.class), description = DESTINATION_STORAGE)
+                                      @Parameter(schema = @Schema(implementation = Destination.class),
+                                              description = DESTINATION_STORAGE)
                                       String destination,
-                                      @RestHeader(HEADER_STORAGE_AUTH) @Parameter(required = false, description = STORAGE_AUTH)
+                                      @RestHeader(HEADER_STORAGE_AUTH)
+                                      @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
         // This is the same for files and folders
         return renameFile(auth, operation, destination, storageAuth);
     }
-
 }

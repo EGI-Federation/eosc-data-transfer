@@ -39,7 +39,7 @@ for data repositories that require authentication.
 The API endpoints that create and manage transfers, as well as the ones that manage storage
 elements, do require authorization, in the form of an access token passed via the HTTP
 header `Authorization`. This gets passed to the
-[transfer service registered to handle the selected destination storage](#register-new-destinations-serviced-by-the-new-data-transfer-service).
+[transfer service registered to handle the destination storage](#3-register-new-destinations-serviced-by-the-new-data-transfer-service).
 The challenge is that some storage systems used as the target of the transfer may need
 a different authentication and/or authorization (than the one the transfer service uses).
 Thus, an additional set of credentials can be supplied to the endpoints in these groups
@@ -93,12 +93,12 @@ Implement the Java interface `ParserService` in a class of your choice.
 
 ```java
 public interface ParserService {
-    public abstract boolean init(ParserConfig config);
-    public abstract String getId();
-    public abstract String getName();
-    public abstract String sourceId();
-    public abstract Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper);
-    public abstract Uni<StorageContent> parseDOI(String auth, String doi);
+    boolean init(ParserConfig config);
+    String getId();
+    String getName();
+    String sourceId();
+    Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper);
+    Uni<StorageContent> parseDOI(String auth, String doi);
 }
 ```
 
@@ -176,29 +176,29 @@ Implement the Java interface `TransferService` in a class of your choice.
 
 ```java
 public interface TransferService {
-    public abstract boolean initService(TransferServiceConfig config);
-    public abstract String getServiceName();
-    public abstract boolean canBrowseStorage(String destination);
-    public abstract String translateTransferInfoFieldName(String genericFieldName);
-    public abstract Uni<UserInfo> getUserInfo(String tsAuth);
+    boolean initService(TransferServiceConfig config);
+    String getServiceName();
+    boolean canBrowseStorage(String destination);
+    String translateTransferInfoFieldName(String genericFieldName);
+    Uni<UserInfo> getUserInfo(String tsAuth);
 
     // Methods for data transfers
-    public abstract Uni<TransferInfo> startTransfer(String tsAuth, String storageAuth, Transfer transfer);
-    public abstract Uni<TransferList> findTransfers(String tsAuth, String fields, int limit,
-                                                    String timeWindow, String stateIn,
-                                                    String srcStorageElement, String dstStorageElement,
-                                                    String delegationId, String voName, String userDN);
-    public abstract Uni<TransferInfoExtended> getTransferInfo(String tsAuth, String jobId);
-    public abstract Uni<Response> getTransferInfoField(String tsAuth, String jobId, String fieldName);
-    public abstract Uni<TransferInfoExtended> cancelTransfer(String tsAuth, String jobId);
+    Uni<TransferInfo> startTransfer(String tsAuth, String storageAuth, Transfer transfer);
+    Uni<TransferList> findTransfers(String tsAuth, String fields, int limit,
+                                    String timeWindow, String stateIn,
+                                    String srcStorageElement, String dstStorageElement,
+                                    String delegationId, String voName, String userDN);
+    Uni<TransferInfoExtended> getTransferInfo(String tsAuth, String jobId);
+    Uni<Response> getTransferInfoField(String tsAuth, String jobId, String fieldName);
+    Uni<TransferInfoExtended> cancelTransfer(String tsAuth, String jobId);
 
     // Methods for storage elements
-    public abstract Uni<StorageContent> listFolderContent(String tsAuth, String storageAuth, String folderUrl);
-    public abstract Uni<StorageElement> getStorageElementInfo(String tsAuth, String storageAuth, String seUrl);
-    public abstract Uni<String> createFolder(String tsAuth, String storageAuth, String folderUrl);
-    public abstract Uni<String> deleteFolder(String tsAuth, String storageAuth, String folderUrl);
-    public abstract Uni<String> deleteFile(String tsAuth, String storageAuth, String fileUrl);
-    public abstract Uni<String> renameStorageElement(String tsAuth, String storageAuth, String seOld, String seNew);
+    Uni<StorageContent> listFolderContent(String tsAuth, String storageAuth, String folderUrl);
+    Uni<StorageElement> getStorageElementInfo(String tsAuth, String storageAuth, String seUrl);
+    Uni<String> createFolder(String tsAuth, String storageAuth, String folderUrl);
+    Uni<String> deleteFolder(String tsAuth, String storageAuth, String folderUrl);
+    Uni<String> deleteFile(String tsAuth, String storageAuth, String fileUrl);
+    Uni<String> renameStorageElement(String tsAuth, String storageAuth, String seOld, String seNew);
 }
 ```
 

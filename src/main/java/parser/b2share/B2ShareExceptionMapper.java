@@ -2,6 +2,7 @@ package parser.b2share;
 
 import org.eclipse.microprofile.rest.client.ext.ResponseExceptionMapper;
 import org.jboss.resteasy.reactive.common.jaxrs.ResponseImpl;
+import static org.jboss.resteasy.reactive.RestResponse.StatusCode;
 
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
@@ -28,7 +29,7 @@ public final class B2ShareExceptionMapper implements ResponseExceptionMapper<B2S
 
     @Override
     public boolean handles(int status, MultivaluedMap<String, Object> headers) {
-        return status >= 400;
+        return status >= StatusCode.BAD_REQUEST;
     }
 
     private String getBody(Response response) {

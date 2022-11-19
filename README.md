@@ -142,17 +142,17 @@ in a destination storage has to be passed a destination type. This selects the d
 service that will be used to perform the data transfer, freeing the clients of the API from
 having to know which data transfer service to pick for each destination. **Each destination type
 is mapped to exactly one data transfer service** in the
-[configuration](#3.-register-new-destinations-serviced-by-the-new-data-transfer-service).
+[configuration](#3-register-new-destinations-serviced-by-the-new-data-transfer-service).
 
 Note that the API uses the concept of a **storage type**, instead of the protocol
 type, to select the transfer service. This makes the API flexible, by allowing multiple
 destination storages that use the same protocol to be handled by different transfer services,
-but at the same time it also allows an entire protocol (e.g. FTP, see below) to be handled
+but at the same time it also allows an entire protocol (e.g. FTP, see below) to be handled by
 a specific transfer service.
 
-> If you do not supply the "dest" query parameter when making an API call to
+> If you do not supply the `dest` query parameter when making an API call to
 > perform a transfer or a storage element related operation or query, the default value
-> "_dcache_" will be supplied instead.
+> `dcache` will be supplied instead.
 
 ### Supported transfer destinations
 
@@ -172,7 +172,7 @@ implementing the interface as the handler for one or more destinations.
 
 #### 1. Implement the interface for a generic data transfer service
 
-Implement the interface `TransferService` in a class of your choice.
+Implement the Java interface `TransferService` in a class of your choice.
 
 ```java
 public interface TransferService {
@@ -221,11 +221,12 @@ for the new transfer service, with the following settings:
 - `url` is the base URL for the REST client that will be used to call the API of this transfer service.
 - `timeout` is the maximum timeout in milliseconds for calls to the transfer service.
    If not supplied, the default value 5000 (5 seconds) is used.
-- `trust-store-file` is the path relative to folder `/src/main/resources` to a keystore file
-  containing certificates that should be trusted when connecting to the transfer service.
+- `trust-store-file` is an optional path to a keystore file containing certificates
+  that should be trusted when connecting to the transfer service.
   Use it when the [CA](https://en.wikipedia.org/wiki/Certificate_authority) that issued the
   certificate(s) of the transfer service is not one of the well known-root CAs.
-- `trust-store-password` is the password to the keystore file.
+  The path is relative to folder `/src/main/resources`.
+- `trust-store-password` is the optional password to the keystore file.
 
 #### 3. Register new destinations serviced by the new data transfer service 
 
@@ -258,9 +259,31 @@ API endpoints.
 
 ## Managing storage elements
 
-The API also supports managing files and folders in a destination storage. Each data transfer service
-that gets integrated can optionally implement this functionality. Clients can query if this
-functionality is implemented for a destination storage by using the endpoint `GET /storage/info`.
+A **storage element** is where user's data is stored. It is a generic term meant to
+hide the complexity of different types of storage technologies. It can mean both
+an element of the storage system's hierarchy (directory, folder, container, bucket, etc.)
+and the entity that stores the data (file, object, etc.).  
+
+The API supports managing storage elements in a destination storage. Each data transfer
+service that gets integrated can optionally implement this functionality. Moreover, data
+transfer services that support multiple storage types can selectively support this
+functionality for just a subset of the supported storage types (see the
+method `TransferService::canBrowseStorage()`
+[above](#1-Implement-the-interface-for-a-generic-data-transfer-service)).
+
+Clients can query if this functionality is implemented for a storage type by
+using the endpoint `GET /storage/info`.
+
+This functionality covers: 
+
+- listing the content of a storage element
+- query information about a storage element
+- renaming a storage element (including its path, which means to move it)
+- delete a storage element
+- create a hierarchical storage element (folder/container/bucket)
+
+> Storage elements that store data (files/objects) can only be created by a
+> data transfer, not by the API endpoints in this group.
 
 
 ## Configuration

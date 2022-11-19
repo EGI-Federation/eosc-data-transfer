@@ -2,8 +2,8 @@ proxy:
   parsers:
     zenodo:
       name: Zenodo
-      url: https://zenodo.org
       class: parser.zenodo.ZenodoParser
+      url: https://zenodo.org
       timeout: 5000
     b2share:
       name: B2Share
@@ -28,8 +28,8 @@ proxy:
     services:
       fts:
         name: EGI Data Transfer
-        url: https://fts3-public.cern.ch:8446
         class: egi.eu.EgiDataTransfer
+        url: https://fts3-public.cern.ch:8446
         timeout: 5000
         trust-store-file: cern-truststore.ks
         trust-store-password: "4hFsKWd.839-2h44X"
@@ -53,8 +53,6 @@ quarkus:
     theme: flattop
     urls:
       default: /openapi
-      production: https://eosc-data-transfer.vm.fedcloud.eu/openapi
-      development: https://eosc-data-transfer.test.fedcloud.eu/openapi
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi

@@ -21,7 +21,7 @@ This project uses [Quarkus](https://quarkus.io/), the Supersonic Subatomic Java 
 
 ## Authentication and authorization
 
-All three groups of API endpoints mentioned above support may require authorization.
+All three groups of API endpoints mentioned above support authorization.
 The generic data transfer service behind the EOSC Data Transfer API aims to be agnostic
 with regard to authorization, thus the HTTP header `Authorization` (if present) will be
 forwarded as received.
@@ -40,16 +40,24 @@ The API endpoints that create and manage transfers, as well as the ones that man
 elements, do require authorization, in the form of an access token passed via the HTTP
 header `Authorization`. This gets passed to the actual [transfer service registered to handle
 the selected destination storage](#register-new-destinations-serviced-by-the-new-data-transfer-service).
-The challenge is that some storage systems used as the target of the transfer may also
-require authentication and/or authorization. Thus, an additional set of credentials may be
-required to be supplied to the endpoints in this group.
+The challenge is that some storage systems used as the target of the transfer may need
+a different authentication and/or authorization (than the one the transfer service uses).
+Thus, an additional set of credentials can be supplied to the endpoints in this group via
+the HTTP header `Authorization-Storage`.
 
 > For example, for transfers to [EGI dCache](https://www.dcache.org), the configured transfer service
 > that handles the transfers is [EGI Data Transfer](https://www.egi.eu/service/data-transfer/).
 > These both can use the same EGI Check-in access token, thus no additional credentials are needed
-> besides the access token for the transfer service.
+> besides the access token for the transfer service, passed via the `Authorization` HTTP header.
 
-TODO: Describe how FTP username/password and S3 keys are passed.
+When used, the HTTP header parameter `Authorization-Storage` receives a
+key value pair, separated by a colon (:), no leading or trailing whitespace, which
+is [Base-64 encoded](https://en.wikipedia.org/wiki/Base64).
+
+> For example, to pass a username and password to the destination storage, you construct
+> a string like `username:password`, then Base-64 encoded it to `dXNlcm5hbWU6cGFzc3dvcmQ=`,
+> and finally pass this through the HTTP header `Authorization-Storage` when calling
+> e.g. the endpoint `GET /storage/folder/list`. 
 
 ## Parsing DOIs
 
@@ -83,8 +91,19 @@ the Java class implementing the interface in the configuration.
 
 Implement the Java interface `ParserService` in a class of your choice. 
 
-Your class must have a constructor that receives a `String id`, which must be returned
-by the method `getId()`.
+```java
+public interface ParserService {
+    public abstract boolean init(ParserConfig config);
+    public abstract String getId();
+    public abstract String getName();
+    public abstract String sourceId();
+    public abstract Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper);
+    public abstract Uni<StorageContent> parseDOI(String auth, String doi);
+}
+```
+
+> Your class must have a constructor that receives a `String id`, which must be returned
+> by the method `getId()`.
 
 When the API `GET /parser` is called to parse a DOI, all configured parsers will be tried,
 by calling the method `canParseDOI()`, until one is identified that can parse the DOI. If no
@@ -106,37 +125,42 @@ new parser, with the following settings:
 
 - `name` is the human-readable name of the data repository.
 - `class` is the canonical Java class name that implements the interface `ParserService`
-  for this data repository.
+  for the data repository.
 - `url` is the base URL for the REST client that will be used to call the API of this 
-  data source (optional).
+  data repository (optional).
 - `timeout` is the maximum timeout in milliseconds for calls to the data repository.
   If not supplied, the default value 5000 (5 seconds) is used.
 
 
 ## Creating and managing data transfers
 
-The API supports creation of new data transfer jobs, finding data transfers, querying information
+The API supports creation of new data transfers (aka jobs), finding data transfers, querying information
 about data transfers, and canceling data transfers.
-
-The API also supports managing files and folders in a destination storage. Each data transfer service
-that gets integrated can optionally implement this functionality. Clients can query if this
-functionality is implemented for a destination storage by using the endpoint `GET /storage/info`.
 
 Every API endpoint that performs operations or queries on data transfers or on storage elements
 in a destination storage has to be passed a destination type. This selects the data transfer
 service that will be used to perform the data transfer, freeing the clients of the API from
-having to know which data transfer service to pick for each destination.
+having to know which data transfer service to pick for each destination. **Each destination type
+is mapped to exactly one data transfer service in the configuration**.
 
-> Note that if you do not supply the "dest" query parameter when making an API call
-> to perform a transfer or a storage element related operation or query, the default value
+Note that the API uses the concept of a **storage type**, instead of the protocol
+type, to select the transfer service. This makes the API flexible, by allowing multiple
+destination storages that use the same protocol to be handled by different transfer services,
+but at the same time it also allows an entire protocol (e.g. FTP, see below) to be handled
+a specific transfer service.
+
+> If you do not supply the "dest" query parameter when making an API call to
+> perform a transfer or a storage element related operation or query, the default value
 > "_dcache_" will be supplied instead.
 
 ### Supported transfer destinations
 
-Initially, [EGI Transfer Service](https://docs.egi.eu/users/data/management/data-transfer/) is integrated into the
-EOSC Data Transfer API, supporting the following destination storages:
+Initially, the [EGI Data Transfer](https://docs.egi.eu/users/data/management/data-transfer/)
+is integrated into the EOSC Data Transfer API, supporting the following destination storages:
 
-- [EGI dCache](https://www.dcache.org) by passing "_dcache_" as the "dest" query parameter to the API
+- [EGI dCache](https://www.dcache.org)
+- [FTP servers](https://en.wikipedia.org/wiki/File_Transfer_Protocol)
+- [S3-compatible](en.wikipedia.org/wiki/Amazon_S3) compatible object storages
 
 
 ### Integrating new data transfer services
@@ -149,38 +173,105 @@ implementing the interface as the handler for one or more destinations.
 
 Implement the interface `TransferService` in a class of your choice.
 
-> The method `canBrowseStorage()` signals to the frontend whether browsing the
-> destination storage is supported for the destination(s) registered for this data transfer service.
+```java
+public interface TransferService {
+    public abstract boolean initService(TransferServiceConfig config);
+    public abstract String getServiceName();
+    public abstract boolean canBrowseStorage(String destination);
+    public abstract String translateTransferInfoFieldName(String genericFieldName);
+    public abstract Uni<UserInfo> getUserInfo(String tsAuth);
+
+    // Methods for data transfers
+    public abstract Uni<TransferInfo> startTransfer(String tsAuth, String storageAuth, Transfer transfer);
+    public abstract Uni<TransferList> findTransfers(String tsAuth, String fields, int limit,
+                                                    String timeWindow, String stateIn,
+                                                    String srcStorageElement, String dstStorageElement,
+                                                    String delegationId, String voName, String userDN);
+    public abstract Uni<TransferInfoExtended> getTransferInfo(String tsAuth, String jobId);
+    public abstract Uni<Response> getTransferInfoField(String tsAuth, String jobId, String fieldName);
+    public abstract Uni<TransferInfoExtended> cancelTransfer(String tsAuth, String jobId);
+
+    // Methods for storage elements
+    public abstract Uni<StorageContent> listFolderContent(String tsAuth, String storageAuth, String folderUrl);
+    public abstract Uni<StorageElement> getStorageElementInfo(String tsAuth, String storageAuth, String seUrl);
+    public abstract Uni<String> createFolder(String tsAuth, String storageAuth, String folderUrl);
+    public abstract Uni<String> deleteFolder(String tsAuth, String storageAuth, String folderUrl);
+    public abstract Uni<String> deleteFile(String tsAuth, String storageAuth, String fileUrl);
+    public abstract Uni<String> renameStorageElement(String tsAuth, String storageAuth, String seOld, String seNew);
+}
+```
+
+> Your class must have a constructor with no parameters.
+
+The methods can be split into two groups:
+
+- The methods for handling data transfers **must** be implemented
+- The methods for storage elements **should** only be implemented for storage types
+  for which the method `canBrowseStorage()` returns `true`.
 
 #### 2. Add configuration for the new data transfer service
 
-Add a new entry in the [configuration file](#configuration) under `proxy/transfer/services` for the
-new transfer service, with the following settings:
+Add a new entry in the [configuration file](#configuration) under `proxy/transfer/services`
+for the new transfer service, with the following settings:
 
 - `name` is the human-readable name of this transfer service. 
-- `url` is the base URL for the REST client that will be used to call the API of this transfer service. 
-- `class` is the canonical Java class name that implements the interface `TransferService` for this transfer service. 
+- `class` is the canonical Java class name that implements the interface `TransferService`
+  for this transfer service.
+- `url` is the base URL for the REST client that will be used to call the API of this transfer service.
 - `timeout` is the maximum timeout in milliseconds for calls to the transfer service.
-   If not supplied, the default value 5000 (5 seconds) is used.  
+   If not supplied, the default value 5000 (5 seconds) is used.
+- `trust-store-file` is the path relative to folder `/src/main/resources` to a keystore file
+  containing certificates that should be trusted when connecting to the transfer service.
+  Use it when the [CA](https://en.wikipedia.org/wiki/Certificate_authority) that issued the
+  certificate(s) of the transfer service is not one of the well known-root CAs.
+- `trust-store-password` is the password to the keystore file.
 
 #### 3. Register new destinations serviced by the new data transfer service 
 
-Add one or more entries in the [configuration file](#configuration) under `proxy/transfer/destinations`,
-one for each destination for which this transfer service will be used to perform data transfers.  
+Add entries in the [configuration file](#configuration) under `proxy/transfer/destinations`
+for each destination storage type you want to support, and map it to one of the registered
+transfer services.
+
+The configuration of each storage type consists of: 
+
+- `service` is the key of the transfer service that will handle transfers to this storage type.
+- `description` is the human-readable name of this storage type.
+- `auth` is the type of authentication required by the storage system, one of these values:
+  - **token** means the storage uses the same OIDC auth token as the transfer service
+  - **password** means the storage needs a username and a password for authentication
+  - **keys** means the storage needs an access key and a secret key for authentication
+
+For storage types that are configured with either `password` or `keys` as the authentication
+type, you will have to supply the HTTP header parameter `Authorization-Storage` when calling
+the API endpoints. See [here](#authentication-and-authorization) for details.
 
 #### 4. Add the new destinations in the enum of possible destination 
 
-In the enum `DataTransferBase.Destination` add new values for each of the destinations for which
-the new data transfer implementation shall be used. Use the same values as the names of the keys
-in the previous step (3).
+In the enum `DataTransferBase.Destination` add new values for each of the storage types
+you added in the previous step. Use the same values as the names of the keys.
+
+This way each entry under the node `proxy/transfer/destinations` in the configuration
+file becomes one possible value for the destination storage parameter `dest` of the
+API endpoints.
+
+
+## Managing storage elements
+
+The API also supports managing files and folders in a destination storage. Each data transfer service
+that gets integrated can optionally implement this functionality. Clients can query if this
+functionality is implemented for a destination storage by using the endpoint `GET /storage/info`.
 
 
 ## Configuration
 
 The application configuration file is in `src/main/resources/application.yml`.
 
-> The settings that are supposed to be overridable with environment variables should also
-> be added to `src/main/resources/application.properties`.
+See [here](#integrating-new-doi-parsers) for how to configure the data repository
+parsers used by the API and [here](#integrating-new-data-transfer-services) for
+how to extend the API with new transfer services and storage types.
+
+You can change the port on which the API runs by altering the setting `quarkus/http/port`
+(8080 by default).
 
 
 ## Running the API in dev mode
@@ -191,6 +282,7 @@ You can run your application in dev mode that enables live coding using:
 ```
 
 Then open the Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+
 
 ## Packaging and running the API
 
@@ -209,6 +301,7 @@ If you want to build an _über-jar_, execute the following command:
 ```
 
 The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+
 
 ## Running the API using Docker Compose
 
@@ -234,24 +327,25 @@ to request an SSL certificate for HTTPS.
 
 After the HTTPS container is deployed and working properly, connect to the container and
 make sure it is requesting an actual HTTPS certificate. By default, it will use a self-signed
-certificate and will only do dry runs for requesting a certificate. This is so to avoid the
+certificate and will only do dry runs for requesting a certificate to avoid the
 [rate limits](https://letsencrypt.org/docs/rate-limits/) of Let's Encrypt. To do this:
  
-- Run the command `sudo docker exec -it data-transfer-cert /bin/sh` then
+- Run the command `sudo docker exec -it data-transfer-ssl /bin/sh` then
 - In the container change directory `cd /opt`
 - Edit the file `request.sh` and remove the `certbot` parameter `--dry-run` 
 
-> In case you remove the containers of the EOSC Data Transfer API, retain the volume `data_transfer_cert`,
+> In case you remove the containers of the EOSC Data Transfer API, retain the volume `certificates`,
 > which contains the SSL certificate. This will avoid requesting a new one for the same domain, in case
 > you redeploy the API (prevents exceeding Let's Encrypt rate limit).
 
 
 ## Related Guides
 
+- [REST server implementation](https://quarkus.io/guides/resteasy-reactive) Writing reactive REST services
 - [REST client implementation](https://quarkus.io/guides/rest-client-reactive): REST client to easily call REST APIs
-- [REST server implementation](https://quarkus.io/guides/rest-json): REST endpoint framework to implement REST APIs
-- [REST Easy Reactive](https://quarkus.io/guides/resteasy-reactive) Writing reactive REST services
+- [Configuration reference](https://quarkus.io/guides/config-reference): Configuration reference guide
 - [YAML Configuration](https://quarkus.io/guides/config#yaml): Use YAML to configure your application
+- [Introduction to CDI](https://quarkus.io/guides/cdi): Contexts and dependency injection guide
 - [Swagger UI](https://quarkus.io/guides/openapi-swaggerui): Add user-friendly UI to view and test your REST API
-- [Mutiny Guides](https://smallrye.io/smallrye-mutiny/guides): Reactive programming with Mutiny
+- [Mutiny Guides](https://smallrye.io/smallrye-mutiny/1.7.0/guides): Reactive programming with Mutiny
 - [Optionals](https://dzone.com/articles/optional-in-java): How to use Optional in Java

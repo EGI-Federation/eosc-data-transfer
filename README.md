@@ -61,7 +61,7 @@ is [Base-64 encoded](https://en.wikipedia.org/wiki/Base64).
 
 ## Parsing DOIs
 
-The API supports parsing digital object identifier (DOIs) and will return a list of files
+The API supports parsing digital object identifiers (DOIs) and will return a list of files
 in the repository indicated by the DOI. It will automatically identify the DOI type and will
 use the correct parser to retrieve the list of source files.
 

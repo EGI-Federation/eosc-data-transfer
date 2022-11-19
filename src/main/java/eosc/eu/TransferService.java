@@ -1,7 +1,6 @@
 package eosc.eu;
 
 import io.smallrye.mutiny.Uni;
-
 import javax.ws.rs.core.Response;
 
 import eosc.eu.model.*;

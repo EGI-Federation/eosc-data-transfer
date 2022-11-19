@@ -1,7 +1,6 @@
 package egi.fts;
 
 import io.smallrye.mutiny.Uni;
-
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
 

@@ -1,14 +1,14 @@
 package eosc.eu.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import egi.fts.model.JobInfoExtended;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
+import egi.fts.model.JobInfoExtended;
 
 
 /**

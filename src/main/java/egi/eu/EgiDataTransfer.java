@@ -5,7 +5,6 @@ import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.RestHeader;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

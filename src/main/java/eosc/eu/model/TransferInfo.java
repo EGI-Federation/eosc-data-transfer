@@ -1,8 +1,8 @@
 package eosc.eu.model;
 
-import egi.fts.model.JobInfo;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import egi.fts.model.JobInfo;
 
 
 /**

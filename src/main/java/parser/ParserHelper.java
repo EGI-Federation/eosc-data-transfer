@@ -1,17 +1,13 @@
 package parser;
 
-import eosc.eu.model.StorageContent;
-import eosc.eu.model.StorageElement;
-import io.smallrye.mutiny.groups.UniCreate;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.vertx.mutiny.core.MultiMap;
-import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 
-import java.util.Map;
-import java.util.HashMap;
+import eosc.eu.model.StorageContent;
+import eosc.eu.model.StorageElement;
 
 
 /***

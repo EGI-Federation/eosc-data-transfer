@@ -1,6 +1,5 @@
 package eosc.eu;
 
-
 import io.smallrye.mutiny.tuples.Tuple2;
 
 import java.util.Arrays;

@@ -16,7 +16,7 @@ The API covers three sets of functionalities:
 - [Creating and managing data transfers](#creating-and-managing-data-transfers)
 - [Managing storage elements](#managing-storage-elements)
 
-This project uses [Quarkus](https://quarkus.io/), the Supersonic Subatomic Java Framework.
+This project uses [Quarkus](https://quarkus.io), the Supersonic Subatomic Java Framework.
 
 
 ## Authentication and authorization

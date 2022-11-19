@@ -1,6 +1,5 @@
 package eosc.eu;
 
-import eosc.eu.model.Transfer;
 import org.jboss.logging.Logger;
 import java.lang.reflect.InvocationTargetException;
 import javax.annotation.PostConstruct;

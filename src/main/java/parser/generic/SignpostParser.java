@@ -1,14 +1,10 @@
 package parser.generic;
 
-import eosc.eu.BooleanAccumulator;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.jboss.logging.Logger;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

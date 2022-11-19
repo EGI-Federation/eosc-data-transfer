@@ -1,10 +1,10 @@
 package egi.fts.model;
 
-import eosc.eu.model.TransferParameters;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+import eosc.eu.model.TransferParameters;
 
 
 /**

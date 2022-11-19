@@ -1,9 +1,6 @@
 package eosc.eu.model;
 
-import egi.fts.model.JobFileSet;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.ArrayList;

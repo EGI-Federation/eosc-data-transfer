@@ -5,13 +5,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Date;
-import javax.ws.rs.core.MediaType;
 
 import parser.zenodo.model.ZenodoFile;
 import parser.b2share.model.B2ShareFile;
 import egi.fts.model.ObjectInfo;
-
-
 
 
 /**

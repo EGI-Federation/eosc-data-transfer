@@ -2,7 +2,6 @@ package parser.b2share;
 
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
-import org.eclipse.microprofile.rest.client.annotation.ClientHeaderParam;
 
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Path;

@@ -13,7 +13,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
-import org.eclipse.microprofile.openapi.models.headers.Header;
 import org.jboss.logging.Logger;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.ext.web.client.WebClient;
@@ -22,7 +21,6 @@ import org.jboss.resteasy.reactive.RestQuery;
 import org.reactivestreams.Subscription;
 
 import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -58,7 +56,9 @@ public class DigitalObjectIdentifier {
      */
     @Inject
     DigitalObjectIdentifier(Vertx vertx) {
-        this.client = WebClient.create(vertx);
+
+        if(null == DigitalObjectIdentifier.client)
+            client = WebClient.create(vertx);
     }
 
     /**

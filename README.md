@@ -141,7 +141,8 @@ Every API endpoint that performs operations or queries on data transfers or on s
 in a destination storage has to be passed a destination type. This selects the data transfer
 service that will be used to perform the data transfer, freeing the clients of the API from
 having to know which data transfer service to pick for each destination. **Each destination type
-is mapped to exactly one data transfer service in the configuration**.
+is mapped to exactly one data transfer service** in the
+[configuration](#3.-register-new-destinations-serviced-by-the-new-data-transfer-service).
 
 Note that the API uses the concept of a **storage type**, instead of the protocol
 type, to select the transfer service. This makes the API flexible, by allowing multiple

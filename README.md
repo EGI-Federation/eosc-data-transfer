@@ -38,12 +38,12 @@ for data repositories that require authentication.
 
 The API endpoints that create and manage transfers, as well as the ones that manage storage
 elements, do require authorization, in the form of an access token passed via the HTTP
-header `Authorization`. This gets passed to the actual [transfer service registered to handle
+header `Authorization`. This gets passed to the [transfer service registered to handle
 the selected destination storage](#register-new-destinations-serviced-by-the-new-data-transfer-service).
 The challenge is that some storage systems used as the target of the transfer may need
 a different authentication and/or authorization (than the one the transfer service uses).
-Thus, an additional set of credentials can be supplied to the endpoints in this group via
-the HTTP header `Authorization-Storage`.
+Thus, an additional set of credentials can be supplied to the endpoints in these groups
+via the HTTP header `Authorization-Storage`.
 
 > For example, for transfers to [EGI dCache](https://www.dcache.org), the configured transfer service
 > that handles the transfers is [EGI Data Transfer](https://www.egi.eu/service/data-transfer/).
@@ -51,7 +51,7 @@ the HTTP header `Authorization-Storage`.
 > besides the access token for the transfer service, passed via the `Authorization` HTTP header.
 
 When used, the HTTP header parameter `Authorization-Storage` receives a
-key value pair, separated by a colon (:), no leading or trailing whitespace, which
+key value pair, separated by a colon (`:`), no leading or trailing whitespace, which
 is [Base-64 encoded](https://en.wikipedia.org/wiki/Base64).
 
 > For example, to pass a username and password to the destination storage, you construct
@@ -161,7 +161,7 @@ is integrated into the EOSC Data Transfer API, supporting the following destinat
 
 - [EGI dCache](https://www.dcache.org)
 - [FTP servers](https://en.wikipedia.org/wiki/File_Transfer_Protocol)
-- [S3-compatible](en.wikipedia.org/wiki/Amazon_S3) compatible object storages
+- [S3-compatible](en.wikipedia.org/wiki/Amazon_S3) object storages
 
 
 ### Integrating new data transfer services
@@ -340,7 +340,7 @@ Steps to run the API in a container:
 1. Copy the file `src/main/docker/.env.template` to `src/main/docker/.env` and edit the
 environment variables `SERVICE_DOMAIN` and `SERVICE_URL` to be the domain name and the
 fully qualified URL (including the protocol HTTPS, the domain name and the port) at which
-the API will be available. Also provide and email address that will be used, together with the domain name, to
+the API will be available. Also provide an email address that will be used, together with the domain name, to
 request an SSL certificate for the webserver serving the API.
 
 2. Run the command `build.sh` (or `build.cmd` on Windows) to build and run the containers that implement

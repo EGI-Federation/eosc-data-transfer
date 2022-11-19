@@ -61,7 +61,7 @@ is [Base-64 encoded](https://en.wikipedia.org/wiki/Base64).
 
 ## Parsing DOIs
 
-The API supports parsing digital object identifier (DOIs) and will return a list of files
+The API supports parsing digital object identifiers (DOIs) and will return a list of files
 in the repository indicated by the DOI. It will automatically identify the DOI type and will
 use the correct parser to retrieve the list of source files.
 
@@ -167,8 +167,8 @@ is integrated into the EOSC Data Transfer API, supporting the following destinat
 ### Integrating new data transfer services
 
 The API for creating and managing data transfers is extensible. All you have to do is implement the
-generic data transfer interface for a specific data transfer service, then register your class
-implementing the interface as the handler for one or more destinations.
+generic data transfer interface to wrap a specific data transfer service, then register your class
+implementing the interface as the handler for one or more destination stprage types.
 
 #### 1. Implement the interface for a generic data transfer service
 
@@ -225,7 +225,7 @@ for the new transfer service, with the following settings:
   that should be trusted when connecting to the transfer service.
   Use it when the [CA](https://en.wikipedia.org/wiki/Certificate_authority) that issued the
   certificate(s) of the transfer service is not one of the well known-root CAs.
-  The path is relative to folder `/src/main/resources`.
+  The path is relative to folder `src/main/resources`.
 - `trust-store-password` is the optional password to the keystore file.
 
 #### 3. Register new destinations serviced by the new data transfer service 

@@ -227,6 +227,8 @@ public class DataStorage extends DataTransferBase {
 
         LOG.infof("List content of folder %s", folderUrl);
 
+        final String folderUrlWithAuth = applyStorageCredentials(destination, folderUrl, storageAuth);
+
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
@@ -241,7 +243,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // List folder content
-                return params.ts.listFolderContent(auth, storageAuth, folderUrl);
+                return params.ts.listFolderContent(auth, storageAuth, folderUrlWithAuth);
             })
             .chain(content -> {
                 // Got folder content
@@ -310,6 +312,8 @@ public class DataStorage extends DataTransferBase {
 
         LOG.infof("Get details of storage element %s", seUrl);
 
+        final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
+
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
@@ -324,7 +328,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Get storage element info
-                return params.ts.getStorageElementInfo(auth, storageAuth, seUrl);
+                return params.ts.getStorageElementInfo(auth, storageAuth, seUrlWithAuth);
             })
             .chain(seinfo -> {
                 // Got storage element info
@@ -439,6 +443,8 @@ public class DataStorage extends DataTransferBase {
 
         LOG.infof("Create folder %s", seUrl);
 
+        final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
+
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
@@ -453,7 +459,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Create folder
-                return params.ts.createFolder(auth, storageAuth, seUrl);
+                return params.ts.createFolder(auth, storageAuth, seUrlWithAuth);
             })
             .chain(created -> {
                 // Folder got created
@@ -520,6 +526,8 @@ public class DataStorage extends DataTransferBase {
 
         LOG.infof("Delete folder %s", seUrl);
 
+        final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
+
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
@@ -534,7 +542,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Delete folder
-                return params.ts.deleteFolder(auth, storageAuth, seUrl);
+                return params.ts.deleteFolder(auth, storageAuth, seUrlWithAuth);
             })
             .chain(deleted -> {
                 // Folder got deleted
@@ -601,6 +609,8 @@ public class DataStorage extends DataTransferBase {
 
         LOG.infof("Delete file %s", seUrl);
 
+        final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
+
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
@@ -615,7 +625,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Delete file
-                return params.ts.deleteFile(auth, storageAuth, seUrl);
+                return params.ts.deleteFile(auth, storageAuth, seUrlWithAuth);
             })
             .chain(deleted -> {
                 // File got deleted
@@ -686,6 +696,9 @@ public class DataStorage extends DataTransferBase {
                                                      .setStatus(Status.BAD_REQUEST)
                                                      .toResponse());
 
+        final String seUrlOldWithAuth = applyStorageCredentials(destination, operation.seUrlOld, storageAuth);
+        final String seUrlNewWithAuth = applyStorageCredentials(destination, operation.seUrlNew, storageAuth);
+
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
@@ -700,7 +713,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Rename storage element
-                return params.ts.renameStorageElement(auth, storageAuth, operation.seUrlOld, operation.seUrlNew);
+                return params.ts.renameStorageElement(auth, storageAuth, seUrlOldWithAuth, seUrlNewWithAuth);
             })
             .chain(renamed -> {
                 // Storage element got renamed

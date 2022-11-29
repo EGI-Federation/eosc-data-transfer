@@ -96,6 +96,17 @@ public class DataTransfer extends DataTransferBase {
 
         LOG.info("Start new data transfer");
 
+        if(destination.equalsIgnoreCase(Destination.ftp.toString())) {
+            for(var payload : transfer.files) {
+                List<String> fixedDestinations = new ArrayList<>();
+                for(var seUrl : payload.destinations) {
+                    var seUrlFixed = applyStorageCredentials(destination, seUrl, storageAuth);
+                    fixedDestinations.add(seUrlFixed);
+                }
+                payload.destinations = fixedDestinations;
+            }
+        }
+
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {

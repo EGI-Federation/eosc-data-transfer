@@ -1,9 +1,16 @@
 package eosc.eu;
 
+import eosc.eu.model.Transfer;
 import org.jboss.logging.Logger;
-import java.lang.reflect.InvocationTargetException;
+
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 
 
 /***
@@ -97,6 +104,46 @@ public class DataTransferBase {
         }
 
         return false;
+    }
+
+    /**
+     * Embed credentials in storage element URL
+     * @param seUrl is the URL to the storage element
+     * @param storageAuth contains the Base64-encoded 'username:password'
+     * @return Updated URL with embedded credentials, null on error
+     */
+    protected String applyStorageCredentials(String destination, String seUrl, String storageAuth) {
+
+        if(null == storageAuth || storageAuth.isBlank())
+            return seUrl;
+
+        if(destination.equalsIgnoreCase(Transfer.Destination.ftp.toString())) {
+            // Add credentials to FTP URL
+            URL url = null;
+
+            try {
+                url = new URL(seUrl);
+                String protocol = url.getProtocol();
+                String authority = url.getAuthority();
+                String host = url.getHost();
+                int port = url.getPort();
+                String path = url.getFile();
+
+                byte[] userInfoBytes = Base64.getDecoder().decode(storageAuth);
+                String userInfo = new String(userInfoBytes, StandardCharsets.UTF_8);
+
+                seUrl = String.format("%s://%s@%s%s/%s",
+                        protocol, userInfo, host,
+                        port > 0 ? ":" + port : "",
+                        path);
+
+            } catch (MalformedURLException e) {
+                LOG.error(e.getMessage());
+                return null;
+            }
+        }
+
+        return seUrl;
     }
 
 }

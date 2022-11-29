@@ -36,18 +36,22 @@ proxy:
         trust-store-password: "4hFsKWd.839-2h44X"
 
 quarkus:
+  application:
+    name: data-transfer
   log:
     level: INFO
     min-level: DEBUG
     console:
       enable: true
       level: INFO
-      format: "%d{HH:mm:ss} %-5p [%c{2.}]] (%t) %s%e%n"
+      format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
     file:
-      enable: true
+      enable: false
       path: ./log/data-transfer.log
       level: INFO
       format: "%d{HH:mm:ss} %-5p [%c{2.}]] (%t) %s%e%n"
+  opentelemetry:
+    enabled: true
   swagger-ui:
     always-include: true
     path: swagger-ui
@@ -57,7 +61,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.0.18
+    info-version: 1.0.20
   jackson:
     fail-on-unknown-properties: false
   http:

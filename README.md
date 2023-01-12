@@ -161,7 +161,7 @@ is integrated into the EOSC Data Transfer API, supporting the following destinat
 
 - [EGI dCache](https://www.dcache.org)
 - [FTP servers](https://en.wikipedia.org/wiki/File_Transfer_Protocol)
-- [S3-compatible](en.wikipedia.org/wiki/Amazon_S3) object storages
+- [S3-compatible](https://en.wikipedia.org/wiki/Amazon_S3) object storages
 
 
 ### Integrating new data transfer services

@@ -109,20 +109,8 @@ public class ZenodoParser implements ParserService {
         boolean isValid = null != doi && !doi.isBlank();
         if(!isValid)
             return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
-        else {
-            // Standard Zenodo DOI (e.g. https://doi.org/10.5281/zenodo.6511035)
-            Pattern p = Pattern.compile("^https?://([\\w\\.]+)/([\\w\\.]+)/zenodo\\.(\\d+).*", Pattern.CASE_INSENSITIVE);
-            Matcher m = p.matcher(doi);
-            isValid = m.matches();
 
-            this.recordId = isValid ? m.group(3) : null;
-
-            if(isValid)
-                // Supported
-                return Uni.createFrom().item(Tuple2.of(true, this));
-        }
-
-        // DOI not in standard Zenodo format, but may still redirect to a Zenodo record
+        // Check if DOI points/redirects to a Zenodo record
         var result = Uni.createFrom().item(helper.redirectedToUrl())
 
             .chain(redirectedToUrl -> {
@@ -132,17 +120,18 @@ public class ZenodoParser implements ParserService {
                 return helper.checkRedirect(doi);
             })
             .chain(redirectedToUrl -> {
-                boolean redirectValid = (null != redirectedToUrl) && !doi.equals(redirectedToUrl);
-                if(redirectValid) {
-                    // Redirected, validate redirection URL
-                    Pattern p = Pattern.compile("^https?://([\\w\\.]*zenodo.org)/record/(\\d+)", Pattern.CASE_INSENSITIVE);
-                    Matcher m = p.matcher(redirectedToUrl);
-                    redirectValid = m.matches();
+                if(!doi.equals(redirectedToUrl))
+                    LOG.debugf("Redirected DOI %s", redirectedToUrl);
 
-                    this.recordId = redirectValid ? m.group(2) : null;
-                }
+                // Validate URL
+                Pattern p = Pattern.compile("^https?://([\\w\\.]*zenodo.org)/record/(\\d+)", Pattern.CASE_INSENSITIVE);
+                Matcher m = p.matcher(redirectedToUrl);
+                boolean isSupported = m.matches();
 
-                return Uni.createFrom().item(Tuple2.of(redirectValid, (ParserService)this));
+                if(isSupported)
+                    this.recordId = m.group(2);
+
+                return Uni.createFrom().item(Tuple2.of(isSupported, (ParserService)this));
             })
             .onFailure().invoke(e -> {
                 LOG.errorf("Failed to check if DOI %s points to Zenodo record", doi);

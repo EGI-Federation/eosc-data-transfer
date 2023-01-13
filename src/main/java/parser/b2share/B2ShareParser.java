@@ -102,7 +102,7 @@ public class B2ShareParser implements ParserService {
         if(!isValid)
             return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
 
-        // Check if DOI redirects to a B2Share record
+        // Check if DOI points/redirects to a B2Share record
         var result = Uni.createFrom().item(helper.redirectedToUrl())
 
             .chain(redirectedToUrl -> {
@@ -112,25 +112,25 @@ public class B2ShareParser implements ParserService {
                 return helper.checkRedirect(doi);
             })
             .chain(redirectedToUrl -> {
-                boolean redirectValid = (null != redirectedToUrl) && !doi.equals(redirectedToUrl);
-                if(redirectValid) {
-                    // Redirected, validate redirection URL
-                    Pattern p = Pattern.compile("^(https?://[^/:]*b2share[^/:]*:?[\\d]*)/records/(.+)", Pattern.CASE_INSENSITIVE);
-                    Matcher m = p.matcher(redirectedToUrl);
-                    redirectValid = m.matches();
+                if(!doi.equals(redirectedToUrl))
+                    LOG.debugf("Redirected DOI %s", redirectedToUrl);
 
-                    if(redirectValid) {
-                        this.recordId = m.group(2);
-                        try {
-                            this.urlServer = new URL(m.group(1));
-                        } catch (MalformedURLException e) {
-                            LOG.error(e.getMessage());
-                            redirectValid = false;
-                        }
+                // Validate URL
+                Pattern p = Pattern.compile("^(https?://[^/:]*b2share[^/:]*:?[\\d]*)/records/(.+)", Pattern.CASE_INSENSITIVE);
+                Matcher m = p.matcher(redirectedToUrl);
+                boolean isSupported = m.matches();
+
+                if(isSupported) {
+                    this.recordId = m.group(2);
+                    try {
+                        this.urlServer = new URL(m.group(1));
+                    } catch (MalformedURLException e) {
+                        LOG.error(e.getMessage());
+                        isSupported = false;
                     }
                 }
 
-                return Uni.createFrom().item(Tuple2.of(redirectValid, (ParserService)this));
+                return Uni.createFrom().item(Tuple2.of(isSupported, (ParserService)this));
             })
             .onFailure().invoke(e -> {
                 LOG.errorf("Failed to check if DOI %s points to B2Share record", doi);

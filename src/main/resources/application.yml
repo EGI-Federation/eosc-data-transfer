@@ -43,15 +43,15 @@ quarkus:
     min-level: DEBUG
     console:
       enable: true
-      level: INFO
+      level: DEBUG
       format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
     file:
-      enable: false
+      enable: true
       path: ./log/data-transfer.log
       level: INFO
       format: "%d{HH:mm:ss} %-5p [%c{2.}]] (%t) %s%e%n"
   opentelemetry:
-    enabled: true
+    enabled: false
   swagger-ui:
     always-include: true
     path: swagger-ui
@@ -61,7 +61,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.0.20
+    info-version: 1.0.23
   jackson:
     fail-on-unknown-properties: false
   http:

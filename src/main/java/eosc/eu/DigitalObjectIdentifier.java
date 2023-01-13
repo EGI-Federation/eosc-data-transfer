@@ -20,7 +20,6 @@ import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
 import org.reactivestreams.Subscription;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -69,7 +68,6 @@ public class DigitalObjectIdentifier {
      * @param doi The DOI for a data set
      * @return true on success, updates field "parser"
      */
-    @PostConstruct
     private Uni<Boolean> getParser(String auth, ActionParameters params, String doi) {
 
         if(null == doi || doi.isBlank()) {

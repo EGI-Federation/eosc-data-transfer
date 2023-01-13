@@ -3,7 +3,6 @@ package eosc.eu;
 import eosc.eu.model.Transfer;
 import org.jboss.logging.Logger;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +45,6 @@ public class DataTransferBase {
      * @param params dictates which transfer service we pick, mapping is in the configuration file
      * @return true on success, updates fields "destination" and "ts"
      */
-    @PostConstruct
     protected boolean getTransferService(ActionParameters params) {
 
         LOG.debug("Selecting transfer service...");

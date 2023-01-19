@@ -110,7 +110,7 @@ public class DataTransfer extends DataTransferBase {
                         return Uni.createFrom().item(new ActionError("urlInvalid", Arrays.asList(
                                                                          Tuple2.of("url", seUrl),
                                                                          Tuple2.of("destination", destination) ))
-                                                                .toResponse();
+                                                                .toResponse());
                     }
 
                     fixedDestinations.add(seUrlFixed);

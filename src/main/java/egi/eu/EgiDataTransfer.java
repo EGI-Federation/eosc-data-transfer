@@ -36,6 +36,8 @@ import eosc.eu.model.*;
 import eosc.eu.TransfersConfig.TransferServiceConfig;
 import eosc.eu.TransferService;
 import eosc.eu.TransferServiceException;
+import eosc.eu.DataStorageCredentials;
+import eosc.eu.BooleanAccumulator;
 
 
 /***

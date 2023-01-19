@@ -120,7 +120,7 @@ After a parser is identified, the methods `init()` and `parseDOI()` are called i
 
 #### 2. Add configuration for the new DOI parser
 
-Add a new entry in the [configuration file](#configuration) under `proxy/parsers` for the
+Add a new entry in the [configuration file](#configuration) under `eosc/parser` for the
 new parser, with the following settings:
 
 - `name` is the human-readable name of the data repository.
@@ -212,7 +212,7 @@ The methods can be split into two groups:
 
 #### 2. Add configuration for the new data transfer service
 
-Add a new entry in the [configuration file](#configuration) under `proxy/transfer/services`
+Add a new entry in the [configuration file](#configuration) under `eosc/transfer/service`
 for the new transfer service, with the following settings:
 
 - `name` is the human-readable name of this transfer service.
@@ -230,7 +230,7 @@ for the new transfer service, with the following settings:
 
 #### 3. Register new destinations serviced by the new data transfer service
 
-Add entries in the [configuration file](#configuration) under `proxy/transfer/destinations`
+Add entries in the [configuration file](#configuration) under `eosc/transfer/destination`
 for each destination storage type you want to support, and map it to one of the registered
 transfer services.
 
@@ -252,7 +252,7 @@ the API endpoints. See [here](#authentication-and-authorization) for details.
 In the enum `DataTransferBase.Destination` add new values for each of the storage types
 you added in the previous step. Use the same values as the names of the keys.
 
-This way each entry under the node `proxy/transfer/destinations` in the configuration
+This way each entry under the node `eosc/transfer/destination` in the configuration
 file becomes one possible value for the destination storage parameter `dest` of the
 API endpoints.
 

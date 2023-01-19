@@ -6,6 +6,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import eosc.eu.model.TransferParameters;
 
+import java.util.Optional;
+
 
 /**
  * Parameters of a transfer job
@@ -30,6 +32,10 @@ public class JobParameters {
     @Schema(title="Force IPv6 if the underlying protocol supports it")
     public boolean ipv6 = false;
 
+    @Schema(title="Set to true when transferring to S3 destinations")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Optional<Boolean> s3alternate;
+
 
     /**
      * Constructor
@@ -47,5 +53,8 @@ public class JobParameters {
         this.strict_copy = params.strictCopy;
         this.ipv4 = params.ipv4;
         this.ipv6 = params.ipv6;
+
+        if(params.hasS3Destinations())
+            this.s3alternate = Optional.of(true);
     }
 }

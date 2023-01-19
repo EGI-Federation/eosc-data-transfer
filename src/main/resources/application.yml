@@ -1,6 +1,6 @@
 ---
-proxy:
-  parsers:
+eosc:
+  parser:
     zenodo:
       name: Zenodo
       class: parser.zenodo.ZenodoParser
@@ -13,7 +13,7 @@ proxy:
       name: Signposting
       class: parser.generic.SignpostParser
   transfer:
-    destinations:
+    destination:
       dcache:
         service: fts
         auth: token
@@ -26,14 +26,19 @@ proxy:
         service: fts
         auth: password
         description: FTP server
-    services:
+    service:
       fts:
         name: EGI Data Transfer
         class: egi.eu.EgiDataTransfer
         url: https://fts3-public.cern.ch:8446
         timeout: 5000
-        trust-store-file: cern-truststore.ks
+        trust-store-file: cern-truststore.jks
         trust-store-password: "4hFsKWd.839-2h44X"
+        # Certificate in keystore only used to call FTS endpoint /config/cloud_storage,
+        # all other calls to FTS are made with the Check-in token provided by the caller.
+        # If keystore is missing, this FTS endpoint will also be called using the caller's Check-in token.
+        key-store-file: fts-keystore.jks
+        key-store-password: "password"
 
 quarkus:
   application:
@@ -59,9 +64,10 @@ quarkus:
     urls:
       default: /openapi
     urls-primary-name: default
+
   smallrye-openapi:
     path: /openapi
-    info-version: 1.0.23
+    info-version: 1.0.31
   jackson:
     fail-on-unknown-properties: false
   http:

@@ -1,5 +1,6 @@
 package eosc.eu.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -9,6 +10,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TransferParameters {
+
+    @JsonIgnore
+    private boolean hasS3Destinations = false;
 
     public boolean verifyChecksum = false;
     public boolean overwrite = false;
@@ -31,4 +35,11 @@ public class TransferParameters {
      * Constructor
      */
     public TransferParameters() {}
+
+    public boolean hasS3Destinations() { return this.hasS3Destinations; }
+
+    public boolean setS3Destinations(boolean hasS3) {
+        this.hasS3Destinations = hasS3;
+        return this.hasS3Destinations;
+    }
 }

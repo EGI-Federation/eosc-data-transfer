@@ -5,11 +5,8 @@ import org.jboss.logging.Logger;
 
 import javax.inject.Inject;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.net.MalformedURLException;
-import java.net.URL;
-
+import java.net.URI;
+import java.net.URISyntaxException;
 
 
 /***
@@ -113,29 +110,35 @@ public class DataTransferBase {
     protected String applyStorageCredentials(String destination, String seUrl, String storageAuth) {
 
         if(null == storageAuth || storageAuth.isBlank())
+            // When no credentials, will try anonymous access
             return seUrl;
 
         if(destination.equalsIgnoreCase(Transfer.Destination.ftp.toString())) {
             // Add credentials to FTP URL
-            URL url = null;
+            URI uri = null;
 
             try {
-                url = new URL(seUrl);
-                String protocol = url.getProtocol();
-                String authority = url.getAuthority();
-                String host = url.getHost();
-                int port = url.getPort();
-                String path = url.getFile();
+                uri = new URI(seUrl);
+                String protocol = uri.getScheme();
+                String authority = uri.getAuthority();
+                String host = uri.getHost();
+                int port = uri.getPort();
+                String path = uri.getPath();
 
-                byte[] userInfoBytes = Base64.getDecoder().decode(storageAuth);
-                String userInfo = new String(userInfoBytes, StandardCharsets.UTF_8);
+                var userInfo = new DataStorageCredentials(storageAuth);
+                String credentials = userInfo.isValid() ?
+                        String.format("%s:%s@", userInfo.getUsername(), userInfo.getPassword()) : "";
 
-                seUrl = String.format("%s://%s@%s%s/%s",
-                        protocol, userInfo, host,
-                        port > 0 ? ":" + port : "",
+                seUrl = String.format("%s://%s%s%s/%s",
+                        protocol, credentials, host,
+                        port > 0 ? (":" + port) : "",
                         path);
 
-            } catch (MalformedURLException e) {
+                if(null != uri.getQuery())
+                    seUrl += ("?" + uri.getQuery());
+            }
+            catch(URISyntaxException e) {
+                LOG.errorf("Invalid destination URL %s", seUrl);
                 LOG.error(e.getMessage());
                 return null;
             }

@@ -4,11 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.jboss.logging.Logger;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 
 /**
@@ -23,7 +23,7 @@ public class ObjectInfo {
     static int S_IFREG = 0x8000; // Regular file
 
     @JsonIgnore
-    private URL url;
+    private URI uri;
 
     public String name;
     public String objectUrl; // Aka storage URL (surl)
@@ -51,17 +51,21 @@ public class ObjectInfo {
         if(null == this.objectUrl || this.objectUrl.isEmpty() || this.objectUrl.isBlank())
             return null;
 
-        if(null == this.url) {
+        if(null == this.uri) {
             try {
-                this.url = new URL(this.objectUrl);
-            } catch (MalformedURLException e) {
+                this.uri = new URI(this.objectUrl);
+            } catch (URISyntaxException e) {
+                LOG.errorf("Invalid storage element URL %s", this.uri);
                 LOG.error(e.getMessage());
                 return null;
             }
         }
 
         // String trailing separator
-        String path = this.url.getFile();
+        String path = this.uri.getPath();
+        if(null != this.uri.getQuery())
+            path += ("?" + this.uri.getQuery());
+
         Pattern p = Pattern.compile("^(.+)/$");
         Matcher m = p.matcher(path);
         if(m.matches())

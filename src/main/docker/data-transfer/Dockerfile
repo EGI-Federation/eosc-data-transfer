@@ -18,6 +18,9 @@ RUN mvn package --define skipTests
 #
 FROM registry.access.redhat.com/ubi8/openjdk-17:1.11
 
+ARG FTS_KEY_STORE_PASSWORD
+
+ENV EOSC_TRANSFER_SERVICE_FTS_KEY_STORE_PASSWORD ${FTS_KEY_STORE_PASSWORD}
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
 
 # We make four distinct layers so if there are application changes the library layers can be re-used

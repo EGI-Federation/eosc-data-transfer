@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
+
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -14,6 +15,7 @@ import javax.ws.rs.core.Response.Status;
 
 import parser.b2share.B2ShareException;
 import parser.zenodo.ZenodoException;
+import egi.fts.FileTransferServiceException;
 
 
 /**
@@ -149,6 +151,7 @@ public class ActionError {
         var type = t.getClass();
         if (type.equals(ZenodoException.class) ||
             type.equals(B2ShareException.class) ||
+            type.equals(FileTransferServiceException.class) ||
             type.equals(ClientWebApplicationException.class) ||
             type.equals(WebApplicationException.class) ) {
             // Build from web exception
@@ -197,6 +200,7 @@ public class ActionError {
             if(this.id.equals("fieldNotSupported") ||
                this.id.equals("doiNotSupported") ||
                this.id.equals("doiInvalid") ||
+               this.id.equals("urlInvalid") ||
                this.id.equals("noFilesLink"))
                 // Return BAD_REQUEST instead of INTERNAL_ERROR
                 this.status = Status.BAD_REQUEST;

@@ -11,13 +11,15 @@ import java.util.Optional;
 /***
  * The configuration of the supported storage types and the transfer services that will handle them
  */
-@ConfigMapping(prefix = "proxy.transfer")
+@ConfigMapping(prefix = "eosc.transfer")
 public interface TransfersConfig {
 
     // Selects a service based on the destination
+    @WithName("destination")
     public Map<String, DataStorageConfig> destinations();
 
     // Contains the details of each specific transfer service
+    @WithName("service")
     public Map<String, TransferServiceConfig> services();
 
 
@@ -53,5 +55,11 @@ public interface TransfersConfig {
 
         @WithName("trust-store-password")
         public Optional<String> trustStorePassword();
+
+        @WithName("key-store-file")
+        public Optional<String> keyStoreFile();
+
+        @WithName("key-store-password")
+        public Optional<String> keyStorePassword();
     }
 }

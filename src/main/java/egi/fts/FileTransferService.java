@@ -1,6 +1,7 @@
 package egi.fts;
 
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
 
@@ -15,6 +16,7 @@ import egi.fts.model.*;
 /***
  * REST client for File Transfer Service (that powers EGI Data Transfer)
  */
+@RegisterProvider(value = FileTransferServiceExceptionMapper.class)
 @Produces(MediaType.APPLICATION_JSON)
 public interface FileTransferService {
 
@@ -62,17 +64,34 @@ public interface FileTransferService {
 
     @POST
     @Path("/dm/mkdir")
+    @Consumes(MediaType.APPLICATION_JSON)
     Uni<String> createFolderAsync(@RestHeader("Authorization") String auth, ObjectOperation folder);
 
     @POST
     @Path("/dm/rmdir")
+    @Consumes(MediaType.APPLICATION_JSON)
     Uni<String> deleteFolderAsync(@RestHeader("Authorization") String auth, ObjectOperation folder);
 
     @POST
     @Path("/dm/rename")
+    @Consumes(MediaType.APPLICATION_JSON)
     Uni<String> renameObjectAsync(@RestHeader("Authorization") String auth, ObjectOperation objects);
 
     @POST
     @Path("/dm/unlink")
+    @Consumes(MediaType.APPLICATION_JSON)
     Uni<String> deleteFileAsync(@RestHeader("Authorization") String auth, ObjectOperation file);
+
+    // NOTE: The methods below should return S3Info, but auto deserialization fails for return type Uni<S3Info>
+    // However, manually deserializing the returned JSON string using ObjectMapper works fine!
+
+    @POST
+    @Path("/config/cloud_storage")
+    @Consumes(MediaType.APPLICATION_JSON)
+    Uni<String> registerS3HostAsync(@RestHeader("Authorization") String auth, S3Info s3Info);
+
+    @POST
+    @Path("/config/cloud_storage/{s3Host}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    Uni<String> configureS3HostAsync(@RestHeader("Authorization") String auth, String s3Host, S3Info s3Info);
 }

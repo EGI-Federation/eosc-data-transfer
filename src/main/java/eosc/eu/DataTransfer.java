@@ -96,13 +96,26 @@ public class DataTransfer extends DataTransferBase {
 
         LOG.info("Start new data transfer");
 
-        if(destination.equalsIgnoreCase(Destination.ftp.toString())) {
+        // If authentication info is provided for the storage, embed it in every FTP destination URL
+        if(null != storageAuth && !storageAuth.isBlank() && destination.equalsIgnoreCase(Destination.ftp.toString())) {
+            // If the destination is FTP, embed storage credentials in all
+            // destination URLs (will not check each URL if the protocol is "ftp")
             for(var payload : transfer.files) {
                 List<String> fixedDestinations = new ArrayList<>();
                 for(var seUrl : payload.destinations) {
                     var seUrlFixed = applyStorageCredentials(destination, seUrl, storageAuth);
+                    if(null == seUrlFixed) {
+                        // Could not add credentials to invalid URL
+                        LOG.error("Failed to start new transfer");
+                        return Uni.createFrom().item(new ActionError("urlInvalid", Arrays.asList(
+                                                                         Tuple2.of("url", seUrl),
+                                                                         Tuple2.of("destination", destination) ))
+                                                                .toResponse();
+                    }
+
                     fixedDestinations.add(seUrlFixed);
                 }
+
                 payload.destinations = fixedDestinations;
             }
         }
@@ -255,8 +268,8 @@ public class DataTransfer extends DataTransferBase {
             .chain(params -> {
                 // Find transfers
                 return params.ts.findTransfers(auth, fields, limit, timeWindow, stateIn,
-                        srcStorageElement, dstStorageElement,
-                        delegationId, voName, userDN);
+                                               srcStorageElement, dstStorageElement,
+                                               delegationId, voName, userDN);
             })
             .chain(matches -> {
                 // Found transfers

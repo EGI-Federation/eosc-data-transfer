@@ -11,10 +11,11 @@ import java.util.Optional;
 /***
  * The configuration of the parsers
  */
-@ConfigMapping(prefix = "proxy")
+@ConfigMapping(prefix = "eosc")
 public interface ParsersConfig {
 
     // Contains the details of each specific parser
+    @WithName("parser")
     public Map<String, ParserConfig> parsers();
 
 

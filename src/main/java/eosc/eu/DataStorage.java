@@ -232,6 +232,9 @@ public class DataStorage extends DataTransferBase {
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
+                if(null == folderUrlWithAuth)
+                    return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
+
                 // Pick transfer service and create REST client for it
                 var params = new ActionParameters(destination);
                 if (!getTransferService(params)) {
@@ -317,6 +320,9 @@ public class DataStorage extends DataTransferBase {
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
+                if(null == seUrlWithAuth)
+                    return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
+
                 // Pick transfer service and create REST client for it
                 var params = new ActionParameters(destination);
                 if (!getTransferService(params)) {
@@ -448,6 +454,9 @@ public class DataStorage extends DataTransferBase {
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
+                if(null == seUrlWithAuth)
+                    return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
+
                 // Pick transfer service and create REST client for it
                 var params = new ActionParameters(destination);
                 if (!getTransferService(params)) {
@@ -531,6 +540,9 @@ public class DataStorage extends DataTransferBase {
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
+                if(null == seUrlWithAuth)
+                    return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
+
                 // Pick transfer service and create REST client for it
                 var params = new ActionParameters(destination);
                 if (!getTransferService(params)) {
@@ -614,6 +626,9 @@ public class DataStorage extends DataTransferBase {
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
+                if(null == seUrlWithAuth)
+                    return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
+
                 // Pick transfer service and create REST client for it
                 var params = new ActionParameters(destination);
                 if (!getTransferService(params)) {
@@ -690,11 +705,15 @@ public class DataStorage extends DataTransferBase {
 
         if(null != operation && null != operation.seUrlOld && null != operation.seUrlNew)
             LOG.infof("Renaming storage element %s to %s", operation.seUrlOld, operation.seUrlNew);
-        else
+        else {
+            LOG.error("Cannot rename storage element");
             return Uni.createFrom().item(new ActionError("missingOperationParameters",
-                                               Tuple2.of("destination", destination) )
-                                                     .setStatus(Status.BAD_REQUEST)
-                                                     .toResponse());
+                                         Arrays.asList(Tuple2.of("seUrlOld", operation.seUrlOld),
+                                                       Tuple2.of("seUrlNew", operation.seUrlNew),
+                                                       Tuple2.of("destination", destination)) )
+                                            .setStatus(Status.BAD_REQUEST)
+                                            .toResponse());
+        }
 
         final String seUrlOldWithAuth = applyStorageCredentials(destination, operation.seUrlOld, storageAuth);
         final String seUrlNewWithAuth = applyStorageCredentials(destination, operation.seUrlNew, storageAuth);
@@ -702,6 +721,9 @@ public class DataStorage extends DataTransferBase {
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
+                if(null == seUrlOldWithAuth || null == seUrlNewWithAuth)
+                    return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
+
                 // Pick transfer service and create REST client for it
                 var params = new ActionParameters(destination);
                 if (!getTransferService(params)) {

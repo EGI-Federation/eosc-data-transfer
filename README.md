@@ -168,7 +168,7 @@ is integrated into the EOSC Data Transfer API, supporting the following destinat
 
 The API for creating and managing data transfers is extensible. All you have to do is implement the
 generic data transfer interface to wrap a specific data transfer service, then register your class
-implementing the interface as the handler for one or more destination stprage types.
+implementing the interface as the handler for one or more destination storage types.
 
 #### 1. Implement the interface for a generic data transfer service
 
@@ -297,6 +297,13 @@ how to extend the API with new transfer services and storage types.
 You can change the port on which the API runs by altering the setting `quarkus/http/port`
 (8080 by default).
 
+> A certificate for an EGI service account needed to call the wrapped
+> [EGI Data Transfer](https://docs.egi.eu/users/data/management/data-transfer/) service
+> and configure S3 storage systems for users of the EOSC Data Transfer API is included in
+> the file `src/main/resources/fts-keystore.jks`. The password for this certificate is not
+> included, contact EGI to obtain a service account and a new certificate (together with its
+> password) when deploying this API. 
+
 
 ## Running the API in dev mode
 
@@ -317,7 +324,8 @@ The application can be packaged using:
 ./mvnw package
 ```
 It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+Be aware that it’s not an _über-jar_ as the dependencies are copied into the
+`target/quarkus-app/lib/` directory.
 
 The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
 
@@ -339,11 +347,14 @@ This will run two containers:
 
 Steps to run the API in a container:
 
-1. Copy the file `src/main/docker/.env.template` to `src/main/docker/.env` and edit the
-environment variables `SERVICE_DOMAIN` and `SERVICE_URL` to be the domain name and the
-fully qualified URL (including the protocol HTTPS, the domain name and the port) at which
-the API will be available. Also provide an email address that will be used, together with the domain name, to
-request an SSL certificate for the webserver serving the API.
+1. Copy the file `src/main/docker/.env.template` to `src/main/docker/.env` and
+   * Edit the environment variables `SERVICE_DOMAIN` and `SERVICE_URL` to be the domain name and the
+   fully qualified URL (including the HTTPS protocol, the domain name, and optionally the port)
+   at which the API will be available.
+   * Provide an email address that will be used, together with the domain name, to request an
+   SSL certificate for the webserver serving the API.
+   * Finally, edit the environment variable `FTS_KEY_STORE_PASSWORD` and provide the password for the
+   certificate in file `src/main/resources/fts-keystore.jks`.  
 
 2. Run the command `build.sh` (or `build.cmd` on Windows) to build and run the containers that implement
 the EOSC Data Transfer API.  

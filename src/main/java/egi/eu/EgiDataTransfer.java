@@ -421,7 +421,7 @@ public class EgiDataTransfer implements TransferService {
             })
             .collect()
             .in(BooleanAccumulator::new, (acc, supported) -> {
-                acc.accumulateAny(supported);
+                acc.accumulateAll(supported);
             })
             .onItem().transform(BooleanAccumulator::get);
 

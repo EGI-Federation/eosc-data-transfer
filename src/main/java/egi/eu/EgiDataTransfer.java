@@ -177,8 +177,7 @@ public class EgiDataTransfer implements TransferService {
             // TODO: Can FTS browse FTP storage systems?
             return true;
         else if(destination.equals(Transfer.Destination.s3.toString()))
-            // TODO: Can FTS browse S3 storage systems?
-            return true;
+            return false;
 
         return false;
     }

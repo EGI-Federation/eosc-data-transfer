@@ -168,6 +168,12 @@ public class TransferInfoExtended extends TransferInfo {
             return unused;
         }
 
-        public String getStatus() { return this.status; }
+        public String toString() {
+            TransferStatus ts = fromString(this.status);
+            if(ts.equals(TransferStatus.unused))
+                return String.format("unused (%s)", this.status);
+
+            return this.status;
+        }
     }
 }

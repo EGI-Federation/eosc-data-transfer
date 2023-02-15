@@ -22,10 +22,6 @@ eosc:
         service: fts
         auth: keys
         description: Amazon S3 compatible object storage
-      ftp:
-        service: fts
-        auth: password
-        description: FTP server
     service:
       fts:
         name: EGI Data Transfer
@@ -67,7 +63,7 @@ quarkus:
 
   smallrye-openapi:
     path: /openapi
-    info-version: 1.0.32
+    info-version: 1.0.35
   jackson:
     fail-on-unknown-properties: false
   http:

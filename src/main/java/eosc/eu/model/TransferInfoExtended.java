@@ -156,7 +156,7 @@ public class TransferInfoExtended extends TransferInfo {
 
         public static TransferStatus fromString(String status_) {
             final String status = status_.toLowerCase();
-            if(status.contains("succes"))
+            if(status.contains("succe") || status.contains("finish"))
                 return succeeded;
             else if(status.contains("fail"))
                 return failed;

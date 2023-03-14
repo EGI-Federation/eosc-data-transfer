@@ -268,7 +268,7 @@ public class EgiDataTransfer implements TransferService {
      * @param storageHost Destination S3 system.
      * @return true on success
      */
-    private Uni<Boolean> prepareStorageImpl(String tsAuth, String accessKey, String secretKey, String storageHost, UserInfo ui) {
+    private Uni<Boolean> prepareStorage(String tsAuth, String accessKey, String secretKey, String storageHost, UserInfo ui) {
 
         // Make sure we have storage credentials
         if (null == accessKey || accessKey.isBlank() || null == secretKey || secretKey.isBlank())
@@ -326,62 +326,6 @@ public class EgiDataTransfer implements TransferService {
     }
 
     /**
-     * Prepare S3 storage system for transfer.
-     * @param tsAuth The access token needed to call the service.
-     * @param storageAuth Credentials for the destination storage, Base-64 encoded "key:value"
-     * @param seUrl Storage element URL in the destination storage system.
-     * @return true on success
-     */
-    private Uni<Boolean> prepareStorage(String tsAuth, String storageAuth, String seUrl) {
-        // Check if URL points to S3 storage system
-        UserInfo userInfo = new UserInfo();
-        try {
-            URI uri = new URI(seUrl);
-            userInfo.delegation_id = uri.getHost();
-            String proto = uri.getScheme();
-            if(!proto.equalsIgnoreCase(Transfer.Destination.s3.toString()))
-                // Not S3 destination, nothing to do
-                return Uni.createFrom().item(true);
-        }
-        catch(URISyntaxException e) {
-            LOG.error(e.getMessage());
-            LOG.errorf("Invalid destination URL %s", seUrl);
-            return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
-        }
-
-        // Make sure we have storage credentials
-        var storageCreds = new DataStorageCredentials(storageAuth);
-        if(!storageCreds.isValid())
-            return Uni.createFrom().failure(new TransferServiceException("missingStorageAuth"));
-
-        Uni<Boolean> result = Uni.createFrom().nullItem()
-
-            .ifNoItem()
-                .after(Duration.ofMillis(this.timeout))
-                .failWith(new TransferServiceException("prepareStorageTimeout"))
-            .chain(unused -> {
-                // Get user info from auth token
-                return fts.getUserInfoAsync(tsAuth);
-            })
-            .chain(ui -> {
-                // Got user info, save DN
-                String destHostname = userInfo.delegation_id;
-                userInfo.delegation_id = null;
-                userInfo.user_dn = ui.user_dn;
-
-                // Prepare this storage
-                return prepareStorageImpl(tsAuth, storageCreds.getAccessKey(),
-                                                  storageCreds.getSecretKey(),
-                                                  destHostname, userInfo);
-            })
-            .onFailure().invoke(e -> {
-                LOG.error("Failed to configure S3 destination");
-            });
-
-        return result;
-    }
-
-    /**
      * Prepare S3 storage systems for transfer.
      * @param tsAuth The access token needed to call the service.
      * @param storageAuth Credentials for the destination storage, Base-64 encoded "key:value"
@@ -411,9 +355,9 @@ public class EgiDataTransfer implements TransferService {
             })
             .onItem().transformToUniAndConcatenate(dest -> {
                 // Prepare this storage
-                return prepareStorageImpl(tsAuth, storageCreds.getAccessKey(),
-                                                  storageCreds.getSecretKey(),
-                                                  dest, userInfo);
+                return prepareStorage(tsAuth, storageCreds.getAccessKey(),
+                                              storageCreds.getSecretKey(),
+                                              dest, userInfo);
             })
             .onFailure().invoke(e -> {
                 LOG.error("Failed to configure S3 destinations");
@@ -665,7 +609,7 @@ public class EgiDataTransfer implements TransferService {
             .chain(unused -> {
                 // When necessary, configure S3 destination
                 if(null != storageAuth && !storageAuth.isBlank())
-                    return prepareStorage(auth, storageAuth, folderUrl);
+                    return prepareStorages(auth, storageAuth, List.of(folderUrl));
 
                 return Uni.createFrom().item(true);
             })
@@ -703,7 +647,7 @@ public class EgiDataTransfer implements TransferService {
             .chain(unused -> {
                 // When necessary, configure S3 destination
                 if(null != storageAuth && !storageAuth.isBlank())
-                    return prepareStorage(auth, storageAuth, seUrl);
+                    return prepareStorages(auth, storageAuth, List.of(seUrl));
 
                 return Uni.createFrom().item(true);
             })
@@ -742,7 +686,7 @@ public class EgiDataTransfer implements TransferService {
             .chain(unused -> {
                 // When necessary, configure S3 destination
                 if(null != storageAuth && !storageAuth.isBlank())
-                    return prepareStorage(auth, storageAuth, folderUrl);
+                    return prepareStorages(auth, storageAuth, List.of(folderUrl));
 
                 return Uni.createFrom().item(true);
             })
@@ -781,7 +725,7 @@ public class EgiDataTransfer implements TransferService {
             .chain(unused -> {
                 // When necessary, configure S3 destination
                 if(null != storageAuth && !storageAuth.isBlank())
-                    return prepareStorage(auth, storageAuth, folderUrl);
+                    return prepareStorages(auth, storageAuth, List.of(folderUrl));
 
                 return Uni.createFrom().item(true);
             })
@@ -820,7 +764,7 @@ public class EgiDataTransfer implements TransferService {
             .chain(unused -> {
                 // When necessary, configure S3 destination
                 if(null != storageAuth && !storageAuth.isBlank())
-                    return prepareStorage(auth, storageAuth, fileUrl);
+                    return prepareStorages(auth, storageAuth, List.of(fileUrl));
 
                 return Uni.createFrom().item(true);
             })
@@ -860,7 +804,7 @@ public class EgiDataTransfer implements TransferService {
             .chain(unused -> {
                 // When necessary, configure S3 destination
                 if(null != storageAuth && !storageAuth.isBlank())
-                    return prepareStorage(auth, storageAuth, seOld);
+                    return prepareStorages(auth, storageAuth, List.of(seOld));
 
                 return Uni.createFrom().item(true);
             })

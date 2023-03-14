@@ -42,9 +42,8 @@ public class Transfer {
      */
     public List<String> allDestinationStorages(String protocol) {
         var hosts = new HashSet<String>();
-        var destinations = new ArrayList<String>();
 
-        for(var payload : this.files){
+        for(var payload : this.files) {
             for(var destUrl : payload.destinations) {
                 // Parse the destination URL and get the hostname
                 try {
@@ -58,11 +57,9 @@ public class Transfer {
                         continue;
 
                     String host = uri.getHost().toLowerCase();
-                    if(!hosts.contains(host)) {
+                    if(!hosts.contains(host))
                         // This is a new distinct hostname
                         hosts.add(host);
-                        destinations.add(host);
-                    }
                 }
                 catch (URISyntaxException e) {
                     LOG.error(e);
@@ -73,7 +70,7 @@ public class Transfer {
             }
         }
 
-        return destinations;
+        return new ArrayList<>(hosts);
     }
 
 

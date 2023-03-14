@@ -10,10 +10,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StorageRenameOperation {
 
-    @Schema(title="The URL to the old storage element")
+    @Schema(description="The URL to the old storage element")
     public String seUrlOld;
 
-    @Schema(title="The URL to the new storage element")
+    @Schema(description="The URL to the new storage element")
     public String seUrlNew;
 
 

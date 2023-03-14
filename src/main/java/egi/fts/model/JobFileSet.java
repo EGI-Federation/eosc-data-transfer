@@ -11,12 +11,15 @@ import eosc.eu.model.TransferPayload;
 
 
 /**
- * A set of files to transfer, includes a source file list and a destination file list
+ * A source file to be transferred, available from multiple locations, and mulple destination where to transfer the file.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class JobFileSet {
 
+    // Multiple sources for the same file
     public List<String> sources;
+
+    // Multiple destination where to transfer the same file
     public List<String> destinations;
 
     @Schema(title="Overrides transfer priority for this set of files, from 1 to 5, 1 being the lowest priority")

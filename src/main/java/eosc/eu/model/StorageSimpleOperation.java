@@ -10,7 +10,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StorageSimpleOperation {
 
-    @Schema(title="The URL to the storage element")
+    @Schema(description="The URL to the storage element")
     public String seUrl;
 
 

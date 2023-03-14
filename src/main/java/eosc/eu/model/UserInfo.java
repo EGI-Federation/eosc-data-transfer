@@ -2,6 +2,7 @@ package eosc.eu.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,9 +25,11 @@ public class UserInfo {
     public List<String> dn;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description="Virtual organisation name(s)")
     public List<String> vos;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description="Virtual organisation identifier(s)")
     public List<String> vos_id;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

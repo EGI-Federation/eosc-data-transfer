@@ -1,6 +1,7 @@
 package eosc.eu.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
 
 import java.net.URI;
@@ -20,7 +21,10 @@ public class Transfer {
 
     private String badUrl;
 
+    @Schema(description="The files to be transferred")
     public List<TransferPayload> files;
+
+    @Schema(description="Transfer parameters")
     public TransferParameters params;
 
 

@@ -8,18 +8,22 @@ import java.util.List;
 
 
 /**
- * A set of files to transfer, includes a source file list and a destination file list
+ * A file to transfer, includes multiple sources for the same file, and multiple destinations where to transfer it.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(description="Describes one file to be transferred")
 public class TransferPayload {
 
+    @Schema(description="Multiple sources for the file to be transferred, will try them all until one is available")
     public List<String> sources;
+
+    @Schema(description="Multiple destinations where to transfer the file")
     public List<String> destinations;
 
-    @Schema(title="Overrides transfer priority for this set of files, from 1 to 5, 1 being the lowest priority")
+    @Schema(description="Transfer priority for this file, from 1 to 5, 1 being the lowest priority")
     public int priority = 0;
 
-    @Schema(title="User defined checksum in the form algorithm:value")
+    @Schema(description="User defined checksum in the form algorithm:value")
     public String checksum;
 
 

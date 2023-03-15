@@ -158,7 +158,7 @@ public class TransferInfoExtended extends TransferInfo {
     /***
      * The status of a transfer
      */
-    @Schema(description="When all files transferred successfully it will be 'succeeded', when all files failed to transfer is will be 'failed'.")
+    @Schema(description="Will be 'succeeded' when all files transferred successfully, and 'failed' if all files failed to transfer.")
     public enum TransferState
     {
         unused("unused"),

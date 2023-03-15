@@ -65,7 +65,7 @@ quarkus:
 
   smallrye-openapi:
     path: /openapi
-    info-version: 1.0.42
+    info-version: 1.0.43
   jackson:
     fail-on-unknown-properties: false
   http:

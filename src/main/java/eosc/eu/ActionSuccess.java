@@ -15,7 +15,7 @@ import java.util.Optional;
 @Schema(name = "Success")
 public class ActionSuccess {
 
-    @Schema(title="Confirmation message")
+    @Schema(description="Confirmation message")
     @JsonInclude(Include.NON_EMPTY)
     public Optional<String> message;
 

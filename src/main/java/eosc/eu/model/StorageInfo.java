@@ -22,6 +22,9 @@ public class StorageInfo {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String authType;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String protocol;
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Optional<Boolean> canBrowse;
 
@@ -32,21 +35,23 @@ public class StorageInfo {
     /**
      * Constructor
      */
-    public StorageInfo(String destination, String authType, String description) {
+    public StorageInfo(String destination, String authType, String protocol, String description) {
         this.destination = destination;
-        this.description = description;
         this.authType = authType;
+        this.protocol = protocol;
+        this.description = description;
     }
 
     /**
      * Extended constructor
      */
-    public StorageInfo(String destination, String authType, boolean canBrowse, String transferWith, String description) {
+    public StorageInfo(String destination, String authType, String protocol, boolean canBrowse, String transferWith, String description) {
         this.destination = destination;
-        this.description = description;
         this.authType = authType;
+        this.protocol = protocol;
         this.canBrowse = Optional.of(canBrowse);
         this.transferWith = transferWith;
+        this.description = description;
     }
 
     /***

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Date;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import parser.zenodo.model.ZenodoFile;
 import parser.b2share.model.B2ShareFile;
 import egi.fts.model.ObjectInfo;
@@ -23,12 +24,18 @@ public class StorageElement extends StorageElementBase {
     public long size;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Schema(description="Date and time when element was created", example = "2022-10-15T20:14:22")
     public Date createdAt;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Schema(description="Date and time when element was last accessed", example = "2022-10-15T20:14:22")
     public Date accessedAt;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Schema(description="Date and time when element was last modified", example = "2022-10-15T20:14:22")
     public Date modifiedAt;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

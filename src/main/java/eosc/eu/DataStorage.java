@@ -92,6 +92,7 @@ public class DataStorage extends DataTransferBase {
 
                     var storageInfo = new StorageInfo(destination,
                             storageConfig.authType(),
+                            storageConfig.protocol(),
                             params.ts.canBrowseStorage(destination),
                             params.ts.getServiceName(),
                             storageDescription);
@@ -157,6 +158,7 @@ public class DataStorage extends DataTransferBase {
                                                 storageConfig.description().get() : "";
                 var storageInfo = new StorageInfo(destination,
                                                   storageConfig.authType(),
+                                                  storageConfig.protocol(),
                                                   params.ts.canBrowseStorage(destination),
                                                   params.ts.getServiceName(),
                                                   storageDescription);

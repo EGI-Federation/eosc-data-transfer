@@ -34,6 +34,8 @@ public interface TransfersConfig {
         @WithName("auth")
         public String authType();
 
+        public String protocol();
+
         public Optional<String> description();
     }
 

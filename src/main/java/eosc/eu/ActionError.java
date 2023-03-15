@@ -29,14 +29,14 @@ import egi.fts.FileTransferServiceException;
 @Schema(name = "Error")
 public class ActionError {
 
-    @Schema(title="Error type")
+    @Schema(description="Error type")
     public String id;
 
-    @Schema(title="Error message")
+    @Schema(description="Error message")
     @JsonInclude(Include.NON_EMPTY)
     public Optional<String> description;
 
-    @Schema(title="Additional details about the error")
+    @Schema(description="Additional details about the error")
     @JsonInclude(Include.NON_EMPTY)
     public Optional<Map<String, String>> details;
 

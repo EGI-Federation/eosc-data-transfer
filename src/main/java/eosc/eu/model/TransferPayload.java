@@ -11,7 +11,7 @@ import java.util.List;
  * A file to transfer, includes multiple sources for the same file, and multiple destinations where to transfer it.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(description="Describes one file to be transferred")
+@Schema(description="Describes one file to be transferred (any source to all destinations)")
 public class TransferPayload {
 
     @Schema(description="Multiple sources for the file to be transferred, will try them all until one is available")

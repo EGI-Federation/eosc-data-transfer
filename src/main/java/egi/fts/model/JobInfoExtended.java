@@ -2,6 +2,7 @@ package egi.fts.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.google.type.DateTime;
 
 import java.util.Date;
 import java.util.Map;
@@ -15,7 +16,7 @@ import java.util.Optional;
 public class JobInfoExtended extends JobInfo {
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String job_state;    // "ACTIVE", "FINISHED", "CANCELED"
+    public String job_state;    // https://fts3-docs.web.cern.ch/fts3-docs/docs/state_machine.html
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String job_type;     // "N" or "R"

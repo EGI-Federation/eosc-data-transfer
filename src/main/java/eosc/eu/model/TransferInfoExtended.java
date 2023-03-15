@@ -1,5 +1,6 @@
 package eosc.eu.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -9,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import egi.fts.model.JobInfoExtended;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 
 /**
@@ -20,7 +22,12 @@ public class TransferInfoExtended extends TransferInfo {
     // NOTE: When adding/renaming fields, also update all translateTransferInfoFieldName() methods
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public TransferStatus jobState;
+    @Schema(description="Job state")
+    public TransferState jobState;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description="Job state as reported by the transfer service")
+    public String jobStateTS;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String jobType;
@@ -29,12 +36,14 @@ public class TransferInfoExtended extends TransferInfo {
     public Map<String, String> jobMetadata;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description="Source storage element")
     public String source_se;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String source_space_token;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description="Destination storage element")
     public String destination_se;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -44,6 +53,7 @@ public class TransferInfoExtended extends TransferInfo {
     public String verifyChecksum;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description="True to overwrite destination files")
     public Optional<Boolean> overwrite;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -68,15 +78,20 @@ public class TransferInfoExtended extends TransferInfo {
     public Optional<Integer> targetQOS;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description="True if transfer was canceled")
     public Optional<Boolean> cancel;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Schema(description="Date and time when transfer was submitted", example = "2022-10-15T20:14:22")
     public Date submittedAt;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String submittedTo;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Schema(description="Date and time when transfer ended", example = "2022-10-15T20:14:22")
     public Date finishedAt;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -104,7 +119,8 @@ public class TransferInfoExtended extends TransferInfo {
 
         this.kind = "TransferInfoExtended";
         this.jobId = jie.job_id;
-        this.jobState = TransferStatus.fromString(jie.job_state);
+        this.jobStateTS = jie.job_state;
+        this.jobState = TransferState.fromString(jie.job_state);
         this.jobType = jie.job_type;
 
         this.jobMetadata = new HashMap<>();
@@ -142,37 +158,43 @@ public class TransferInfoExtended extends TransferInfo {
     /***
      * The status of a transfer
      */
-    public enum TransferStatus
+    @Schema(description="When all files transferred successfully it will be 'succeeded', when all files failed to transfer is will be 'failed'.")
+    public enum TransferState
     {
         unused("unused"),
+        staging("staging"),
+        submitted("submitted"),
         active("active"),
         succeeded("succeeded"),
+        partial("partial"),
         failed("failed"),
         canceled("canceled");
 
         private String status;
 
-        TransferStatus(String status) { this.status = status; }
+        TransferState(String status) { this.status = status; }
 
-        public static TransferStatus fromString(String status_) {
+        public static TransferState fromString(String status_) {
             final String status = status_.toLowerCase();
-            if(status.contains("succe") || status.contains("finish"))
+            if(status.contains("staging"))
+                return staging;
+            else if(status.contains("submitted"))
+                return submitted;
+            else if(status.contains("ready") || status.contains("active") || status.contains("progress"))
+                return active;
+            else if(status.contains("dirty"))
+                return partial;
+            else if(status.contains("succe") || status.contains("finish"))
                 return succeeded;
             else if(status.contains("fail"))
                 return failed;
             else if(status.contains("cancel"))
                 return canceled;
-            else if(status.contains("active") || status.contains("progress"))
-                return active;
 
             return unused;
         }
 
         public String toString() {
-            TransferStatus ts = fromString(this.status);
-            if(ts.equals(TransferStatus.unused))
-                return String.format("unused (%s)", this.status);
-
             return this.status;
         }
     }

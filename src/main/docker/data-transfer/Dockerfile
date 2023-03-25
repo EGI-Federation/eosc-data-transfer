@@ -33,12 +33,10 @@ EXPOSE 8080
 USER 185
 
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
-ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
+ENV JAVA_APP_DIR="/deployments"
 
 # This image uses the `run-java.sh` script to run the application.
 # This scripts computes the command line to execute your Java application, and
 # includes memory/GC tuning.
 # You can configure the behavior using the environment variables from file data-transfer.env
 # See also https://github.com/fabric8io-images/run-java-sh
-
-

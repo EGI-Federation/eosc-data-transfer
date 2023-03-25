@@ -49,12 +49,18 @@ quarkus:
       level: DEBUG
       format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
     file:
-      enable: true
-      path: ./log/data-transfer.log
+      enable: false
+      path: ./logs/data-transfer.log
       level: INFO
-      format: "%d{HH:mm:ss} %-5p [%c{2.}]] (%t) %s%e%n"
+      format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
+      rotation:
+        max-file-size: 1M
+        max-backup-index: 10
   opentelemetry:
-    enabled: false
+    enabled: true
+    exporter:
+      otlp:
+        endpoint: http://localhost:4317
   swagger-ui:
     always-include: true
     path: swagger-ui
@@ -62,10 +68,9 @@ quarkus:
     urls:
       default: /openapi
     urls-primary-name: default
-
   smallrye-openapi:
     path: /openapi
-    info-version: 1.0.43
+    info-version: 1.0.45
   jackson:
     fail-on-unknown-properties: false
   http:

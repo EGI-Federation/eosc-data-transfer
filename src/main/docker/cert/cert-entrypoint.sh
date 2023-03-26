@@ -9,12 +9,12 @@ if [ ! -d /usr/share/nginx/certificates ]; then
     mkdir -p /usr/share/nginx/certificates
 fi
 
-### If certificates do not exist yet, create self-signed ones before we start nginx
+### If certificates do not exist yet, create self-signed one before we start nginx
 if [ ! -f /usr/share/nginx/certificates/fullchain.pem ]; then
     echo "Generating self-signed certificate"
     openssl genrsa -out /usr/share/nginx/certificates/privkey.pem 4096
     openssl req -new -key /usr/share/nginx/certificates/privkey.pem -out /usr/share/nginx/certificates/cert.csr -nodes -subj \
-    "/C=PT/ST=World/L=World/O=$DOMAIN/OU=egi lda/CN=$DOMAIN"
+    "/C=PT/ST=World/L=World/O=$DOMAIN/OU=EGI lda/CN=$DOMAIN"
     openssl x509 -req -days 365 -in /usr/share/nginx/certificates/cert.csr -signkey /usr/share/nginx/certificates/privkey.pem -out /usr/share/nginx/certificates/fullchain.pem
 fi
 

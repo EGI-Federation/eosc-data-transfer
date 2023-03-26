@@ -23,6 +23,7 @@ services:
         - SERVICE_URL=http://api:${SERVICE_PORT}
         - SERVICE_DOMAIN=${SERVICE_DOMAIN}
         - SERVICE_EMAIL=${SERVICE_EMAIL}
+        - TELEMETRY_URL=${OTEL_COLLECTOR_ADDR}
     links:
       - api
     volumes:
@@ -143,7 +144,6 @@ services:
       - logs:/usr/logs/data-transfer:ro
     ports:
       - "${OTEL_COLLECTOR_PORT}:4317"
-      - "${HTTP_COLLECTOR_PORT}:4318"
       - "9464:9464"   # Prometheus exporter
       - "8888:8888"   # Metrics endpoint
       - "13133:13133" # Health check

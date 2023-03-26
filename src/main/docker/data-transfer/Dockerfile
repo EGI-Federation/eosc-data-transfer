@@ -25,8 +25,8 @@ COPY --from=builder --chown=185 /app/target/quarkus-app/lib/ /deployments/lib/
 COPY --from=builder --chown=185 /app/target/quarkus-app/*.jar /deployments/
 COPY --from=builder --chown=185 /app/target/quarkus-app/app/ /deployments/app/
 COPY --from=builder --chown=185 /app/target/quarkus-app/quarkus/ /deployments/quarkus/
-RUN mkdir /deployments/logs && \
-    chown 185: /deployments/logs
+RUN mkdir /deployments/logs
+RUN chown 185: /deployments/logs
 
 # If you want to include the debug port into your docker image
 # you will have to expose the debug port (default 5005) like this :  EXPOSE 8080 5005

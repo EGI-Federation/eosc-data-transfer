@@ -294,15 +294,12 @@ See [here](#integrating-new-doi-parsers) for how to configure the data repositor
 parsers used by the API and [here](#integrating-new-data-transfer-services) for
 how to extend the API with new transfer services and storage types.
 
-You can change the port on which the API runs by altering the setting `quarkus/http/port`
-(8080 by default).
-
-> A certificate for an EGI service account needed to call the wrapped
-> [EGI Data Transfer](https://docs.egi.eu/users/data/management/data-transfer/) service
-> and configure S3 storage systems for users of the EOSC Data Transfer API is included in
-> the file `src/main/resources/fts-keystore.jks`. The password for this certificate is not
-> included, contact EGI to obtain a service account and a new certificate (together with its
-> password) when deploying this API. 
+> The API needs a certificate for an EGI service account to
+> [register and configure S3 storage systems](https://fts3-docs.web.cern.ch/fts3-docs/docs/s3_support.html)
+> with the wrapped [EGI Data Transfer](https://docs.egi.eu/users/data/management/data-transfer/)
+> service. Such a certificate is included in the file `src/main/resources/fts-keystore.jks`, but
+> the password for this certificate is not included. [Contact EGI](https://www.egi.eu/contact-us/)
+> to obtain a service account and a new certificate (together with its password) when deploying this API. 
 
 
 ## Running the API in dev mode
@@ -342,27 +339,30 @@ The application, packaged as an _über-jar_, is now runnable using `java -jar ta
 You can use Docker Compose to easily deploy and run the EOSC Data Transfer API.
 This will run two containers:
 
-- This application that implements the API and serves it over HTTP on port 8080 ([configurable](#configuration))
-- HTTPS frontend that will forward REST API requests to the API application
+- This application that implements the API and serves it over HTTP
+- SSL terminator that decrypts traffic and forwards REST API requests to the API
 
 Steps to run the API in a container:
 
-1. Copy the file `src/main/docker/.env.template` to `src/main/docker/.env` and
-   * Edit the environment variables `SERVICE_DOMAIN` and `SERVICE_URL` to be the domain name and the
-   fully qualified URL (including the HTTPS protocol, the domain name, and optionally the port)
-   at which the API will be available.
-   * Provide an email address that will be used, together with the domain name, to request an
-   SSL certificate for the webserver serving the API.
-   * Finally, edit the environment variable `FTS_KEY_STORE_PASSWORD` and provide the password for the
-   certificate in file `src/main/resources/fts-keystore.jks`.  
+1. Copy the file `src/main/docker/.env.template` to `src/main/docker/.env`, then:
+   * Provide the domain name and port where you will deploy the API in the environment
+   variables `SERVICE_DOMAIN` and `SERVICE_PORT`, respectively. 
+   * Provide an email address in environment variables `SERVICE_EMAIL` to be used,
+   together with the domain name, to automatically request SSL certificate for the
+   SSL terminator.
+   * In the environment variable `FTS_KEY_STORE_FILE` provide a path to a
+   Java keystore file containing a new [EGI service account certificate](#configuration),
+   and in the environment variable `FTS_KEY_STORE_PASSWORD` provide the password for it.
+   * In the environment variable `TELEMETRY_PORT` provide the port on which to publish
+   the Grafana telemetry dashboards.
 
-2. Run the command `build.sh` (or `build.cmd` on Windows) to build and run the containers that implement
-the EOSC Data Transfer API.  
+2. Run the command `build.sh` (or `build.cmd` on Windows) to build and run the containers
+that implement the EOSC Data Transfer API.  
 
-3. The HTTPS frontend container will automatically use [Let's Encrypt](https://letsencrypt.org)
+3. The SSL terminator will automatically use [Let's Encrypt](https://letsencrypt.org)
 to request an SSL certificate for HTTPS.
 
-After the HTTPS container is deployed and working properly, connect to the container and
+After the SSL terminator container is deployed and working properly, connect to it and
 make sure it is requesting an actual HTTPS certificate. By default, it will use a self-signed
 certificate and will only do dry runs for requesting a certificate to avoid the
 [rate limits](https://letsencrypt.org/docs/rate-limits/) of Let's Encrypt. To do this:

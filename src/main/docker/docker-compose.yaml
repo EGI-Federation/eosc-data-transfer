@@ -1,23 +1,30 @@
-version: '3.5'
+version: '3.9'
+
+networks:
+  default:
+    name: eosc
+    driver: bridge
 
 volumes:
   certificates:
+  logs:
 
 services:
+  # ************************
+  # Data Transfer components
+  # ************************
+  # SSL offloading
   cert:
     container_name: data-transfer-ssl
     image: eosc/data-transfer-ssl:latest
     build:
       context: cert/
       args:
-        - SERVICE_URL=http://api:8080
+        - SERVICE_URL=http://api:${SERVICE_PORT}
         - SERVICE_DOMAIN=${SERVICE_DOMAIN}
         - SERVICE_EMAIL=${SERVICE_EMAIL}
     links:
       - api
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
       - certificates:/etc/letsencrypt
     healthcheck:
@@ -26,14 +33,119 @@ services:
       interval: 1m
       timeout: 5s
     restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
 
+  # Data transfer service
   api:
     container_name: data-transfer-api
     image: eosc/data-transfer-api:latest
     build:
       context: data-transfer/
-      args:
-        - FTS_KEY_STORE_PASSWORD=${FTS_KEY_STORE_PASSWORD}
-    ports:
-      - "8080:8080"
+    environment:
+      - EOSC_TRANSFER_SERVICE_FTS_KEY_STORE_PASSWORD=${FTS_KEY_STORE_PASSWORD}
+      - QUARKUS_LOG_FILE_PATH=/deployments/logs/data-transfer.log
+      - QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
+      - QUARKUS_OPENTELEMETRY_TRACER_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.name=data-transfer
+    volumes:
+      - logs:/deployments/logs:rw
     restart: unless-stopped
+    ports:
+      - "${SERVICE_PORT}:${SERVICE_PORT}"
+    depends_on:
+      - otelcol
+
+  # ************************
+  # Telemetry components
+  # ************************
+  # Jaeger (traces)
+  jaeger:
+    image: jaegertracing/all-in-one
+    container_name: jaeger
+    command:
+      - "--memory.max-traces"
+      - "10000"
+      - "--query.base-path"
+      - "/jaeger/ui"
+      - "--prometheus.server-url"
+      - "http://${PROMETHEUS_ADDR}"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - METRICS_STORAGE_TYPE=prometheus
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    restart: unless-stopped
+    ports:
+      - "${JAEGER_SERVICE_PORT}:16686" # Jaeger UI
+      - "${JAEGER_COLLECTOR_PORT}:4317"
+
+  # Prometheus (metrics)
+  prometheus:
+    image: quay.io/prometheus/prometheus:v2.34.0
+    container_name: prometheus
+    command:
+      - --web.console.templates=/etc/prometheus/consoles
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --storage.tsdb.retention.time=1h
+      - --config.file=/etc/prometheus/prometheus-config.yaml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+      - --web.route-prefix=/
+      - --enable-feature=exemplar-storage
+    volumes:
+      - ./prometheus/prometheus-config.yaml:/etc/prometheus/prometheus-config.yaml
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    ports:
+      - "${PROMETHEUS_SERVICE_PORT}:9090"
+
+  # Loki (logs)
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    volumes:
+      - ./loki/loki.yaml:/etc/loki/local-config.yaml
+    restart: unless-stopped
+    ports:
+      - "${LOKI_COLLECTOR_PORT}:3100"
+
+  # Grafana (dashboard)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    deploy:
+      resources:
+        limits:
+          memory: 75M
+    volumes:
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    ports:
+      - "${GRAFANA_SERVICE_PORT}:3000"
+
+  # OpenTelemetry collector
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    deploy:
+      resources:
+        limits:
+          memory: 125M
+    restart: unless-stopped
+    command: [ "--config=/etc/otelcol-config.yml" ]
+    volumes:
+      - ./otelcollector/otelcol-config.yml:/etc/otelcol-config.yml
+      - logs:/usr/logs/data-transfer:ro
+    ports:
+      - "${OTEL_COLLECTOR_PORT}:4317"
+      - "${HTTP_COLLECTOR_PORT}:4318"
+      - "9464:9464"   # Prometheus exporter
+      - "8888:8888"   # Metrics endpoint
+      - "13133:13133" # Health check
+    depends_on:
+      - jaeger

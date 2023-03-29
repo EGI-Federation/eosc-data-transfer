@@ -1,7 +1,5 @@
 package eosc.eu;
 
-import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
@@ -15,6 +13,9 @@ import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Tuple2;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,18 +43,19 @@ import eosc.eu.model.Transfer.Destination;
 @Produces(MediaType.APPLICATION_JSON)
 public class DataTransfer extends DataTransferBase {
 
+    private static final Logger LOG = Logger.getLogger(DataTransfer.class);
+
     @Inject
     TransfersConfig config;
 
-    private static final Logger LOG = Logger.getLogger(DataTransfer.class);
+    @Inject
+    MeterRegistry registry;
 
 
     /***
      * Constructor
      */
-    public DataTransfer() {
-        super(LOG);
-    }
+    public DataTransfer() { super(LOG); }
 
     /**
      * Initiate new transfer of multiple sets of files.

@@ -11,17 +11,8 @@ receivers:
     start_at: beginning
     include:
       - /usr/logs/data-transfer/*.log
-  hostmetrics:
-    scrapers:
-      cpu:
-      disk:
-      filesystem:
-      load:
-      memory:
-      network:
-      process:
-      processes:
-      paging:
+  docker_stats:
+
 
 exporters:
   otlp:

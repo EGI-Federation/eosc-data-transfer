@@ -1,8 +1,5 @@
 package eosc.eu;
 
-import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -14,13 +11,16 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import org.jboss.logging.Logger;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.tuples.Tuple2;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.ext.web.client.WebClient;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
 import org.reactivestreams.Subscription;
 
-import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -32,7 +32,6 @@ import eosc.eu.model.*;
 import parser.ParserHelper;
 
 
-@RequestScoped
 @Path("/")
 @SecuritySchemes(value = {
     @SecurityScheme(securitySchemeName = "none"),
@@ -47,7 +46,13 @@ public class DigitalObjectIdentifier {
     private Subscription subscription;
 
     @Inject
+    MeterRegistry registry;
+
+    @Inject
     ParsersConfig config;
+
+    @Inject
+    Vertx vertx;
 
 
     /***
@@ -55,9 +60,9 @@ public class DigitalObjectIdentifier {
      */
     @Inject
     DigitalObjectIdentifier(Vertx vertx) {
+        this.client = WebClient.create(vertx);
 
-        if(null == DigitalObjectIdentifier.client)
-            client = WebClient.create(vertx);
+        LOG.infof("Is Vertx Metrics Enabled - {}", vertx.isMetricsEnabled());
     }
 
     /**

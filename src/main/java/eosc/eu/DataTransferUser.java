@@ -1,7 +1,5 @@
 package eosc.eu;
 
-import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -14,6 +12,9 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestHeader;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Tuple2;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -39,18 +40,19 @@ import org.jboss.resteasy.reactive.RestQuery;
 @Produces(MediaType.APPLICATION_JSON)
 public class DataTransferUser extends DataTransferBase {
 
+    private static final Logger LOG = Logger.getLogger(DataTransferUser.class);
+
     @Inject
     TransfersConfig config;
 
-    private static final Logger LOG = Logger.getLogger(DataTransferUser.class);
+    @Inject
+    MeterRegistry registry;
 
 
     /***
-     * Constructor
+     * Construct with meter
      */
-    public DataTransferUser() {
-        super(LOG);
-    }
+    public DataTransferUser() { super(LOG); }
 
     /**
      * Retrieve information about current user.

@@ -3,7 +3,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>eosc.eu</groupId>
-  <artifactId>eosc-future-data-transfer</artifactId>
+  <artifactId>eosc-data-transfer</artifactId>
   <version>1.1</version>
   <properties>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
@@ -47,6 +47,10 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-opentelemetry</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>

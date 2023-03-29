@@ -132,7 +132,7 @@ public class DataStorage extends DataTransferBase {
                                                    description = DESTINATION_STORAGE)
                                         String destination) {
 
-        LOG.infof("Retrieve information about a storage type %s?", destination);
+        LOG.infof("Retrieve information about storage type %s", destination);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 

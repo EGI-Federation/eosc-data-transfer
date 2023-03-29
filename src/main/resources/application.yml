@@ -47,7 +47,7 @@ quarkus:
     console:
       enable: true
       level: INFO
-      format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
+      format: "%d{HH:mm:ss} %-5p traceId=%X{traceId} [%c{2.}] (%t) %s%e%n"
     file:
       enable: true
       path: ./logs/data-transfer.log
@@ -58,9 +58,15 @@ quarkus:
         max-backup-index: 10
   opentelemetry:
     enabled: true
-    exporter:
-      otlp:
-        endpoint: http://localhost:4317
+    tracer:
+      exporter:
+        otlp:
+          endpoint: http://localhost:4317
+  micrometer:
+    enabled: true
+    export:
+      prometheus:
+        path: /metrics
   swagger-ui:
     always-include: true
     path: swagger-ui
@@ -70,11 +76,11 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.0.45
+    info-version: 1.1.3
   jackson:
     fail-on-unknown-properties: false
   http:
-    port: 8080
+    port: 8081
     cors: true
   tls:
     trust-all: false

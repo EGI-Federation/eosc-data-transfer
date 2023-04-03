@@ -310,8 +310,8 @@ You can run your application in dev mode that enables live coding using:
 ```
 
 <!-- markdownlint-disable no-bare-urls -->
-Then open the Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
-<!-- markdownlint-enable no-bare-urls -->
+Then open the Dev UI, which is available in dev mode only at http://localhost:8081/q/dev/.
+<!-- markdownlint-enable no-bare-urls -->8081
 
 
 ## Packaging and running the API
@@ -379,10 +379,12 @@ certificate and will only do dry runs for requesting a certificate to avoid the
 ## Related Guides
 
 - [REST server implementation](https://quarkus.io/guides/resteasy-reactive) Writing reactive REST services
-- [REST client implementation](https://quarkus.io/guides/rest-client-reactive): REST client to easily call REST APIs
+- [REST client implementation](https://quarkus.io/guides/rest-client-reactive): REST client to easily call APIs
 - [Configuration reference](https://quarkus.io/guides/config-reference): Configuration reference guide
 - [YAML Configuration](https://quarkus.io/guides/config#yaml): Use YAML to configure your application
 - [Introduction to CDI](https://quarkus.io/guides/cdi): Contexts and dependency injection guide
-- [Swagger UI](https://quarkus.io/guides/openapi-swaggerui): Add user-friendly UI to view and test your REST API
+- [OpenTelemetry support](https://quarkus.io/guides/opentelemetry): Adding observability to your application
+- [Metrics with Micrometer](https://quarkus.io/guides/micrometer): Sending API metrics to Prometheus
+- [Swagger UI](https://quarkus.io/guides/openapi-swaggerui): User-friendly UI to document and test your API
 - [Mutiny Guides](https://smallrye.io/smallrye-mutiny/1.7.0/guides): Reactive programming with Mutiny
 - [Optionals](https://dzone.com/articles/optional-in-java): How to use Optional in Java

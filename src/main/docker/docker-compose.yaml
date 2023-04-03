@@ -24,8 +24,10 @@ services:
         - SERVICE_DOMAIN=${SERVICE_DOMAIN}
         - SERVICE_EMAIL=${SERVICE_EMAIL}
         - TELEMETRY_URL=${OTEL_COLLECTOR_ADDR}
+        - GRAFANA_URL=http://grafana:3000
     links:
       - api
+      - grafana
     volumes:
       - certificates:/etc/letsencrypt
     healthcheck:
@@ -37,6 +39,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8080:8080"
 
   # Data transfer service
   api:

@@ -1,0 +1,220 @@
+{
+    "datasource": {
+      "uid": "my-mterics"
+    },
+    "description": "",
+    "fieldConfig": {
+      "defaults": {
+        "custom": {
+          "drawStyle": "line",
+          "lineInterpolation": "smooth",
+          "barAlignment": 0,
+          "lineWidth": 1,
+          "fillOpacity": 39,
+          "gradientMode": "hue",
+          "spanNulls": true,
+          "showPoints": "never",
+          "pointSize": 5,
+          "stacking": {
+            "mode": "none",
+            "group": "A"
+          },
+          "axisPlacement": "auto",
+          "axisLabel": "",
+          "axisColorMode": "text",
+          "scaleDistribution": {
+            "type": "log",
+            "log": 2
+          },
+          "axisCenteredZero": false,
+          "hideFrom": {
+            "tooltip": false,
+            "viz": false,
+            "legend": false
+          },
+          "thresholdsStyle": {
+            "mode": "off"
+          }
+        },
+        "color": {
+          "mode": "palette-classic"
+        },
+        "mappings": [],
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {
+              "color": "green",
+              "value": null
+            },
+            {
+              "color": "red",
+              "value": 80
+            }
+          ]
+        },
+        "decimals": 0,
+        "unit": "short"
+      },
+      "overrides": [
+        {
+          "matcher": {
+            "id": "byName",
+            "options": "HTTP Status 500"
+          },
+          "properties": [
+            {
+              "id": "color",
+              "value": {
+                "fixedColor": "dark-orange",
+                "mode": "fixed"
+              }
+            }
+          ]
+        },
+        {
+          "matcher": {
+            "id": "byName",
+            "options": "{statuscode=\"200\"} 200"
+          },
+          "properties": [
+            {
+              "id": "color",
+              "value": {
+                "fixedColor": "green",
+                "mode": "fixed"
+              }
+            }
+          ]
+        },
+        {
+          "matcher": {
+            "id": "byName",
+            "options": "{statuscode=\"404\"} 404"
+          },
+          "properties": [
+            {
+              "id": "color",
+              "value": {
+                "fixedColor": "semi-dark-purple",
+                "mode": "fixed"
+              }
+            }
+          ]
+        },
+        {
+          "matcher": {
+            "id": "byName",
+            "options": "{statuscode=\"503\"} 503"
+          },
+          "properties": [
+            {
+              "id": "color",
+              "value": {
+                "fixedColor": "dark-red",
+                "mode": "fixed"
+              }
+            }
+          ]
+        },
+        {
+          "matcher": {
+            "id": "byName",
+            "options": "HTTP Status 404"
+          },
+          "properties": [
+            {
+              "id": "color",
+              "value": {
+                "fixedColor": "light-orange",
+                "mode": "fixed"
+              }
+            }
+          ]
+        },
+        {
+          "matcher": {
+            "id": "byName",
+            "options": "HTTP Status 403"
+          },
+          "properties": [
+            {
+              "id": "color",
+              "value": {
+                "fixedColor": "light-blue",
+                "mode": "fixed"
+              }
+            }
+          ]
+        },
+        {
+          "matcher": {
+            "id": "byName",
+            "options": "HTTP Status 200"
+          },
+          "properties": [
+            {
+              "id": "color",
+              "value": {
+                "fixedColor": "semi-dark-blue",
+                "mode": "fixed"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "gridPos": {
+      "h": 9,
+      "w": 8,
+      "x": 8,
+      "y": 21
+    },
+    "id": 2,
+    "maxDataPoints": 50,
+    "options": {
+      "tooltip": {
+        "mode": "single",
+        "sort": "none"
+      },
+      "legend": {
+        "showLegend": true,
+        "displayMode": "list",
+        "placement": "bottom",
+        "calcs": []
+      }
+    },
+    "pluginVersion": "8.0.0-beta3",
+    "targets": [
+      {
+        "datasource": {
+          "uid": "my-metrics"
+        },
+        "expr": "sum by (status) (count_over_time(http_server_requests_seconds_count{job=\"$service\"} | json | __error__=\"\" [$__interval]))",
+        "legendFormat": "HTTP Status {{status}}",
+        "refId": "A",
+        "editorMode": "code",
+        "queryType": "range"
+      }
+    ],
+    "title": "HTTP status codes over time",
+    "transformations": [
+      {
+        "id": "filterFieldsByName",
+        "options": {
+          "include": {
+            "names": [
+              "Time",
+              "HTTP Status 200",
+              "HTTP Status 202",
+              "HTTP Status 401",
+              "HTTP Status 403",
+              "HTTP Status 404",
+              "HTTP Status 500"
+            ]
+          }
+        }
+      }
+    ],
+    "type": "timeseries"
+  }

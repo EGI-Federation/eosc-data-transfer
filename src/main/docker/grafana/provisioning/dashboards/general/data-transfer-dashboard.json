@@ -419,12 +419,50 @@
       "title": "Error Rate",
       "type": "timeseries"
     },
+
+
     {
+      "id": 2,
+      "type": "timeseries",
+      "title": "HTTP status codes over time",
+      "description": "",
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
       "datasource": {
         "type": "prometheus",
         "uid": "my-metrics"
       },
-      "description": "",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": " sum by(status) (increase(http_server_requests_seconds_count{job=~\"data-transfer\", uri!~\"/metrics\"}[$__interval]))",
+          "legendFormat": "HTTP Status {{status}}",
+          "queryType": "range",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "maxDataPoints": 50,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "all",
+          "sort": "none"
+        }
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -482,7 +520,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "HTTP Status 500"
+              "options": "HTTP Status 503"
             },
             "properties": [
               {
@@ -497,37 +535,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "{statuscode=\"200\"} 200"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "{statuscode=\"404\"} 404"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "semi-dark-purple",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "{statuscode=\"503\"} 503"
+              "options": "HTTP Status 500"
             },
             "properties": [
               {
@@ -542,13 +550,28 @@
           {
             "matcher": {
               "id": "byName",
+              "options": "HTTP Status 419"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "HTTP Status 404"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "light-orange",
+                  "fixedColor": "red",
                   "mode": "fixed"
                 }
               }
@@ -563,7 +586,52 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "light-blue",
+                  "fixedColor": "light-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "HTTP Status 401"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-light-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "HTTP Status 400"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "HTTP Status 202"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-blue",
                   "mode": "fixed"
                 }
               }
@@ -578,7 +646,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "semi-dark-blue",
+                  "fixedColor": "semi-dark-green",
                   "mode": "fixed"
                 }
               }
@@ -586,42 +654,6 @@
           }
         ]
       },
-      "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 17
-      },
-      "id": 2,
-      "maxDataPoints": 50,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "8.0.0-beta3",
-      "targets": [
-        {
-          "datasource": {
-            "uid": "my-metrics"
-          },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": " sum by (status) (increase (http_server_requests_seconds_count{job=\"$service\"} [$__interval]))",
-          "legendFormat": "HTTP Status {{status}}",
-          "queryType": "range",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "HTTP status codes over time",
       "transformations": [
         {
           "id": "filterFieldsByName",
@@ -643,9 +675,14 @@
           }
         }
       ],
-      "type": "timeseries"
+      "pluginVersion": "8.0.0-beta3"
     },
+
+
     {
+      "id": 16,
+      "type": "row",
+      "title": "Service Logs",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -653,12 +690,11 @@
         "x": 0,
         "y": 26
       },
-      "id": 16,
-      "panels": [],
-      "title": "Logs",
-      "type": "row"
+      "panels": []
     },
     {
+      "id": 19,
+      "type": "logs",
       "datasource": {
         "type": "loki",
         "uid": "my-logs"
@@ -668,17 +704,6 @@
         "w": 24,
         "x": 0,
         "y": 27
-      },
-      "id": 19,
-      "options": {
-        "dedupStrategy": "none",
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": false,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": false
       },
       "targets": [
         {
@@ -691,9 +716,17 @@
           "queryType": "range",
           "refId": "A"
         }
-      ],
-      "title": "Service Logs",
-      "type": "logs"
+      ]
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      }
     }
   ],
   "schemaVersion": 37,

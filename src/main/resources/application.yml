@@ -47,7 +47,7 @@ quarkus:
     console:
       enable: true
       level: INFO
-      format: "%d{HH:mm:ss} %-5p traceId=%X{traceId} [%c{2.}] (%t) %s%e%n"
+      format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
     file:
       enable: true
       path: ./logs/data-transfer.log
@@ -67,6 +67,9 @@ quarkus:
     export:
       prometheus:
         path: /metrics
+    binder:
+      http-server:
+        ignore-patterns: /metrics
   swagger-ui:
     always-include: true
     path: swagger-ui

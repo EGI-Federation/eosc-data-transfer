@@ -614,7 +614,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "increase (http_server_requests_seconds_count{job=\"$service\"} [$__interval])",
+          "expr": " sum by (status) (increase (http_server_requests_seconds_count{job=\"$service\"} [$__interval]))",
           "legendFormat": "HTTP Status {{status}}",
           "queryType": "range",
           "range": true,
@@ -661,7 +661,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "P8E80F9AEF21F6940"
+        "uid": "my-logs"
       },
       "gridPos": {
         "h": 8,
@@ -676,15 +676,18 @@
         "prettifyLogMessage": false,
         "showCommonLabels": false,
         "showLabels": false,
-        "showTime": false,
+        "showTime": true,
         "sortOrder": "Descending",
         "wrapLogMessage": false
       },
       "targets": [
         {
+          "datasource": {
+            "type": "loki",
+            "uid": "my-logs"
+          },
           "editorMode": "builder",
-          "expr": "{filename=~\"data-transfer.*\"} | json | line_format `{{.timestamp}} {{.level}} sequence:{{.sequence}} span:{{.mdc_spanId}} trace:{{.mdc_traceId}} {{.message}} | {{.loggerName}}`",
-          "key": "Q-374a937c-bf5c-4485-b12e-0f80800e57ba-0",
+          "expr": "{filename=~\"data-transfer.*\"} | json | line_format `{{.level}} sequence:{{.sequence}} span:{{.mdc_spanId}} trace:{{.mdc_traceId}} {{.message}} | {{.loggerName}}`",
           "queryType": "range",
           "refId": "A"
         }
@@ -729,7 +732,7 @@
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},

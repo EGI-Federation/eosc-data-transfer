@@ -33,10 +33,8 @@ public class MetricsCustomization {
                 LOG.debugf("Metric: %s", id.getName());
 
                 if(id.getName().startsWith("http.server.requests")) {
-                    LOG.debugf("SLO is %f", qos.slo());
-
                     return DistributionStatisticConfig.builder()
-                            .percentiles(0.95)                      // 95th percentile, not aggregable
+                            .percentiles(qos.percentile())                      // 95th percentile, not aggregable
                             .percentilesHistogram(true)     // histogram buckets
                             .serviceLevelObjectives(qos.slo())      // SLO in milliseconds
                             .build()

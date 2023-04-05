@@ -1,9 +1,9 @@
 package eosc.eu;
 
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefault;
 
 import java.util.List;
+import java.util.Optional;
 
 
 /***
@@ -12,9 +12,6 @@ import java.util.List;
 @ConfigMapping(prefix = "eosc.qos")
 public interface MetricsConfig {
 
-    @WithDefault("0.95")
-    public double percentile();
-
-    @WithDefault("100")
-    public double slo(); // Request SLO in milliseconds
+    public Optional<List<Double>> percentiles();
+    public Optional<List<Long>> slos();
 }

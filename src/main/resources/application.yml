@@ -38,8 +38,8 @@ eosc:
         key-store-file: fts-keystore.jks
         key-store-password: "password"
   qos:
-    percentile: 0.95
-    slo: 500 # milliseconds
+    percentiles: [ 0.95 ]
+    slos: [ 500, 600, 1000 ] # milliseconds
 
 quarkus:
   application:
@@ -72,9 +72,9 @@ quarkus:
         path: /metrics
     binder:
       http-client:
-        ignore-patterns: "*"
+        ignore-patterns: .+
       http-server:
-        ignore-patterns: "/metrics"
+        ignore-patterns: /metrics
   swagger-ui:
     always-include: true
     path: swagger-ui

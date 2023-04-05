@@ -42,7 +42,7 @@ eosc:
     slo: 500 # milliseconds
 
 quarkus:
-                          application:
+  application:
     name: data-transfer
   log:
     level: INFO
@@ -72,9 +72,10 @@ quarkus:
         path: /metrics
     binder:
       http-client:
-        ignore-patterns: *
+        ignore-patterns: "*"
       http-server:
-        ignore-patterns: /metrics
+        ignore-patterns: "/metrics"
+  swagger-ui:
     always-include: true
     path: swagger-ui
     theme: flattop

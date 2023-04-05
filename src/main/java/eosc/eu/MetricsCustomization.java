@@ -34,9 +34,9 @@ public class MetricsCustomization {
 
                 if(id.getName().startsWith("http.server.requests")) {
                     return DistributionStatisticConfig.builder()
-                            .percentiles(qos.percentile())                      // 95th percentile, not aggregable
-                            .percentilesHistogram(true)     // histogram buckets
-                            .serviceLevelObjectives(qos.slo())      // SLO in milliseconds
+                            .percentiles(qos.percentile())      // 95th percentile, not aggregable
+                            .percentilesHistogram(true)  // histogram buckets
+                            .serviceLevelObjectives(qos.slo())  // SLO in milliseconds
                             .build()
                             .merge(config);
                 }

@@ -37,6 +37,8 @@ eosc:
         # If keystore is missing, this FTS endpoint will also be called using the caller's Check-in token.
         key-store-file: fts-keystore.jks
         key-store-password: "password"
+  qos:
+    slo: 500 # milliseconds
 
 quarkus:
   application:
@@ -67,9 +69,6 @@ quarkus:
     export:
       prometheus:
         path: /metrics
-    binder:
-      http-server:
-        ignore-patterns: /metrics
   swagger-ui:
     always-include: true
     path: swagger-ui

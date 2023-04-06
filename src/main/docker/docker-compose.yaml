@@ -38,7 +38,7 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
+      - "${SERVICE_PORT}:443"
       - "${TELEMETRY_PORT}:8080"
 
   # Data transfer service

@@ -1,4 +1,7 @@
 {
+  "uid": "W2gX2zHVk",
+  "title": "Data Transfer Dashboard",
+  "version": 1,
   "annotations": {
     "list": [
       {
@@ -22,12 +25,77 @@
     ]
   },
   "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "links": [],
+  "style": "dark",
   "liveNow": false,
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "allValue": "",
+        "current": {
+          "selected": false,
+          "text": "data-transfer",
+          "value": "data-transfer"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "my-metrics"
+        },
+        "definition": "system_cpu_count",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Service",
+        "multi": false,
+        "name": "service",
+        "options": [],
+        "query": {
+          "query": "system_cpu_count",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "/.*job=\\\"([^\\\"]+)\\\".*/",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": "",
+        "current": {
+          "selected": false,
+          "text": "api:8081",
+          "value": "api:8081"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "my-metrics"
+        },
+        "definition": "system_cpu_count",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Instance",
+        "multi": false,
+        "name": "instance",
+        "options": [],
+        "query": {
+          "query": "system_cpu_count",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "/.*instance=\\\"([^\\\"]+)\\\".*/",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
   "panels": [
     {
+      "id": 10,
+      "type": "row",
+      "title": "Service Health",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -35,59 +103,165 @@
         "x": 0,
         "y": 0
       },
-      "id": 14,
-      "panels": [],
-      "title": "Metrics",
-      "type": "row"
+      "panels": []
     },
     {
-      "datasource": {},
+      "id": 11,
+      "type": "stat",
+      "title": "Uptime",
+      "gridPos": {
+        "h": 3,
+        "w": 2,
+        "x": 0,
+        "y": 1
+      },
+      "maxDataPoints": 100,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "process_uptime_seconds{job=\"$service\", instance=\"$instance\"}",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "",
+          "metric": "",
+          "range": true,
+          "refId": "A",
+          "step": 14400
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
+          "decimals": 1,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
             }
-          },
-          "mappings": [],
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "dark-green",
                 "value": null
               },
               {
-                "color": "red",
-                "value": 80
+                "color": "semi-dark-green",
+                "value": 86400
+              },
+              {
+                "color": "green",
+                "value": 604800
+              },
+              {
+                "color": "super-light-green",
+                "value": 2629800
+              },
+              {
+                "color": "dark-yellow",
+                "value": 7889399
+              },
+              {
+                "color": "orange",
+                "value": 15778800
+              },
+              {
+                "color": "light-red",
+                "value": 31557600
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "links": [],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Used Heap Mem",
+      "gridPos": {
+        "h": 3,
+        "w": 2,
+        "x": 0,
+        "y": 4
+      },
+      "maxDataPoints": 100,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "sum(jvm_memory_used_bytes{job=\"$service\", instance=\"$instance\", area=\"heap\"})*100/sum(jvm_memory_max_bytes{job=\"$service\",instance=\"$instance\", area=\"heap\"})",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "",
+          "range": true,
+          "refId": "A",
+          "step": 14400
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "value": null
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "value": 70
+              },
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "value": 90
               }
             ]
           },
@@ -95,24 +269,124 @@
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 1
-      },
-      "id": 6,
+      "links": [],
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
+        "textMode": "auto"
+      }
+    },
+
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Used Non-Heap Mem",
+      "gridPos": {
+        "h": 3,
+        "w": 2,
+        "x": 0,
+        "y": 7
+      },
+      "maxDataPoints": 100,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "sum(jvm_memory_used_bytes{job=\"$service\", instance=\"$instance\", area=\"nonheap\"})*100/sum(jvm_memory_max_bytes{job=\"$service\",instance=\"$instance\", area=\"nonheap\"})",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "",
+          "range": true,
+          "refId": "A",
+          "step": 14400
         }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            },
+            {
+              "options": {
+                "from": -1e+32,
+                "result": {
+                  "text": "N/A"
+                },
+                "to": 0
+              },
+              "type": "range"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "value": null
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "value": 70
+              },
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "links": [],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Service Load",
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 2,
+        "y": 1
       },
       "targets": [
         {
@@ -121,8 +395,419 @@
             "uid": "my-metrics"
           },
           "editorMode": "code",
-          "expr": "rate(runtime_cpython_cpu_time{type=~\"system\"}[$__interval])*100",
-          "legendFormat": "__auto",
+          "expr": "system_cpu_count{job=\"$service\", instance=\"$instance\"}",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "CPUs",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "system_load_average_1m{job=\"$service\", instance=\"$instance\"}",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "Load-1m",
+          "metric": "",
+          "range": true,
+          "refId": "A",
+          "step": 2400
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 1,
+          "links": [],
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPUs"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Load-1m"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 35
+              }
+            ]
+          }
+        ]
+      },
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+
+    {
+      "id": 15,
+      "title": "Service CPU Usage",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "system_cpu_usage{job=\"$service\", instance=\"$instance\"}",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 1,
+          "legendFormat": "System",
+          "metric": "",
+          "range": true,
+          "refId": "A",
+          "step": 2400
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "process_cpu_usage{job=\"$service\", instance=\"$instance\"}",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 1,
+          "legendFormat": "Process",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "avg_over_time(process_cpu_usage{job=\"$service\", instance=\"$instance\"}[1h])",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 1,
+          "legendFormat": "Process-1h",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "links": [],
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "Service Memory Usage",
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "sum(jvm_memory_used_bytes{job=\"$service\", instance=\"$instance\"})",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "Used",
+          "metric": "",
+          "range": true,
+          "refId": "A",
+          "step": 2400
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "sum(jvm_memory_committed_bytes{job=\"$service\", instance=\"$instance\"})",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "Committed",
+          "range": true,
+          "refId": "B",
+          "step": 2400
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "sum(jvm_memory_max_bytes{job=\"$service\", instance=\"$instance\"})",
+          "format": "time_series",
+          "hide": true,
+          "intervalFactor": 2,
+          "legendFormat": "Maximum",
+          "range": true,
+          "refId": "C",
+          "step": 2400
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "links": [],
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+
+    {
+      "id": 20,
+      "title": "Service Statistics",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "panels": []
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Request Count",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 11
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!~\"/metrics\"}[$__interval]))",
+          "legendFormat": "Requests",
           "range": true,
           "refId": "A"
         },
@@ -132,21 +817,13 @@
             "uid": "my-metrics"
           },
           "editorMode": "code",
-          "expr": "rate(runtime_cpython_cpu_time{type=~\"user\"}[$__interval])*100",
+          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri=\"/transfers\", method=\"POST\", outcome=\"SUCCESS\"}[$__interval]))",
           "hide": false,
-          "legendFormat": "__auto",
+          "legendFormat": "Transfers",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "Data Transfer Service (CPU%)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "my-metrics"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -159,20 +836,20 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
+            "fillOpacity": 25,
+            "gradientMode": "hue",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "linear",
+            "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -189,119 +866,52 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
-          "unit": "decmbytes"
+          "decimals": 0,
+          "unit": "short"
         },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 1
-      },
-      "id": 8,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "my-metrics"
-          },
-          "editorMode": "code",
-          "expr": "rate(runtime_cpython_memory{type=~\"rss|vms\"}[$__interval])/1024/1024",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Data Transfer Service (Memory)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "my-metrics"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Requests"
             },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+            "properties": [
               {
-                "color": "green",
-                "value": null
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Transfers"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
               },
               {
-                "color": "red",
-                "value": 80
+                "id": "custom.fillOpacity",
+                "value": 100
               }
             ]
           }
-        },
-        "overrides": []
+        ]
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 9
-      },
-      "id": 4,
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [ "sum" ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -310,140 +920,431 @@
           "mode": "single",
           "sort": "none"
         }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "my-metrics"
-          },
-          "editorMode": "code",
-          "expr": "rate(app_recommendations_counter{recommendation_type=\"catalog\"}[$__interval])",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Recommendations Count",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "my-metrics"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 9
-      },
-      "id": 10,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "my-metrics"
-          },
-          "editorMode": "code",
-          "expr": "rate(calls_total{status_code=\"STATUS_CODE_ERROR\"}[$__interval])",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Error Rate",
-      "type": "timeseries"
+      }
     },
 
-
     {
-      "id": 2,
+      "id": 22,
       "type": "timeseries",
-      "title": "HTTP status codes over time",
-      "description": "",
+      "title": "Request Rate",
       "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 17
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "my-metrics"
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 11
       },
       "targets": [
         {
           "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\"}[2m]))",
+          "hide": false,
+          "legendFormat": "Rate-1m",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rate-1m"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+
+    {
+      "id": 23,
+      "title": "Duration",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 11
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "avg(http_server_requests_seconds{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\"})",
+          "hide": false,
+          "legendFormat": "Average",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
             "uid": "my-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": " sum by(status) (increase(http_server_requests_seconds_count{job=~\"data-transfer\", uri!~\"/metrics\"}[$__interval]))",
+          "expr": "max(http_server_requests_seconds{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\", quantile=\"0.95\"})",
+          "hide": false,
+          "legendFormat": "95th percentile",
+          "queryType": "range",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "max(http_server_requests_seconds_max{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\"})",
+          "hide": false,
+          "legendFormat": "Maximum",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "maxDataPoints": 50,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 2,
+              "type": "log"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 0.3
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "95th percentile"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 35
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Maximum"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Maximum"
+            },
+            "properties": [
+              {
+                "id": "custom.fillOpacity",
+                "value": 10
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Average"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 100
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+
+    {
+      "id": 24,
+      "type": "timeseries",
+      "title": "Errors",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 19
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\", outcome!=\"SUCCESS\"}[$__interval]))*100/sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\"}[$__interval]))",
+          "legendFormat": "Percent of requests failing",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Percent of requests failing"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "calcs": [ "mean" ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+
+    {
+      "id": 25,
+      "type": "timeseries",
+      "title": "Status codes over time",
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 19
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "my-metrics"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "sum by(status) (increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!~\"/metrics\"}[$__interval]))",
           "legendFormat": "HTTP Status {{status}}",
           "queryType": "range",
           "range": true,
@@ -451,18 +1352,6 @@
         }
       ],
       "maxDataPoints": 50,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "all",
-          "sort": "none"
-        }
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -526,7 +1415,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "dark-orange",
+                  "fixedColor": "dark-red",
                   "mode": "fixed"
                 }
               }
@@ -541,7 +1430,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "dark-red",
+                  "fixedColor": "red",
                   "mode": "fixed"
                 }
               }
@@ -556,7 +1445,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "semi-light-red",
+                  "fixedColor": "dark-purple",
                   "mode": "fixed"
                 }
               }
@@ -571,7 +1460,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "red",
+                  "fixedColor": "orange",
                   "mode": "fixed"
                 }
               }
@@ -586,7 +1475,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "light-orange",
+                  "fixedColor": "purple",
                   "mode": "fixed"
                 }
               }
@@ -601,7 +1490,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "semi-light-orange",
+                  "fixedColor": "super-light-purple",
                   "mode": "fixed"
                 }
               }
@@ -616,7 +1505,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "light-red",
+                  "fixedColor": "light-orange",
                   "mode": "fixed"
                 }
               }
@@ -675,12 +1564,22 @@
           }
         }
       ],
-      "pluginVersion": "8.0.0-beta3"
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
     },
 
-
     {
-      "id": 16,
+      "id": 40,
       "type": "row",
       "title": "Service Logs",
       "collapsed": false,
@@ -688,22 +1587,23 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 27
       },
       "panels": []
     },
     {
-      "id": 19,
+      "id": 41,
       "type": "logs",
+      "title": "Logged Traces",
+      "gridPos": {
+        "h": 15,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
       "datasource": {
         "type": "loki",
         "uid": "my-logs"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 27
       },
       "targets": [
         {
@@ -712,11 +1612,11 @@
             "uid": "my-logs"
           },
           "editorMode": "builder",
-          "expr": "{filename=~\"data-transfer.*\"} | json | line_format `{{.level}} sequence:{{.sequence}} span:{{.mdc_spanId}} trace:{{.mdc_traceId}} {{.message}} | {{.loggerName}}`",
+          "expr": "{filename=~\"${service}.*\"} | json | line_format `{{.level}} sequence:{{.sequence}} span:{{.mdc_spanId}} trace:{{.mdc_traceId}} {{.message}} | {{.loggerName}}`",
           "queryType": "range",
           "refId": "A"
         }
-      ]
+      ],
       "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,
@@ -729,49 +1629,12 @@
       }
     }
   ],
-  "schemaVersion": 37,
-  "style": "dark",
   "tags": [],
-  "templating": {
-    "list": [
-      {
-        "allValue": "",
-        "current": {
-          "selected": false,
-          "text": "data-transfer",
-          "value": "data-transfer"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "my-metrics"
-        },
-        "definition": "data-transfer",
-        "hide": 0,
-        "includeAll": false,
-        "label": "Service",
-        "multi": false,
-        "name": "service",
-        "options": [],
-        "query": {
-          "query": "data-transfer",
-          "refId": "StandardVariableQuery"
-        },
-        "refresh": 1,
-        "regex": "/.*service_name=\\\"([^\\\"]+)\\\".*/",
-        "skipUrlSync": false,
-        "sort": 1,
-        "type": "query"
-      }
-    ]
-  },
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
+  "links": [],
   "timepicker": {},
   "timezone": "",
-  "title": "Data Transfer Dashboard",
-  "uid": "W2gX2zHVk",
-  "version": 1,
-  "weekStart": ""
+  "weekStart": "",
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "schemaVersion": 37
 }

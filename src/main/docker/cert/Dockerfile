@@ -19,7 +19,7 @@ ENV GRAFANA_URL ${GRAFANA_URL}
 # Install certbot and openssl
 # Using inotifywait to watch our certificates and trigger actions on change
 RUN apt-get -q -y update && \
-    apt-get -q -y install inotify-tools openssl certbot gettext-base && \
+    apt-get -q -y install inotify-tools openssl certbot gettext-base vim && \
     apt-get -q clean && \
     rm -rf /var/lib/apt/lists/*
 

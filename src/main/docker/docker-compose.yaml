@@ -39,7 +39,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "${SERVICE_PORT}:8080"
+      - "${TELEMETRY_PORT}:8080"
 
   # Data transfer service
   api:
@@ -130,7 +130,7 @@ services:
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./grafana/provisioning/:/etc/grafana/provisioning/
     ports:
-      - "${TELEMETRY_PORT}:3000"
+      - "3000:3000"
 
   # OpenTelemetry collector
   otelcol:

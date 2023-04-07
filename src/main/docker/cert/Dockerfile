@@ -44,8 +44,8 @@ RUN ./install.sh
 
 WORKDIR /opt
 COPY telemetry.conf telemetry.conf
-RUN envsubst '${TELEMETRY_URL}' < /opt/telemetry.conf > /etc/nginx/conf.d/opentelemetry_module.conf && \
-    rm -f telemetry.conf
+# RUN envsubst '${TELEMETRY_URL}' < /opt/telemetry.conf > /etc/nginx/conf.d/opentelemetry_module.conf && \
+#    rm -f telemetry.conf
 
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/opentelemetry-webserver-sdk/sdk_lib/lib
 

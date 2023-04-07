@@ -52,6 +52,7 @@ services:
       - QUARKUS_LOG_FILE_PATH=/deployments/logs/data-transfer.log
       - QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
       - QUARKUS_OPENTELEMETRY_TRACER_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.name=data-transfer
+      - QUARKUS_HTTP_CORS_ORIGINS=https://${SERVICE_DOMAIN}:${SERVICE_PORT},https://cert:443
     volumes:
       - logs:/deployments/logs:rw
     restart: unless-stopped

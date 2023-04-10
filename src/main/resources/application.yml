@@ -89,6 +89,6 @@ quarkus:
     fail-on-unknown-properties: false
   http:
     port: 8081
-    cors: true
+    cors: false
   tls:
     trust-all: false

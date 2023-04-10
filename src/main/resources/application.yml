@@ -90,5 +90,12 @@ quarkus:
   http:
     port: 8081
     cors: true
+      origins: http://localhost:8081
+    access-log:
+      enabled: true
+      pattern: combined
+      log-to-file: true
+      base-file-name: data-transfer-http
+      log-directory: ./logs
   tls:
     trust-all: false

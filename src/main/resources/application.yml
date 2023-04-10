@@ -89,7 +89,8 @@ quarkus:
     fail-on-unknown-properties: false
   http:
     port: 8081
-    cors: true
+    cors:
+      ~: true
       origins: http://localhost:8081
     access-log:
       enabled: true

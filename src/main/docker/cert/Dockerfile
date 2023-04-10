@@ -39,15 +39,15 @@ ADD https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/downloa
 RUN tar xvfz opentelemetry-webserver-sdk-x64-linux.tgz && \
     rm -f opentelemetry-webserver-sdk-x64-linux.tgz
 
-WORKDIR /opt/opentelemetry-webserver-sdk
-RUN ./install.sh
+# WORKDIR /opt/opentelemetry-webserver-sdk
+# RUN ./install.sh
 
 WORKDIR /opt
-COPY telemetry.conf telemetry.conf
+# COPY telemetry.conf telemetry.conf
 # RUN envsubst '${TELEMETRY_URL}' < /opt/telemetry.conf > /etc/nginx/conf.d/opentelemetry_module.conf && \
-#    rm -f telemetry.conf
+#     rm -f telemetry.conf
 
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/opentelemetry-webserver-sdk/sdk_lib/lib
+# ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/opentelemetry-webserver-sdk/sdk_lib/lib
 
 # Configure entrypoint
 COPY cert-entrypoint.sh entrypoint.sh

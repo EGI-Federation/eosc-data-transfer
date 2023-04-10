@@ -6,7 +6,7 @@ FROM maven:3-eclipse-temurin-17 AS builder
 # Get source code
 WORKDIR /app
 
-RUN git clone https://github.com/EGI-Federation/eosc-future-data-transfer.git . && \
+RUN git clone --single-branch https://github.com/EGI-Federation/eosc-data-transfer.git . && \
     chmod a+x mvnw.sh
 
 # Build app

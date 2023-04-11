@@ -93,7 +93,7 @@ quarkus:
       ~: true
       origins: http://localhost:8081
     access-log:
-      enabled: false
+      enabled: true
       pattern: long
       log-to-file: true
       base-file-name: data-transfer-http

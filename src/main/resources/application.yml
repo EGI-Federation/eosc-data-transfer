@@ -98,7 +98,7 @@ quarkus:
       enable-forwarded-host: true
     access-log:
       enabled: true
-      pattern: "%r\n%{ALL_REQUEST_HEADERS}\nStatus: %s"
+      pattern: "%r -> %s\n%{ALL_REQUEST_HEADERS}"
       log-to-file: true
       base-file-name: data-transfer-http
       log-directory: logs

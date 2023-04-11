@@ -53,7 +53,7 @@ quarkus:
       format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
     file:
       enable: true
-      path: ./logs/data-transfer.log
+      path: logs/data-transfer.log
       level: DEBUG
       format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
       rotation:
@@ -84,7 +84,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.23
+    info-version: 1.1.24
   jackson:
     fail-on-unknown-properties: false
   http:

@@ -20,11 +20,14 @@ services:
     build:
       context: cert/
       args:
-        - SERVICE_URL=http://api:8081
         - SERVICE_DOMAIN=${SERVICE_DOMAIN}
         - SERVICE_EMAIL=${SERVICE_EMAIL}
-        - TELEMETRY_URL=${OTEL_COLLECTOR_ADDR}
+        - SERVICE_URL=http://api:8081
         - GRAFANA_URL=http://grafana:3000
+        - TELEMETRY_URL=${OTEL_COLLECTOR_ADDR}
+        - CORS_ORIGINS=${CORS_ORIGINS:-.*}
+        - CORS_HEADERS=${CORS_HEADERS:-Origin,Content-Type,Accept}
+        - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
     links:
       - api
       - grafana
@@ -52,7 +55,9 @@ services:
       - QUARKUS_LOG_FILE_PATH=/deployments/logs/data-transfer.log
       - QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
       - QUARKUS_OPENTELEMETRY_TRACER_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.name=data-transfer
-      - QUARKUS_HTTP_CORS_ORIGINS=${SERVICE_CORS_ORIGINS}
+      - QUARKUS_HTTP_CORS_ORIGINS=/${CORS_ORIGINS:-.*}/
+      - QUARKUS_HTTP_CORS_HEADERS=${CORS_HEADERS:-Origin,Content-Type,Accept}
+      - QUARKUS_HTTP_CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
     volumes:
       - logs:/deployments/logs:rw
     restart: unless-stopped

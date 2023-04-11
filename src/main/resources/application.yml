@@ -34,7 +34,8 @@ eosc:
         trust-store-password: "4hFsKWd.839-2h44X"
         # Certificate in keystore only used to call FTS endpoint /config/cloud_storage,
         # all other calls to FTS are made with the Check-in token provided by the caller.
-        # If keystore is missing, this FTS endpoint will also be called using the caller's Check-in token.
+        # If keystore is missing, this FTS endpoint will also be called using the caller's
+        # Check-in token.
         key-store-file: fts-keystore.jks
         key-store-password: "password"
   qos:
@@ -84,7 +85,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.28
+    info-version: 1.1.32
   jackson:
     fail-on-unknown-properties: false
   http:
@@ -96,7 +97,7 @@ quarkus:
       allow-x-forwarded: true
       enable-forwarded-host: true
     access-log:
-      enabled: true
+      enabled: false
       pattern: "%r -> %s\n%{ALL_REQUEST_HEADERS}\n"
       log-to-file: true
       base-file-name: data-transfer-http

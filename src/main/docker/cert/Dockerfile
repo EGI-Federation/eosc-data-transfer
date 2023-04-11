@@ -8,6 +8,9 @@ ARG SERVICE_DOMAIN
 ARG SERVICE_EMAIL
 ARG TELEMETRY_URL
 ARG GRAFANA_URL
+ARG CORS_ORIGINS
+ARG CORS_HEADERS
+ARG CORS_METHODS
 
 # Define environment variables
 ENV SERVICE_URL ${SERVICE_URL}
@@ -15,6 +18,9 @@ ENV DOMAIN ${SERVICE_DOMAIN}
 ENV EMAIL ${SERVICE_EMAIL}
 ENV TELEMETRY_URL ${TELEMETRY_URL}
 ENV GRAFANA_URL ${GRAFANA_URL}
+ENV CORS_ORIGINS ${CORS_ORIGINS}
+ENV CORS_HEADERS ${CORS_HEADERS}
+ENV CORS_METHODS ${CORS_METHODS}
 
 # Install certbot and openssl
 # Using inotifywait to watch our certificates and trigger actions on change
@@ -27,7 +33,7 @@ RUN apt-get -q -y update && \
 COPY ssl/ /etc/ssl-options
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY cert-nginx.conf /etc/nginx/conf.d/default.conf.template
-RUN envsubst '${DOMAIN}${SERVICE_URL}${GRAFANA_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && \
+RUN envsubst '${DOMAIN}${SERVICE_URL}${GRAFANA_URL}${CORS_ORIGINS}${CORS_METHODS}${CORS_HEADERS}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && \
     rm -f /etc/nginx/conf.d/default.conf.template && \
     rm -f /etc/nginx/sites-enabled/default && \
     mkdir -p /var/cache/nginx/proxycache && \

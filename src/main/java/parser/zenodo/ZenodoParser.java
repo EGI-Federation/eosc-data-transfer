@@ -120,16 +120,18 @@ public class ZenodoParser implements ParserService {
                 return helper.checkRedirect(doi);
             })
             .chain(redirectedToUrl -> {
-                if(!doi.equals(redirectedToUrl))
+                if(null == redirectedToUrl)
+                    redirectedToUrl = doi;
+                else if(!doi.equals(redirectedToUrl))
                     LOG.debugf("Redirected DOI %s", redirectedToUrl);
 
                 // Validate URL
-                Pattern p = Pattern.compile("^https?://([\\w\\.]*zenodo.org)/record/(\\d+)", Pattern.CASE_INSENSITIVE);
+                Pattern p = Pattern.compile("^https?://([\\w\\.]*zenodo.org)/(record|api/records)/(\\d+)", Pattern.CASE_INSENSITIVE);
                 Matcher m = p.matcher(redirectedToUrl);
                 boolean isSupported = m.matches();
 
                 if(isSupported)
-                    this.recordId = m.group(2);
+                    this.recordId = m.group(3);
 
                 return Uni.createFrom().item(Tuple2.of(isSupported, (ParserService)this));
             })

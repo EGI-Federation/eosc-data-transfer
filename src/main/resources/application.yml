@@ -85,7 +85,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.33
+    info-version: 1.1.34
   jackson:
     fail-on-unknown-properties: false
   http:

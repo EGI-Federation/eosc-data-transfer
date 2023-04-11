@@ -112,7 +112,9 @@ public class B2ShareParser implements ParserService {
                 return helper.checkRedirect(doi);
             })
             .chain(redirectedToUrl -> {
-                if(!doi.equals(redirectedToUrl))
+                if(null == redirectedToUrl)
+                    redirectedToUrl = doi;
+                else if(!doi.equals(redirectedToUrl))
                     LOG.debugf("Redirected DOI %s", redirectedToUrl);
 
                 // Validate URL

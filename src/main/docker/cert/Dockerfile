@@ -2,25 +2,19 @@ FROM nginx:1.23.0
 
 MAINTAINER Levente Farkas (levente.farkas@egi.eu)
 
-# Build-time variables specified by docker-compose.yml / .env
-ARG SERVICE_URL
-ARG SERVICE_DOMAIN
+# Build-time environment variables specified by docker-compose.yml / .env
 ARG SERVICE_EMAIL
+ARG SERVICE_DOMAIN
+ARG SERVICE_URL
 ARG TELEMETRY_URL
 ARG GRAFANA_URL
 ARG CORS_ORIGINS
 ARG CORS_HEADERS
 ARG CORS_METHODS
 
-# Define environment variables
-ENV SERVICE_URL ${SERVICE_URL}
-ENV DOMAIN ${SERVICE_DOMAIN}
+# Run-time environment variables
 ENV EMAIL ${SERVICE_EMAIL}
-ENV TELEMETRY_URL ${TELEMETRY_URL}
-ENV GRAFANA_URL ${GRAFANA_URL}
-ENV CORS_ORIGINS ${CORS_ORIGINS}
-ENV CORS_HEADERS ${CORS_HEADERS}
-ENV CORS_METHODS ${CORS_METHODS}
+ENV DOMAIN ${SERVICE_DOMAIN}
 
 # Install certbot and openssl
 # Using inotifywait to watch our certificates and trigger actions on change

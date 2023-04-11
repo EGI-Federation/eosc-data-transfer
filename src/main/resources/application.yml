@@ -84,7 +84,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.26
+    info-version: 1.1.27
   jackson:
     fail-on-unknown-properties: false
   http:
@@ -98,7 +98,7 @@ quarkus:
       enable-forwarded-host: true
     access-log:
       enabled: true
-      pattern: long
+      pattern: "%r\n%{ALL_REQUEST_HEADERS}\nStatus: %s"
       log-to-file: true
       base-file-name: data-transfer-http
       log-directory: logs

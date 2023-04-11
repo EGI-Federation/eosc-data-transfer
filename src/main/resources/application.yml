@@ -91,7 +91,7 @@ quarkus:
     port: 8081
     cors:
       ~: true
-      origins: http://localhost:8081
+      origins: /.*/
     access-log:
       enabled: true
       pattern: long

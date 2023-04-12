@@ -137,7 +137,7 @@
     <module name="MethodLength"/>
     <module name="ParameterNumber">
       <property name="max" value="12"/>
-    </module>module>
+    </module>
 
     <!-- Checks for whitespace                               -->
     <!-- See https://checkstyle.org/config_whitespace.html -->

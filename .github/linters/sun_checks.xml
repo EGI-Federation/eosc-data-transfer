@@ -15,7 +15,7 @@
     - the Javadoc guidelines at
       https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html
 
-    - the JDK Api documentation https://docs.oracle.com/en/java/javase/11/
+    - the JDK API documentation https://docs.oracle.com/en/java/javase/11/
 
     - some best practices
 
@@ -26,8 +26,6 @@
 
   To completely disable a check, just comment it out or delete it from the file.
   To suppress certain violations please review suppression filters.
-
-  Finally, it is worth reading the documentation.
 
 -->
 
@@ -146,10 +144,10 @@
     <module name="MethodParamPad"/>
     <module name="NoWhitespaceAfter"/>
     <module name="NoWhitespaceBefore"/>
-    <module name="OperatorWrap"/>
-    <module name="ParenPad"/>
     <module name="TypecastParenPad"/>
     <!--
+    <module name="ParenPad"/>
+    <module name="OperatorWrap"/>
     <module name="WhitespaceAfter"/>
     <module name="WhitespaceAround"/>
     -->
@@ -173,7 +171,6 @@
     <!-- See https://checkstyle.org/config_coding.html -->
     <module name="EmptyStatement"/>
     <module name="EqualsHashCode"/>
-    <module name="HiddenField"/>
     <module name="IllegalInstantiation"/>
     <module name="InnerAssignment"/>
     <module name="MagicNumber"/>
@@ -181,6 +178,9 @@
     <module name="MultipleVariableDeclarations"/>
     <module name="SimplifyBooleanExpression"/>
     <module name="SimplifyBooleanReturn"/>
+    <!--
+    <module name="HiddenField"/>
+    -->
 
     <!-- Checks for class design                         -->
     <!-- See https://checkstyle.org/config_design.html -->
@@ -188,14 +188,18 @@
     <module name="FinalClass"/>
     <module name="HideUtilityClassConstructor"/>
     <module name="InterfaceIsType"/>
+    <!--
     <module name="VisibilityModifier"/>
+    -->
 
     <!-- Miscellaneous other checks.                   -->
     <!-- See https://checkstyle.org/config_misc.html -->
     <module name="ArrayTypeStyle"/>
-    <module name="FinalParameters"/>
     <module name="TodoComment"/>
     <module name="UpperEll"/>
+    <!--
+    <module name="FinalParameters">
+    -->
 
     <!-- https://checkstyle.org/config_filters.html#SuppressionXpathFilter -->
     <module name="SuppressionXpathFilter">

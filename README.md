@@ -350,12 +350,9 @@ This will run multiple containers:
 
 The architecture and interaction between these containers is illustrated below: 
 
-<!-- markdownlint-disable no-inline-html -->
-<img  style="display: block; margin-left: auto; margin-right: auto; width: 70%;"
-src="docs/architecture.png"
-alt="Container architecture">
-</img>
-<!-- markdownlint-enable no-inline-html -->
+<!-- markdownlint-disable no-inline-html line-length -->
+<img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="docs/architecture.png" alt="Container architecture" />
+<!-- markdownlint-enable no-inline-html line-length -->
 
 Steps to run the API in a container:
 

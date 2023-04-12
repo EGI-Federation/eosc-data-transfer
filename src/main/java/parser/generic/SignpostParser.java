@@ -46,7 +46,6 @@ public class SignpostParser implements ParserService {
     /***
      * Initialize parser.
      * The helper should be already set by a previous call to canParseDOI().
-     * @param config Configuration loaded from the config file.
      * @param config Configuration of the parser, from the config file.
      * @param port The port on which the application runs, from the config file.
      * @return true on success

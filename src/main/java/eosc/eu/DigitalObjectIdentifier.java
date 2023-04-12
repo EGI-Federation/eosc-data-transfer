@@ -54,18 +54,16 @@ public class DigitalObjectIdentifier {
     @Inject
     PortConfig port;
 
-    @Inject
-    Vertx vertx;
-
 
     /***
      * Construct with Vertx
+     * @param vertx Injected Vertx instance
      */
     @Inject
     DigitalObjectIdentifier(Vertx vertx) {
         this.client = WebClient.create(vertx);
 
-        LOG.infof("Is Vertx Metrics Enabled - {}", vertx.isMetricsEnabled());
+        LOG.infof("Vertx metrics enabled - {}", vertx.isMetricsEnabled());
     }
 
     /**
@@ -126,10 +124,12 @@ public class DigitalObjectIdentifier {
                     LOG.error(e.getMessage());
                 }
 
-                return null != parser ? Uni.createFrom().item(parser) : Uni.createFrom().nullItem(); // Multi discards null items
+                return null != parser ?
+                                Uni.createFrom().item(parser) :
+                                Uni.createFrom().nullItem(); // Multi discards null items
             })
             .onItem().transformToUniAndConcatenate(parser -> {
-                // TODO: Remove this check once we can cancel the Multi stream
+                // Note: Remove this check once we can cancel the Multi stream
                 // Check if this parser can handle the DOI
                 if(null == params.parser)
                     return parser.canParseDOI(auth, doi, helper);
@@ -175,7 +175,10 @@ public class DigitalObjectIdentifier {
 
     /**
      * Parse Digital Object Identifier at specified URL and return list of files.
-     *
+     * @param auth  Optional access token for accessing the data repository.
+     * @param doi   The DOI to parse.
+     * @param level The level of recursion. If we have to call ourselves, this gets increased
+     *              each time, providing for a mechanism to avoid infinite recursion.
      * @return API Response, wraps an ActionSuccess or an ActionError entity
      */
     @GET
@@ -184,16 +187,20 @@ public class DigitalObjectIdentifier {
     @Operation(operationId = "parse",  summary = "Extract source files from DOI")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = StorageContent.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = StorageContent.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class))),
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Source not found",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ActionError.class)))
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> parseDOI(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                  @Parameter(description = "The DOI to parse", required = true, example = "https://doi.org/12.3456/zenodo.12345678")
+                                  @Parameter(description = "The DOI to parse", required = true,
+                                             example = "https://doi.org/12.3456/zenodo.12345678")
                                   @RestQuery String doi,
-                                  @Parameter(required = false, hidden = true) @DefaultValue("1")
+                                  @Parameter(hidden = true) @DefaultValue("1")
                                   @RestQuery int level) {
 
         LOG.infof("Parse DOI %s (level %d)", doi, level);

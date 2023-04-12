@@ -12,6 +12,6 @@ import java.util.Optional;
 @ConfigMapping(prefix = "eosc.qos")
 public interface MetricsConfig {
 
-    public Optional<List<Double>> quantiles();
-    public Optional<List<Long>> slos();
+    Optional<List<Double>> quantiles();
+    Optional<List<Long>> slos();
 }

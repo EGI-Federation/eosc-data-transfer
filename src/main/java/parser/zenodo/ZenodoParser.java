@@ -129,7 +129,8 @@ public class ZenodoParser implements ParserService {
                     LOG.debugf("Redirected DOI %s", redirectedToUrl);
 
                 // Validate URL
-                Pattern p = Pattern.compile("^https?://([\\w\\.]*zenodo.org)/(record|api/records)/(\\d+)", Pattern.CASE_INSENSITIVE);
+                Pattern p = Pattern.compile("^https?://([\\w\\.]*zenodo.org)/(record|api/records)/(\\d+)",
+                                            Pattern.CASE_INSENSITIVE);
                 Matcher m = p.matcher(redirectedToUrl);
                 boolean isSupported = m.matches();
 

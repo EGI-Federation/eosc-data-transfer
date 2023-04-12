@@ -41,10 +41,10 @@ import org.jboss.resteasy.reactive.RestQuery;
 @Produces(MediaType.APPLICATION_JSON)
 public class DataStorage extends DataTransferBase {
 
+    private static final Logger LOG = Logger.getLogger(DataStorage.class);
+
     @Inject
     TransfersConfig config;
-
-    private static final Logger LOG = Logger.getLogger(DataStorage.class);
 
 
     /***
@@ -112,6 +112,7 @@ public class DataStorage extends DataTransferBase {
 
     /**
      * Check if browsing destination storage is supported and what auth type it requires.
+     * @param destination The destination storage type to get information about.
      * @return API Response, wraps an ActionSuccess(boolean) or an ActionError entity
      */
     @GET
@@ -180,7 +181,7 @@ public class DataStorage extends DataTransferBase {
      * List the content of a folder.
      * @param auth The access token needed to call the service.
      * @param folderUrl The link to the folder to list content of.
-     * @param destination The type of destination storage.
+     * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionSuccess(StorageContent) or an ActionError entity
      */
@@ -271,7 +272,7 @@ public class DataStorage extends DataTransferBase {
      * Get the details of a file.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the file to get details of.
-     * @param destination The type of destination storage.
+     * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
      */
@@ -359,7 +360,7 @@ public class DataStorage extends DataTransferBase {
      * Get the details of a folder.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the folder to get details of.
-     * @param destination The type of destination storage.
+     * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
      */
@@ -410,7 +411,7 @@ public class DataStorage extends DataTransferBase {
      * Create a new folder.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the folder to create.
-     * @param destination The type of destination storage.
+     * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
      */
@@ -493,7 +494,7 @@ public class DataStorage extends DataTransferBase {
      * Delete existing folder.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the folder to delete.
-     * @param destination The type of destination storage.
+     * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
      */
@@ -579,7 +580,7 @@ public class DataStorage extends DataTransferBase {
      * Delete existing file.
      * @param auth The access token needed to call the service.
      * @param seUrl The link to the file to delete.
-     * @param destination The type of destination storage.
+     * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
      */
@@ -665,7 +666,7 @@ public class DataStorage extends DataTransferBase {
      * Rename a file.
      * @param auth The access token needed to call the service.
      * @param operation The links to the old and new storage element URLs.
-     * @param destination The type of destination storage.
+     * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
      */
@@ -763,7 +764,7 @@ public class DataStorage extends DataTransferBase {
      * Rename a folder.
      * @param auth The access token needed to call the service.
      * @param operation The links to the old and new storage element URLs.
-     * @param destination The type of destination storage.
+     * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
      */

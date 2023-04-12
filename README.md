@@ -369,7 +369,7 @@ Steps to run the API in a container:
 
 1. Copy the file `src/main/docker/.env.template` to `src/main/docker/.env`, then:
    * Provide the domain name and port where you will deploy the API in the environment
-   variables `SERVICE_DOMAIN` and `SERVICE_PORT`, respectively. 
+   variables `SERVICE_DOMAIN` and `SERVICE_PORT`, respectively.
    * Provide an email address in the environment variable `SERVICE_EMAIL` to be used,
    together with the domain name, to automatically request a SSL certificate for the
    SSL terminator.
@@ -381,7 +381,7 @@ Steps to run the API in a container:
    the API itself.
 
 2. Run the command `build.sh` (or `build.cmd` on Windows) to build and run the containers
-that implement the EOSC Data Transfer API.  
+that implement the EOSC Data Transfer API.
 
 3. The SSL terminator will automatically use [Let's Encrypt](https://letsencrypt.org)
 to request an SSL certificate for HTTPS.

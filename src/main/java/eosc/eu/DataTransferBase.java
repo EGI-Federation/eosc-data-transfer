@@ -38,7 +38,7 @@ public class DataTransferBase {
 
     /**
      * Prepare REST client for the appropriate data transfer service, based on the destination
-     * configured in "proxy.transfer.destination".
+     * configured in "eosc.transfer.destination".
      * @param params dictates which transfer service we pick, mapping is in the configuration file
      * @return true on success, updates fields "destination" and "ts"
      */
@@ -103,7 +103,8 @@ public class DataTransferBase {
 
     /**
      * Embed credentials in storage element URL
-     * @param seUrl is the URL to the storage element
+     * @param destination is the type of destination storage.
+     * @param seUrl is the URL to the storage element.
      * @param storageAuth contains the Base64-encoded 'username:password'
      * @return Updated URL with embedded credentials, null on error
      */

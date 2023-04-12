@@ -11,7 +11,6 @@ import org.jboss.logging.Logger;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
 
 
 /***
@@ -26,7 +25,9 @@ public class MetricsCustomization {
     @Inject
     MetricsConfig qos;
 
-    // Enable histogram buckets for specific timer(s)
+    /***
+     * Enable histogram buckets for specific timer(s)
+     */
     @Produces
     @Singleton
     public MeterFilter enableHistogram() {
@@ -44,7 +45,10 @@ public class MetricsCustomization {
                     if(qos.quantiles().isPresent()) {
                         var quantiles = qos.quantiles().get();
                         if(!quantiles.isEmpty())
-                            builder = builder.percentiles(quantiles.stream().mapToDouble(Double::doubleValue).toArray());
+                            builder = builder.percentiles(quantiles
+                                                            .stream()
+                                                            .mapToDouble(Double::doubleValue)
+                                                            .toArray());
                     }
 
                     // If SLOs were specified, use them
@@ -55,7 +59,10 @@ public class MetricsCustomization {
                             slosNano.add((double)Duration.ofMillis(slo).toNanos()); // SLO in milliseconds
 
                         if(!slosNano.isEmpty())
-                            builder = builder.serviceLevelObjectives(slosNano.stream().mapToDouble(Double::doubleValue).toArray());
+                            builder = builder.serviceLevelObjectives(slosNano
+                                                                        .stream()
+                                                                        .mapToDouble(Double::doubleValue)
+                                                                        .toArray());
                     }
 
                     return builder

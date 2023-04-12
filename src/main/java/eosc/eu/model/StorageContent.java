@@ -33,14 +33,17 @@ public class StorageContent {
 
     /**
      * Constructor with allocation
+     * @param size Initial capacity for storage elements.
      */
-    public StorageContent(int count) {
+    public StorageContent(int size) {
         this.count = 0;
-        this.elements = new ArrayList<>(count);
+        this.elements = new ArrayList<>(size);
     }
 
     /**
      * Construct from FTS folder listing
+     * @param folderUrl The URL to the folder.
+     * @param folderContent The list of files in the folder.
      */
     public StorageContent(String folderUrl, Map<String, ObjectInfo> folderContent) {
         this.elements = new ArrayList<>();
@@ -61,18 +64,16 @@ public class StorageContent {
 
     /**
      * Copy constructor makes deep copy
+     * @param storage The storage to copy all elements from.
      */
     public StorageContent(StorageContent storage) {
         this.elements = new ArrayList<>(this.count);
-
-        if(null != storage) {
-            this.elements.addAll(storage.elements);
-            this.count = this.elements.size();
-        }
+        merge(storage);
     }
 
     /***
      * Add a new element
+     * @param se The storage element to add.
      */
     public void add(StorageElement se) {
         if(null != se) {
@@ -83,6 +84,7 @@ public class StorageContent {
 
     /***
      * Add all elements from another storage
+     * @param storage Storage to add all elements from.
      */
     public void merge(StorageContent storage) {
         if(null != storage) {

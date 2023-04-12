@@ -23,17 +23,27 @@ public class ParserHelper {
 
     /***
      * Constructor to wrap a Web client
+     * @param client The client to use to make web requests
      */
     public ParserHelper(WebClient client) {
         this.client = client;
     }
 
+    /***
+     * Get the cached redirected to URL
+     * @return the URL where the checked URL was redirected, null if not redirected
+     */
     public String redirectedToUrl() { return this.redirectedToUrl; }
 
+    /***
+     * Get the cached response HTTP headers
+     * @return HTTP headers
+     */
     public MultiMap headers() { return this.headers; }
 
     /***
      * Check if a URL is being redirected
+     * @param url URL to request
      * @return the URL where the passed in URL is redirected, null if not redirected
      */
     public Uni<String> checkRedirect(String url) {
@@ -60,7 +70,8 @@ public class ParserHelper {
     }
 
     /***
-     * Fetch the response HTTP headers from passed in URL
+     * Get the response HTTP headers from passed in URL
+     * @param url URL to request
      * @return HTTP headers
      */
     public Uni<Tuple2<String, MultiMap>> fetchHeaders(String url) {
@@ -89,6 +100,7 @@ public class ParserHelper {
 
     /***
      * Fetch the Linkset from passed in URL
+     * @param url URL to request
      * @return Parsed Linkset
      */
     public Uni<StorageContent> fetchLinkset(String url) {

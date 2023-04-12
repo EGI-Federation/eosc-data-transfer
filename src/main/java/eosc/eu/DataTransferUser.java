@@ -57,6 +57,7 @@ public class DataTransferUser extends DataTransferBase {
     /**
      * Retrieve information about current user.
      * @param auth The access token needed to call the service.
+     * @param destination The type of destination storage (selects transfer service to call).
      * @return API Response, wraps an ActionSuccess(UserInfo) or an ActionError entity
      */
     @GET

@@ -10,6 +10,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
+/***
+ * Abstracts credentials (pair of strings) for a storage system
+ */
 public class DataStorageCredentials {
 
     private String username;

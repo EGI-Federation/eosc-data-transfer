@@ -10,5 +10,5 @@ import io.smallrye.config.ConfigMapping;
 public interface PortConfig {
 
     // The port on which the application runs
-    public int port();
+    int port();
 }

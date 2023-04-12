@@ -16,21 +16,21 @@ public interface ParsersConfig {
 
     // Contains the details of each specific parser
     @WithName("parser")
-    public Map<String, ParserConfig> parsers();
+    Map<String, ParserConfig> parsers();
 
 
     /***
      * The configuration of a parser
      */
-    public interface ParserConfig {
-        public String name();
+    interface ParserConfig {
+        String name();
 
-        public Optional<String> url();
+        Optional<String> url();
 
         @WithDefault("5000")
-        public int timeout(); // milliseconds
+        int timeout(); // milliseconds
 
         @WithName("class")
-        public String className();
+        String className();
     }
 }

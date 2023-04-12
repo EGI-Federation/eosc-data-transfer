@@ -61,7 +61,7 @@ public class DataTransfer extends DataTransferBase {
      * Initiate new transfer of multiple sets of files.
      * @param auth The access token needed to call the service.
      * @param transfer The details of the transfer (source and destination files, parameters).
-     * @param destination The type of destination storage.
+     * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionSuccess(TransferInfo) or an ActionError entity
      */
@@ -165,6 +165,7 @@ public class DataTransfer extends DataTransferBase {
      * @param delegationId Filter by delegation ID of user who started the transfer
      * @param voName Filter by VO of user who started the transfer
      * @param userDN Filter by user who started the transfer
+     * @param destination The type of destination storage (selects transfer service to call).
      * @return API Response, wraps an ActionSuccess(TransferList) or an ActionError entity
      */
     @GET
@@ -313,6 +314,7 @@ public class DataTransfer extends DataTransferBase {
      * Request information about a transfer.
      * @param auth The access token needed to call the service.
      * @param jobId The ID of the transfer to request info about.
+     * @param destination The type of destination storage (selects transfer service to call).
      * @return API Response, wraps an ActionSuccess(TransferInfoExtended) or an ActionError entity
      */
     @GET
@@ -388,6 +390,7 @@ public class DataTransfer extends DataTransferBase {
      * @param auth The access token needed to call the service.
      * @param jobId The ID of the transfer to request info about.
      * @param fieldName The name of the TransferInfoExtended field to retrieve (except "kind").
+     * @param destination The type of destination storage (selects transfer service to call).
      * @return API Response, wraps an ActionSuccess or an ActionError entity
      */
     @GET
@@ -465,6 +468,7 @@ public class DataTransfer extends DataTransferBase {
      * Cancel a transfer.
      * @param auth The access token needed to call the service.
      * @param jobId The ID of the transfer to cancel.
+     * @param destination The type of destination storage (selects transfer service to call).
      * @return API Response, wraps an ActionSuccess(TransferInfoExtended) or an ActionError entity
      */
     @DELETE

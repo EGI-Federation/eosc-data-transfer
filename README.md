@@ -350,17 +350,17 @@ This will run multiple containers:
 
 The architecture and interaction between these containers is illustrated below: 
 
-<!-- markdownlint-disable no-inline-html line-length -->
-<img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="docs/architecture.png" alt="Container architecture" />
-<!-- markdownlint-enable no-inline-html line-length -->
+<!-- markdownlint-disable no-inline-html -->
+<p align="center" width="100%"><img src="docs/architecture.png" alt="Container architecture" /></p>
+<!-- markdownlint-enable no-inline-html -->
 
 Steps to run the API in a container:
 
 1. Copy the file `src/main/docker/.env.template` to `src/main/docker/.env`, then:
    * Provide the domain name and port where you will deploy the API in the environment
    variables `SERVICE_DOMAIN` and `SERVICE_PORT`, respectively. 
-   * Provide an email address in environment variables `SERVICE_EMAIL` to be used,
-   together with the domain name, to automatically request SSL certificate for the
+   * Provide an email address in the environment variable `SERVICE_EMAIL` to be used,
+   together with the domain name, to automatically request a SSL certificate for the
    SSL terminator.
    * In the environment variable `FTS_KEY_STORE_FILE` provide a path to a
    Java keystore file containing a new [EGI service account certificate](#configuration),

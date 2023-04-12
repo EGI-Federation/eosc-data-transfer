@@ -1,5 +1,6 @@
 package parser.zenodo;
 
+import eosc.eu.PortConfig;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
@@ -42,15 +43,16 @@ public class ZenodoParser implements ParserService {
     /***
      * Initialize the REST client for B2Share.
      * The hostname of the B2Share server should be already determined by a previous call to canParseDOI().
-     * @param config Configuration loaded from the config file.
+     * @param config Configuration of the parser, from the config file.
+     * @param port The port on which the application runs, from the config file.
      * @return true on success
      */
-    public boolean init(ParserConfig config) {
+    public boolean init(ParserConfig config, PortConfig port) {
 
         this.name = config.name();
         this.timeout = config.timeout();
 
-        if (null != this.parser)
+        if (null != parser)
             return true;
 
         LOG.debug("Obtaining REST client for Zenodo");
@@ -67,7 +69,7 @@ public class ZenodoParser implements ParserService {
 
         try {
             // Create the REST client for the parser service
-            this.parser = RestClientBuilder.newBuilder()
+            parser = RestClientBuilder.newBuilder()
                             .baseUrl(urlParserService)
                             .build(Zenodo.class);
 
@@ -100,8 +102,9 @@ public class ZenodoParser implements ParserService {
 
     /***
      * Checks if the parser service understands this DOI.
-     * @param auth The access token needed to call the service.
-     * @param doi The DOI for a data set.
+     * @param auth   The access token needed to call the service.
+     * @param doi    The DOI for a data set.
+     * @param helper Helper class that can follow (and cache) redirects.
      * @return Return true if the parser service can parse this DOI.
      */
     public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper) {
@@ -144,15 +147,16 @@ public class ZenodoParser implements ParserService {
 
     /**
      * Parse the DOI and return a set of files in the data set.
-     * @param auth The access token needed to call the service.
-     * @param doi The DOI for a data set.
+     * @param auth  The access token needed to call the service.
+     * @param doi   The DOI for a data set.
+     * @param level Unused.
      * @return List of files in the data set.
      */
-    public Uni<StorageContent> parseDOI(String auth, String doi) {
+    public Uni<StorageContent> parseDOI(String auth, String doi, int level) {
         if(null == doi || doi.isBlank())
             return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
 
-        if(null == this.parser)
+        if(null == parser)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         if(null == this.recordId || this.recordId.isEmpty())
@@ -165,7 +169,7 @@ public class ZenodoParser implements ParserService {
                 .failWith(new TransferServiceException("doiParseTimeout"))
             .chain(unused -> {
                 // Get Zenodo record details
-                return this.parser.getRecordAsync(this.recordId);
+                return parser.getRecordAsync(this.recordId);
             })
             .chain(record -> {
                 // Got Zenodo record

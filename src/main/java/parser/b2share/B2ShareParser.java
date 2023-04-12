@@ -1,5 +1,6 @@
 package parser.b2share;
 
+import eosc.eu.PortConfig;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
@@ -41,12 +42,14 @@ public class B2ShareParser implements ParserService {
 
     /***
      * Initialize the REST client for B2Share
+     * @param config Configuration of the parser, from the config file.
+     * @param port The port on which the application runs, from the config file.
      * @return true on success
      */
-    public boolean init(ParserConfig serviceConfig) {
+    public boolean init(ParserConfig config, PortConfig port) {
 
-        this.name = serviceConfig.name();
-        this.timeout = serviceConfig.timeout();
+        this.name = config.name();
+        this.timeout = config.timeout();
 
         if (null != this.parser)
             return true;
@@ -93,8 +96,9 @@ public class B2ShareParser implements ParserService {
 
     /***
      * Checks if the parser service understands this DOI.
-     * @param auth The access token needed to call the service.
-     * @param doi The DOI for a data set.
+     * @param auth   The access token needed to call the service.
+     * @param doi    The DOI for a data set.
+     * @param helper Helper class that can follow (and cache) redirects.
      * @return Return true if the parser service can parse this DOI.
      */
     public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper) {
@@ -143,11 +147,12 @@ public class B2ShareParser implements ParserService {
 
     /**
      * Parse the DOI and return a set of files in the data set.
-     * @param auth The access token needed to call the service.
-     * @param doi The DOI for a data set.
+     * @param auth  The access token needed to call the service.
+     * @param doi   The DOI for a data set.
+     * @param level Unused.
      * @return List of files in the data set.
      */
-    public Uni<StorageContent> parseDOI(String auth, String doi) {
+    public Uni<StorageContent> parseDOI(String auth, String doi, int level) {
         if(null == this.parser)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 

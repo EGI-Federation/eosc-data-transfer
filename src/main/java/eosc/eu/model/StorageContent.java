@@ -64,23 +64,30 @@ public class StorageContent {
      */
     public StorageContent(StorageContent storage) {
         this.elements = new ArrayList<>(this.count);
-        this.elements.addAll(storage.elements);
-        this.count = this.elements.size();
+
+        if(null != storage) {
+            this.elements.addAll(storage.elements);
+            this.count = this.elements.size();
+        }
     }
 
     /***
      * Add a new element
      */
     public void add(StorageElement se) {
-        this.elements.add(se);
-        this.count++;
+        if(null != se) {
+            this.elements.add(se);
+            this.count++;
+        }
     }
 
     /***
      * Add all elements from another storage
      */
     public void merge(StorageContent storage) {
-        this.elements.addAll(storage.elements);
-        this.count = this.elements.size();
+        if(null != storage) {
+            this.elements.addAll(storage.elements);
+            this.count = this.elements.size();
+        }
     }
 }

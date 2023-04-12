@@ -52,6 +52,9 @@ public class DigitalObjectIdentifier {
     ParsersConfig config;
 
     @Inject
+    PortConfig port;
+
+    @Inject
     Vertx vertx;
 
 
@@ -143,7 +146,7 @@ public class DigitalObjectIdentifier {
 
                     // Initialize parser
                     var parserConfig = this.config.parsers().get(params.parser.getId());
-                    var initOK = (null != parserConfig) ? params.parser.init(parserConfig) : false;
+                    var initOK = (null != parserConfig) ? params.parser.init(parserConfig, this.port) : false;
 
                     // Cancel iteration of parsers
 //                    if(null != this.subscription) {
@@ -189,9 +192,11 @@ public class DigitalObjectIdentifier {
     })
     public Uni<Response> parseDOI(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                   @Parameter(description = "The DOI to parse", required = true, example = "https://doi.org/12.3456/zenodo.12345678")
-                                  @RestQuery String doi) {
+                                  @RestQuery String doi,
+                                  @Parameter(required = false, hidden = true) @DefaultValue("1")
+                                  @RestQuery int level) {
 
-        LOG.infof("Parse DOI %s", doi);
+        LOG.infof("Parse DOI %s (level %d)", doi, level);
 
         var params = new ActionParameters();
         Uni<Response> result = Uni.createFrom().nullItem()
@@ -208,7 +213,7 @@ public class DigitalObjectIdentifier {
                 }
 
                 // Parse DOI and get source files
-                return params.parser.parseDOI(auth, doi);
+                return params.parser.parseDOI(auth, doi, level);
             })
             .chain(sourceFiles -> {
                 // Got list of source files

@@ -40,11 +40,11 @@ public class MetricsCustomization {
 
                     var builder = DistributionStatisticConfig.builder();
 
-                    // If percentiles were specified, use them
-                    if(qos.percentiles().isPresent()) {
-                        var percentiles = qos.percentiles().get();
-                        if(!percentiles.isEmpty())
-                            builder = builder.percentiles(percentiles.stream().mapToDouble(Double::doubleValue).toArray());
+                    // If quantiles were specified, use them
+                    if(qos.quantiles().isPresent()) {
+                        var quantiles = qos.quantiles().get();
+                        if(!quantiles.isEmpty())
+                            builder = builder.percentiles(quantiles.stream().mapToDouble(Double::doubleValue).toArray());
                     }
 
                     // If SLOs were specified, use them

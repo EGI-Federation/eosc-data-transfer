@@ -39,7 +39,7 @@ eosc:
         key-store-file: fts-keystore.jks
         key-store-password: "password"
   qos:
-    percentiles: [ 0.95 ]
+    quantiles: [ 0.95 ]
     slos: [ 500 ] # SLOs expressed in milliseconds
 
 quarkus:

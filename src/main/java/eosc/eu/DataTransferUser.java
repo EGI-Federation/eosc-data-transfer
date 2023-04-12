@@ -85,7 +85,7 @@ public class DataTransferUser extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getUserInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                     @RestQuery("dest") @DefaultValue(defaultDestination)
+                                     @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                      @Parameter(schema = @Schema(implementation = Destination.class),
                                                 description = "The destination storage")
                                      String destination) {

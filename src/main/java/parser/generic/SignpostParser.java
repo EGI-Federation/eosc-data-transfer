@@ -40,6 +40,7 @@ public class SignpostParser implements ParserService {
 
     /***
      * Constructor
+     * @param id The key of the parser in the config file
      */
     public SignpostParser(String id) { this.id = id; }
 
@@ -172,7 +173,8 @@ public class SignpostParser implements ParserService {
                     var links = new ArrayList<Link>();
 
                     for(var rawLink : rawLinks) {
-                        String pattern = "\\s*<?(https?://[^>;]+)>?\\s*;\\s*rel\\s*=\\s*[\"\']([^\"\']+)[\"\']\\s*(;\\s*type\\s*=\\s*[\"\'](?<type>[^\"\']+)[\"\'])?\\s*,?";
+                        String pattern = "\\s*<?(https?://[^>;]+)>?\\s*;\\s*rel\\s*=\\s*[\"\']([^\"\']+)[\"\']\\s*" +
+                                         "(;\\s*type\\s*=\\s*[\"\'](?<type>[^\"\']+)[\"\'])?\\s*,?";
                         Pattern p = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
                         Matcher m = p.matcher(rawLink);
                         while(m.find()) {

@@ -1,3 +1,4 @@
+---
 version: '3.9'
 
 networks:
@@ -34,7 +35,7 @@ services:
     volumes:
       - certificates:/etc/letsencrypt
     healthcheck:
-      test: [ 'CMD', '/opt/status.sh' ]
+      test: ['CMD', '/opt/status.sh']
       start_period: 30s
       interval: 1m
       timeout: 5s
@@ -152,7 +153,7 @@ services:
         limits:
           memory: 125M
     restart: unless-stopped
-    command: [ "--config=/etc/otelcol-config.yml" ]
+    command: ["--config=/etc/otelcol-config.yml"]
     volumes:
       - ./otelcollector/otelcol-config.yml:/etc/otelcol-config.yml
       - logs:/usr/logs/data-transfer:ro

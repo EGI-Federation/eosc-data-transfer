@@ -128,7 +128,7 @@ public class DataStorage extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> getStorageInfo(@RestQuery("dest") @DefaultValue(defaultDestination)
+    public Uni<Response> getStorageInfo(@RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                         @Parameter(schema = @Schema(implementation = Destination.class),
                                                    description = DESTINATION_STORAGE)
                                         String destination) {
@@ -219,7 +219,7 @@ public class DataStorage extends DataTransferBase {
                                                       description =
                                                           "URL to the storage element (folder) to list content of")
                                            String folderUrl,
-                                           @RestQuery("dest") @DefaultValue(defaultDestination)
+                                           @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                            @Parameter(schema = @Schema(implementation = Destination.class),
                                                       description = DESTINATION_STORAGE)
                                            String destination,
@@ -308,7 +308,7 @@ public class DataStorage extends DataTransferBase {
                                      @Parameter(required = true,
                                                 description = "URL to the storage element (file) to get stats for")
                                      String seUrl,
-                                     @RestQuery("dest") @DefaultValue(defaultDestination)
+                                     @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                      @Parameter(schema = @Schema(implementation = Destination.class),
                                                 description = DESTINATION_STORAGE)
                                      String destination,
@@ -396,7 +396,7 @@ public class DataStorage extends DataTransferBase {
                                        @Parameter(required = true,
                                                   description = "URL to the storage element (folder) to get stats for")
                                        String seUrl,
-                                       @RestQuery("dest") @DefaultValue(defaultDestination)
+                                       @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                        @Parameter(schema = @Schema(implementation = Destination.class),
                                                   description = DESTINATION_STORAGE)
                                        String destination,
@@ -442,7 +442,7 @@ public class DataStorage extends DataTransferBase {
                                       @Parameter(required = true,
                                                  description = "URL to the storage element (folder) to create")
                                       String seUrl,
-                                      @RestQuery("dest") @DefaultValue(defaultDestination)
+                                      @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                       @Parameter(schema = @Schema(implementation = Destination.class),
                                                  description = DESTINATION_STORAGE)
                                       String destination,
@@ -504,7 +504,8 @@ public class DataStorage extends DataTransferBase {
     @Operation(operationId = "deleteFolder",  summary = "Delete existing folder from a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success"),
-            @APIResponse(responseCode = "400", description="Invalid parameters/configuration or storage element is not a folder",
+            @APIResponse(responseCode = "400",
+                    description="Invalid parameters/configuration or storage element is not a folder",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
@@ -528,7 +529,7 @@ public class DataStorage extends DataTransferBase {
                                       @Parameter(required = true,
                                                  description = "URL to the storage element (folder) to delete")
                                       String seUrl,
-                                      @RestQuery("dest") @DefaultValue(defaultDestination)
+                                      @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                       @Parameter(schema = @Schema(implementation = Destination.class),
                                                  description = DESTINATION_STORAGE)
                                       String destination,
@@ -590,7 +591,8 @@ public class DataStorage extends DataTransferBase {
     @Operation(operationId = "deleteFile",  summary = "Delete existing file from a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success"),
-            @APIResponse(responseCode = "400", description="Invalid parameters/configuration or storage element is not a file",
+            @APIResponse(responseCode = "400",
+                    description="Invalid parameters/configuration or storage element is not a file",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "401", description="Not authorized",
@@ -614,7 +616,7 @@ public class DataStorage extends DataTransferBase {
                                     @Parameter(required = true,
                                                description = "URL to the storage element (file) to delete")
                                     String seUrl,
-                                    @RestQuery("dest") @DefaultValue(defaultDestination)
+                                    @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                     @Parameter(schema = @Schema(implementation = Destination.class),
                                                description = DESTINATION_STORAGE)
                                     String destination,
@@ -698,7 +700,7 @@ public class DataStorage extends DataTransferBase {
     })
     public Uni<Response> renameFile(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                     StorageRenameOperation operation,
-                                    @RestQuery("dest") @DefaultValue(defaultDestination)
+                                    @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                     @Parameter(schema = @Schema(implementation = Destination.class),
                                                description = DESTINATION_STORAGE)
                                     String destination,
@@ -796,7 +798,7 @@ public class DataStorage extends DataTransferBase {
     })
     public Uni<Response> renameFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                       StorageRenameOperation operation,
-                                      @RestQuery("dest") @DefaultValue(defaultDestination)
+                                      @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                       @Parameter(schema = @Schema(implementation = Destination.class),
                                               description = DESTINATION_STORAGE)
                                       String destination,

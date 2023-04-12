@@ -27,6 +27,7 @@ public class MetricsCustomization {
 
     /***
      * Enable histogram buckets for specific timer(s)
+     * @return MeterFilter to be injected
      */
     @Produces
     @Singleton

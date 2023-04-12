@@ -29,3 +29,4 @@ jobs:
           # Skip some linters
           VALIDATE_JSCPD: false
           VALIDATE_NATURAL_LANGUAGE: false
+          VALIDATE_GOOGLE_JAVA_FORMAT: false

@@ -12,6 +12,15 @@ import java.util.Optional;
 @ConfigMapping(prefix = "eosc.qos")
 public interface MetricsConfig {
 
+    /***
+     * List of quantiles (percentiles) to create histogram bucket(s) for
+     * @return Quantiles
+     */
     Optional<List<Double>> quantiles();
+
+    /***
+     * List of service level objectives (SLOs) to create histogram bucket(s) for
+     * @return SLOs [milliseconds]
+     */
     Optional<List<Long>> slos();
 }

@@ -72,13 +72,27 @@ public class DataStorageCredentials {
         return null;
     }
 
+    /***
+     * Get username
+     * @return The username
+     */
     public String getUsername() { return this.username; }
-    public String getPassword() {
-        return this.password;
-    }
 
+    /***
+     * Get password
+     * @return The password
+     */
+    public String getPassword() { return this.password; }
+
+    /***
+     * Get access key
+     * @return The access key
+     */
     public String getAccessKey() { return this.username; }
-    public String getSecretKey() {
-        return this.password;
-    }
+
+    /***
+     * Get secret key
+     * @return The secret key
+     */
+    public String getSecretKey() { return this.password; }
 }

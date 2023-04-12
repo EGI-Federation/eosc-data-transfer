@@ -14,7 +14,10 @@ import java.util.Optional;
 @ConfigMapping(prefix = "eosc")
 public interface ParsersConfig {
 
-    // Contains the details of each specific parser
+    /***
+     * Contains the details of each specific parser
+      * @return Parser configurations
+     */
     @WithName("parser")
     Map<String, ParserConfig> parsers();
 
@@ -23,6 +26,7 @@ public interface ParsersConfig {
      * The configuration of a parser
      */
     interface ParserConfig {
+
         String name();
 
         Optional<String> url();

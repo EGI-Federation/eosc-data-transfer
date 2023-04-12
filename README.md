@@ -70,7 +70,8 @@ use the correct parser to retrieve the list of source files.
 > [registration agencies of the International DOI Foundation](https://www.doi.org/registration_agencies.html).
 > Although in this documentation we refer to DOIs, the API endpoint that parses DOIs
 > supports any PID registered in the [global handle system](https://www.dona.net/handle-system)
-> of the [DONA Foundation](https://www.dona.net/digitalobjectarchitecture).
+> of the [DONA Foundation](https://www.dona.net/digitalobjectarchitecture), provided it points
+> to a data repository for which a parser is configured.
 
 
 ### Supported data repositories
@@ -93,12 +94,12 @@ Implement the Java interface `ParserService` in a class of your choice.
 
 ```java
 public interface ParserService {
-    boolean init(ParserConfig config);
+    boolean init(ParserConfig config, PortConfig port);
     String getId();
     String getName();
     String sourceId();
     Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper);
-    Uni<StorageContent> parseDOI(String auth, String doi);
+    Uni<StorageContent> parseDOI(String auth, String doi, int level);
 }
 ```
 
@@ -311,7 +312,7 @@ You can run your application in dev mode that enables live coding using:
 
 <!-- markdownlint-disable no-bare-urls -->
 Then open the Dev UI, which is available in dev mode only at http://localhost:8081/q/dev/.
-<!-- markdownlint-enable no-bare-urls -->8081
+<!-- markdownlint-enable no-bare-urls -->
 
 
 ## Packaging and running the API
@@ -334,13 +335,27 @@ If you want to build an _über-jar_, execute the following command:
 The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
 
 
-## Running the API using Docker Compose
+## Running the API with telemetry using Docker Compose
 
 You can use Docker Compose to easily deploy and run the EOSC Data Transfer API.
-This will run two containers:
+This will run multiple containers:
 
-- This application that implements the API and serves it over HTTP
-- SSL terminator that decrypts traffic and forwards REST API requests to the API
+- This application that implements the REST API and serves it over HTTP
+- SSL terminator - decrypts HTTPS traffic and forwards requests to the API
+- OpenTelemetry collector - collects, batch processes, and forwards traces/logs/metrics
+- Jaeger - receives traces
+- Loki - receives logs
+- Prometheus - receives and scrapes metrics
+- Grafana - visualization of the telemetry dashboard
+
+The architecture and interaction between these containers is illustrated below: 
+
+<!-- markdownlint-disable no-inline-html -->
+<img  style="display: block; margin-left: auto; margin-right: auto; width: 70%;"
+src="docs/architecture.png"
+alt="Container architecture">
+</img>
+<!-- markdownlint-enable no-inline-html -->
 
 Steps to run the API in a container:
 
@@ -354,7 +369,8 @@ Steps to run the API in a container:
    Java keystore file containing a new [EGI service account certificate](#configuration),
    and in the environment variable `FTS_KEY_STORE_PASSWORD` provide the password for it.
    * In the environment variable `TELEMETRY_PORT` provide the port on which to publish
-   the Grafana telemetry dashboards.
+   the Grafana telemetry dashboard. This will be available on the same domain name as
+   the API itself.
 
 2. Run the command `build.sh` (or `build.cmd` on Windows) to build and run the containers
 that implement the EOSC Data Transfer API.  

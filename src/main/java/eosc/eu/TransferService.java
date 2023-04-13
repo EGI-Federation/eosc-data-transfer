@@ -14,6 +14,7 @@ public interface TransferService {
 
     /***
      * Initialize the service, avoids the need to inject configuration.
+     * @param config Service configuration loaded from the config file
      * @return true on success.
      */
     boolean initService(TransferServiceConfig config);

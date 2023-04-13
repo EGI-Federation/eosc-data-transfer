@@ -9,9 +9,6 @@ import io.smallrye.config.ConfigMapping;
 @ConfigMapping(prefix = "quarkus.http")
 public interface PortConfig {
 
-    /***
-     * The port on which the application runs
-     * @return Local application port
-     */
+    // The port on which the application runs
     int port();
 }

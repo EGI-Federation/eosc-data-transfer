@@ -52,7 +52,7 @@ public class EgiDataTransfer implements TransferService {
 
     private String name;
     private static FileTransferService fts;
-    private static FileTransferService fts_s3;
+    private static FileTransferService ftsConfig;
     private int timeout;
 
 
@@ -100,6 +100,7 @@ public class EgiDataTransfer implements TransferService {
 
     /***
      * Initialize the REST client for the File Transfer Service that powers EGI Data Transfer
+     * @param serviceConfig Configuration loaded from the config file
      * @return true on success
      */
     @PostConstruct
@@ -144,7 +145,7 @@ public class EgiDataTransfer implements TransferService {
             if(oks.isPresent()) {
                 rcb.keyStore(oks.get(), ksPass);
 
-                fts_s3 = rcb.build(FileTransferService.class);
+                ftsConfig = rcb.build(FileTransferService.class);
             }
 
             return true;
@@ -252,7 +253,7 @@ public class EgiDataTransfer implements TransferService {
 
         LOG.infof("Registering S3 destination %s", storageHost);
 
-        if (null == fts_s3)
+        if (null == ftsConfig)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<Boolean> result = Uni.createFrom().nullItem()
@@ -260,7 +261,7 @@ public class EgiDataTransfer implements TransferService {
             .chain(unused -> {
                 // Register S3 destination
                 S3Info s3info = new S3Info(storageHost);
-                return fts_s3.registerS3HostAsync("", s3info);
+                return ftsConfig.registerS3HostAsync("", s3info);
             })
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
@@ -301,15 +302,18 @@ public class EgiDataTransfer implements TransferService {
      * @param accessKey Access key for the destination storage.
      * @param secretKey Secret key for the destination storage.
      * @param storageHost Destination S3 system.
+     * @param ui Optional user information
      * @return true on success
      */
-    private Uni<Boolean> prepareStorage(String tsAuth, String accessKey, String secretKey, String storageHost, UserInfo ui) {
+    private Uni<Boolean> prepareStorage(String tsAuth,
+                                        String accessKey, String secretKey,
+                                        String storageHost, UserInfo ui) {
 
         // Make sure we have storage credentials
         if (null == accessKey || accessKey.isBlank() || null == secretKey || secretKey.isBlank())
             return Uni.createFrom().failure(new TransferServiceException("missingStorageAuth"));
 
-        if (null == fts || null == fts_s3)
+        if (null == fts || null == ftsConfig)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<Boolean> result = Uni.createFrom().nullItem()
@@ -333,7 +337,7 @@ public class EgiDataTransfer implements TransferService {
 
                 var voName = (null == userInfo.vos || userInfo.vos.isEmpty()) ? null : userInfo.vos.get(0);
                 var s3info = new S3Info(userInfo.user_dn, voName, accessKey, secretKey);
-                return fts_s3.configureS3HostAsync("", "s3:" + storageHost, s3info);
+                return ftsConfig.configureS3HostAsync("", "s3:" + storageHost, s3info);
             })
             .chain(unused -> {
                 // Success

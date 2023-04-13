@@ -62,8 +62,6 @@ public class DigitalObjectIdentifier {
     @Inject
     DigitalObjectIdentifier(Vertx vertx) {
         this.client = WebClient.create(vertx);
-
-        LOG.infof("Vertx metrics enabled - {}", vertx.isMetricsEnabled());
     }
 
     /**

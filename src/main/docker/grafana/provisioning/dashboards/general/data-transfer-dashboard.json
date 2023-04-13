@@ -806,7 +806,7 @@
             "uid": "my-metrics"
           },
           "editorMode": "code",
-          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!~\"/metrics\"}[$__interval]))",
+          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!~\"/metrics\"}[1m]))",
           "legendFormat": "Requests",
           "range": true,
           "refId": "A"
@@ -817,7 +817,7 @@
             "uid": "my-metrics"
           },
           "editorMode": "code",
-          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri=\"/transfers\", method=\"POST\", outcome=\"SUCCESS\"}[$__interval]))",
+          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri=\"/transfers\", method=\"POST\", outcome=\"SUCCESS\"}[1m]))",
           "hide": false,
           "legendFormat": "Transfers",
           "range": true,
@@ -1237,7 +1237,7 @@
             "uid": "my-metrics"
           },
           "editorMode": "code",
-          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\", outcome!=\"SUCCESS\"}[$__interval]))*100/sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\"}[$__interval]))",
+          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\", outcome!=\"SUCCESS\"}[1m]))*100/sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\"}[1m]))",
           "legendFormat": "Percent of requests failing",
           "range": true,
           "refId": "A"
@@ -1344,7 +1344,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by(status) (increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!~\"/metrics\"}[$__interval]))",
+          "expr": "sum by(status) (increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!~\"/metrics\"}[1m]))",
           "legendFormat": "HTTP Status {{status}}",
           "queryType": "range",
           "range": true,

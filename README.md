@@ -179,7 +179,6 @@ Implement the Java interface `TransferService` in a class of your choice.
 public interface TransferService {
     boolean initService(TransferServiceConfig config);
     String getServiceName();
-    boolean canBrowseStorage(String destination);
     String translateTransferInfoFieldName(String genericFieldName);
     Uni<UserInfo> getUserInfo(String tsAuth);
 
@@ -243,6 +242,9 @@ The configuration of each storage type consists of:
   - **token** means the storage uses the same OIDC auth token as the transfer service
   - **password** means the storage needs a username and a password for authentication
   - **keys** means the storage needs an access key and a secret key for authentication
+- `protocol` is the schema to use in URLs pointing to this storage.
+- `browse` signals whether the storage supports browsing (the endpoints to
+  [list and manage storage elements](#managing-storage-elements) are available). 
 
 For storage types that are configured with either `password` or `keys` as the authentication
 type, you will have to supply the HTTP header parameter `Authorization-Storage` when calling

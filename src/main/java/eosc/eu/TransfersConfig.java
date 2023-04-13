@@ -36,6 +36,9 @@ public interface TransfersConfig {
 
         String protocol();
 
+        @WithDefault("false")
+        boolean browse();
+
         Optional<String> description();
     }
 

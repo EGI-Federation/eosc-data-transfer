@@ -19,6 +19,7 @@ eosc:
         auth: token
         protocol: https
         description: EGI dCache
+        browse: true
       s3:
         service: fts
         auth: keys
@@ -85,7 +86,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.39
+    info-version: 1.1.40
   jackson:
     fail-on-unknown-properties: false
   http:

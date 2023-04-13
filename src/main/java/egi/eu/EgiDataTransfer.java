@@ -166,24 +166,6 @@ public class EgiDataTransfer implements TransferService {
     public String getServiceName() { return this.name; }
 
     /***
-     * Signal if browsing the destination is supported
-     * @param destination The key of the destination storage type from the configuration file
-     * @return true if creating and managing storage elements is supported in associated destination storage(s)
-     */
-    public boolean canBrowseStorage(String destination) {
-
-        if(destination.equals(Transfer.Destination.dcache.toString()))
-            return true;
-        else if(destination.equals(Transfer.Destination.ftp.toString()))
-            // TODO: Can FTS browse FTP storage systems?
-            return true;
-        else if(destination.equals(Transfer.Destination.s3.toString()))
-            return false;
-
-        return false;
-    }
-
-    /***
      * Translates name of a generic information field to the name specific to the transfer service.
      * @param genericFieldName is the name of a TransferInfoExtended field.
      * @return Name of the field specific to this transfer service, null if requested field not supported.

@@ -410,5 +410,5 @@ certificate and will only do dry runs for requesting a certificate to avoid the
 - [OpenTelemetry support](https://quarkus.io/guides/opentelemetry): Adding observability to your application
 - [Metrics with Micrometer](https://quarkus.io/guides/micrometer): Sending API metrics to Prometheus
 - [Swagger UI](https://quarkus.io/guides/openapi-swaggerui): User-friendly UI to document and test your API
-- [Mutiny Guides](https://smallrye.io/smallrye-mutiny/1.7.0/guides): Reactive programming with Mutiny
+- [Mutiny Guides](https://smallrye.io/smallrye-mutiny/2.1.0/guides): Reactive programming with Mutiny
 - [Optionals](https://dzone.com/articles/optional-in-java): How to use Optional in Java

@@ -2,6 +2,7 @@
 # EOSC Data Transfer Service
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/EGI-Federation/eosc-data-transfer?color=darkcyan&label=Release)
 
 [EOSC Future](https://eoscfuture.eu) is an EU-funded Horizon 2020 project that is implementing
 the [European Open Science Cloud](https://eosc-portal.eu) (EOSC). EOSC will give European

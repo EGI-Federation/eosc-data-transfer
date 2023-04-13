@@ -41,8 +41,9 @@ public class S3Info {
     /**
      * Construct from user DN and keys
      */
-    public S3Info(String userDN, String accessKey, String secretKey) {
+    public S3Info(String userDN, String voName, String accessKey, String secretKey) {
         this.user_dn = userDN;
+        this.vo_name = voName;
         this.access_key = accessKey;
         this.secret_key = secretKey;
     }

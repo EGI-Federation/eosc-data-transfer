@@ -23,8 +23,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import static javax.ws.rs.core.HttpHeaders.*;
 
 import egi.fts.model.*;
@@ -36,6 +38,7 @@ import eosc.eu.TransferService;
 import eosc.eu.TransferServiceException;
 import eosc.eu.DataStorageCredentials;
 import eosc.eu.BooleanAccumulator;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 
 /***
@@ -259,6 +262,58 @@ public class EgiDataTransfer implements TransferService {
     }
 
     /**
+     * Register S3 storage system with FTS.
+     * @param storageHost Destination S3 system.
+     * @return true on success
+     */
+    private Uni<Boolean> registerStorage(String storageHost) {
+
+        LOG.infof("Registering S3 destination %s", storageHost);
+
+        if (null == fts_s3)
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
+
+        Uni<Boolean> result = Uni.createFrom().nullItem()
+
+            .chain(unused -> {
+                // Register S3 destination
+                S3Info s3info = new S3Info(storageHost);
+                return fts_s3.registerS3HostAsync("", s3info);
+            })
+            .ifNoItem()
+                .after(Duration.ofMillis(this.timeout))
+                .recoverWithItem(() -> {
+                    // Hack: Treat this as "S3 host registered successfully"
+                    // See also https://github.com/cern-fts/fts-rest-flask/issues/4
+                    return new S3Info(storageHost).toString();
+                })
+            .chain(unused -> {
+                // Success
+                return Uni.createFrom().item(true);
+            })
+            .onFailure().recoverWithUni(e -> {
+                var type = e.getClass();
+                if (type.equals(ClientWebApplicationException.class) ||
+                    type.equals(WebApplicationException.class) ) {
+                    // Extract status code
+                    var we = (WebApplicationException) e;
+                    var status = Status.fromStatusCode(we.getResponse().getStatus());
+                    if(status == Status.INTERNAL_SERVER_ERROR) {
+                        // Hack: Treat this as "S3 host already registered"
+                        // See also https://github.com/cern-fts/fts-rest-flask/issues/4
+                        return Uni.createFrom().item(true);
+                    }
+                }
+
+                LOG.error(e);
+                LOG.errorf("Failed to register S3 destination %s", storageHost);
+                return Uni.createFrom().failure(e);
+            });
+
+        return result;
+    }
+
+    /**
      * Prepare S3 storage system for transfer.
      * @param tsAuth The access token needed to call the service.
      * @param accessKey Access key for the destination storage.
@@ -272,28 +327,17 @@ public class EgiDataTransfer implements TransferService {
         if (null == accessKey || accessKey.isBlank() || null == secretKey || secretKey.isBlank())
             return Uni.createFrom().failure(new TransferServiceException("missingStorageAuth"));
 
-        if (null == fts)
+        if (null == fts || null == fts_s3)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<Boolean> result = Uni.createFrom().nullItem()
 
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
-                .failWith(new TransferServiceException("prepareStorageImplTimeout"))
+                .failWith(new TransferServiceException("prepareStorageTimeout"))
             .chain(unused -> {
                 // Register S3 destination
-                if(true)
-                    // TODO: Remove this hack when FTS is fixed and registration works
-                    // FTS issue https://github.com/cern-fts/fts-rest-flask/issues/4
-                    return Uni.createFrom().item(new S3Info(storageHost));
-
-                LOG.infof("Registering S3 destination %s", storageHost);
-
-                S3Info s3info = new S3Info(storageHost);
-                if(null != fts_s3)
-                    return fts_s3.registerS3HostAsync("", s3info);
-
-                return fts.registerS3HostAsync(tsAuth, s3info);
+                return registerStorage(storageHost);
             })
             .chain(s3info -> {
                 // Get user info from auth token, if not supplied
@@ -305,11 +349,9 @@ public class EgiDataTransfer implements TransferService {
                 // Configure S3 destination with provided credentials
                 LOG.infof("Configuring S3 destination %s", storageHost);
 
-                S3Info s3info = new S3Info(userInfo.user_dn, accessKey, secretKey);
-                if(null != fts_s3)
-                    return fts_s3.configureS3HostAsync("", "s3:" + storageHost, s3info);
-
-                return fts.configureS3HostAsync(tsAuth, "s3:" + storageHost, s3info);
+                var voName = (null == userInfo.vos || userInfo.vos.isEmpty()) ? null : userInfo.vos.get(0);
+                var s3info = new S3Info(userInfo.user_dn, voName, accessKey, secretKey);
+                return fts_s3.configureS3HostAsync("", "s3:" + storageHost, s3info);
             })
             .chain(unused -> {
                 // Success

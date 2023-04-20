@@ -314,6 +314,7 @@ public class ActionError {
 
     /**
      * Convert to Response with new status that can be returned by a REST endpoint
+     * @param status New HTTP status
      * @return Response object with new HTTP status code
      */
     public Response toResponse(Status status) {

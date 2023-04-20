@@ -37,6 +37,7 @@ public class B2ShareParser implements ParserService {
 
     /***
      * Constructor
+     * @param id The key of the parser in the config file
      */
     public B2ShareParser(String id) { this.id = id; }
 
@@ -121,7 +122,8 @@ public class B2ShareParser implements ParserService {
                     LOG.debugf("Redirected DOI %s", redirectedToUrl);
 
                 // Validate URL
-                Pattern p = Pattern.compile("^(https?://[^/:]*b2share[^/:]*:?[\\d]*)/records/(.+)", Pattern.CASE_INSENSITIVE);
+                Pattern p = Pattern.compile("^(https?://[^/:]*b2share[^/:]*:?[\\d]*)/records/(.+)",
+                                            Pattern.CASE_INSENSITIVE);
                 Matcher m = p.matcher(redirectedToUrl);
                 boolean isSupported = m.matches();
 

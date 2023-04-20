@@ -15,6 +15,11 @@ public class B2ShareException extends WebApplicationException {
         super();
     }
 
+    /***
+     * Construct from a response
+     * @param resp Response object
+     * @param body Response body
+     */
     public B2ShareException(Response resp, String body) {
         super(resp);
         this.responseBody = body;

@@ -49,6 +49,7 @@ public class ActionError {
 
     /**
      * Copy constructor does deep copy
+     * @param error Error to copy
      */
     public ActionError(ActionError error) {
 
@@ -68,6 +69,8 @@ public class ActionError {
 
     /**
      * Copy but change id
+     * @param error Error to copy
+     * @param newId New error id
      */
     public ActionError(ActionError error, String newId) {
         this(error);
@@ -76,6 +79,7 @@ public class ActionError {
 
     /**
      * Construct with error id
+     * @param id Error id
      */
     public ActionError(String id) {
         this.id = id;
@@ -85,6 +89,8 @@ public class ActionError {
 
     /**
      * Construct with error id and description
+     * @param id Error id
+     * @param description Error description
      */
     public ActionError(String id, String description) {
         this.id = id;
@@ -94,6 +100,8 @@ public class ActionError {
 
     /**
      * Construct with error id and detail
+     * @param id Error id
+     * @param detail Key-value pair to add to the details of the error
      */
     public ActionError(String id, Tuple2<String, String> detail) {
         this(id, Arrays.asList(detail));
@@ -101,6 +109,8 @@ public class ActionError {
 
     /**
      * Construct with error id and details
+     * @param id Error id
+     * @param details Key-value pairs to add to the details of the error
      */
     public ActionError(String id, List<Tuple2<String, String>> details) {
         this.id = id;
@@ -116,6 +126,9 @@ public class ActionError {
 
     /**
      * Construct with error id, description, and detail
+     * @param id Error id
+     * @param description Error description
+     * @param detail Key-value pair to add to the details of the error
      */
     public ActionError(String id, String description, Tuple2<String, String> detail) {
         this(id, description, Arrays.asList(detail));
@@ -123,6 +136,9 @@ public class ActionError {
 
     /**
      * Construct with error id, description, and details
+     * @param id Error id
+     * @param description Error description
+     * @param details Key-value pairs to add to the details of the error
      */
     public ActionError(String id, String description, List<Tuple2<String, String>> details) {
         this.id = id;
@@ -138,6 +154,7 @@ public class ActionError {
 
     /**
      * Construct from exception
+     * @param t The exception to wrap
      */
     public ActionError(Throwable t) {
         this.id = "exception";
@@ -219,6 +236,8 @@ public class ActionError {
 
     /**
      * Construct from exception and detail
+     * @param t The exception to wrap
+     * @param detail Key-value pair to add to the details of the error
      */
     public ActionError(Throwable t, Tuple2<String, String> detail) {
         this(t, Arrays.asList(detail));
@@ -226,6 +245,8 @@ public class ActionError {
 
     /**
      * Construct from exception and details
+     * @param t The exception to wrap
+     * @param details Key-value pair to add to the details of the error
      */
     public ActionError(Throwable t, List<Tuple2<String, String>> details) {
         this(t);
@@ -274,6 +295,7 @@ public class ActionError {
 
     /**
      * Update the HTTP status code
+     * @param status New HTTP status
      */
     public ActionError setStatus(Status status) {
         this.status = status;

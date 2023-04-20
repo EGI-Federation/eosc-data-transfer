@@ -7,7 +7,7 @@ eosc:
       url: https://zenodo.org
       timeout: 5000
     esrf:
-      name: European Synchrotron Radiation Facility
+      name: ESRF
       class: parser.esrf.EsrfParser
       url: https://icatplus.esrf.fr
     b2share:

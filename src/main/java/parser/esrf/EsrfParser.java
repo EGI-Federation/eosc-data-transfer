@@ -203,9 +203,10 @@ public class EsrfParser implements ParserService {
             })
             .chain(files -> {
                 // Got the files in the dataset
+                var session = sessionId.get();
                 StorageContent srcFiles = new StorageContent(files.size());
                 for(var file : files) {
-                    srcFiles.elements.add(new StorageElement(file, this.baseUrl));
+                    srcFiles.elements.add(new StorageElement(file, this.baseUrl, session));
                 }
 
                 srcFiles.count = srcFiles.elements.size();

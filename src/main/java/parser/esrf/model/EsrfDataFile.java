@@ -19,6 +19,16 @@ public class EsrfDataFile {
     public EsrfDataFile() {}
 
     /***
+     * Build URL to access/download this file
+     * @param baseUrl is the base URL to the ESRF API
+     * @param sessionId is the session to use to download the file (thus the built URL will expire after a while)
+     * @return URL to access file content
+     */
+    public String accessUrl(String baseUrl, String sessionId) {
+        return String.format("%s/catalogue/%s/data/download?datafileIds=%s", baseUrl, sessionId, Datafile.id);
+    }
+
+    /***
      * The details of the ESRF file
      */
     public class Info {

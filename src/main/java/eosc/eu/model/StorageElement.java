@@ -86,10 +86,10 @@ public class StorageElement extends StorageElementBase {
      * @param baseUrl The base URL for the access URL, as the ESRF file
      *                only contains the path to the file
      */
-    public StorageElement(EsrfDataFile ef, String baseUrl) {
+    public StorageElement(EsrfDataFile ef, String baseUrl, String sessionId) {
         super("StorageElement", ef.Datafile.name);
         this.size = ef.Datafile.fileSize;
-        this.accessUrl = baseUrl + ef.Datafile.location;
+        this.accessUrl = ef.accessUrl(baseUrl, sessionId);
 
         if(null != ef.Datafile.createTime)
             this.createdAt = ef.Datafile.createTime;

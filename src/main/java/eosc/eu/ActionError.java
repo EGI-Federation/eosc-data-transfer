@@ -14,6 +14,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import parser.b2share.B2ShareException;
+import parser.esrf.EsrfException;
 import parser.zenodo.ZenodoException;
 import egi.fts.FileTransferServiceException;
 
@@ -151,6 +152,7 @@ public class ActionError {
         var type = t.getClass();
         if (type.equals(ZenodoException.class) ||
             type.equals(B2ShareException.class) ||
+            type.equals(EsrfException.class) ||
             type.equals(FileTransferServiceException.class) ||
             type.equals(ClientWebApplicationException.class) ||
             type.equals(WebApplicationException.class) ) {

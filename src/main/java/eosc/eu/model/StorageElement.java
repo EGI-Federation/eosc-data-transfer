@@ -9,6 +9,7 @@ import java.util.Date;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import parser.zenodo.model.ZenodoFile;
 import parser.b2share.model.B2ShareFile;
+import parser.esrf.model.EsrfDataFile;
 import egi.fts.model.ObjectInfo;
 
 
@@ -74,6 +75,21 @@ public class StorageElement extends StorageElementBase {
         if(null != this.accessUrl && !this.accessUrl.isEmpty()) {
             this.downloadUrl = this.accessUrl + "?download=1";
         }
+    }
+
+    /**
+     * Construct from ESRF file
+     */
+    public StorageElement(EsrfDataFile ef, String baseUrl) {
+        super("StorageElement", ef.Datafile.name);
+        this.size = ef.Datafile.fileSize;
+        this.accessUrl = baseUrl + ef.Datafile.location;
+
+        if(null != ef.Datafile.createTime)
+            this.createdAt = ef.Datafile.createTime;
+
+        if(null != ef.Datafile.modTime)
+            this.modifiedAt = ef.Datafile.modTime;
     }
 
     /**

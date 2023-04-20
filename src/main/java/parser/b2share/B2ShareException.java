@@ -25,5 +25,9 @@ public class B2ShareException extends WebApplicationException {
         this.responseBody = body;
     }
 
+    /***
+     * Get the response body
+     * @return Body of the response
+     */
     String responseBody() { return responseBody; }
 }

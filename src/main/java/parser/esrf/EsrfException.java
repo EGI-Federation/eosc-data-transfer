@@ -25,5 +25,9 @@ public class EsrfException extends WebApplicationException {
         this.responseBody = body;
     }
 
+    /***
+     * Get the response body
+     * @return Body of the response
+     */
     String responseBody() { return responseBody; }
 }

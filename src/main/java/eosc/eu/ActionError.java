@@ -288,6 +288,7 @@ public class ActionError {
 
     /**
      * Retrieve the HTTP status code
+     * @return HTTP status code
      */
     public Status getStatus() {
         return this.status;
@@ -296,6 +297,7 @@ public class ActionError {
     /**
      * Update the HTTP status code
      * @param status New HTTP status
+     * @return Instance to allow for fluent calls (with .)
      */
     public ActionError setStatus(Status status) {
         this.status = status;
@@ -304,6 +306,7 @@ public class ActionError {
 
     /**
      * Convert to Response that can be returned by a REST endpoint
+     * @return Response object
      */
     public Response toResponse() {
         return Response.ok(this).status(this.status).build();
@@ -311,6 +314,7 @@ public class ActionError {
 
     /**
      * Convert to Response with new status that can be returned by a REST endpoint
+     * @return Response object with new HTTP status code
      */
     public Response toResponse(Status status) {
         return Response.ok(this).status(status).build();

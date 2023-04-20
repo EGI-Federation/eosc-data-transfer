@@ -9,6 +9,7 @@ import java.util.Date;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import parser.zenodo.model.ZenodoFile;
 import parser.b2share.model.B2ShareFile;
+import parser.esrf.model.EsrfDataFile;
 import egi.fts.model.ObjectInfo;
 
 
@@ -55,7 +56,9 @@ public class StorageElement extends StorageElementBase {
     public StorageElement() { super("StorageElement"); }
 
     /**
-     * Constructor
+     * Construct using access URL and media type
+     * @param url Access URL for the storage element
+     * @param type Media type
      */
     public StorageElement(String url, String type) {
         super("StorageElement");
@@ -65,6 +68,7 @@ public class StorageElement extends StorageElementBase {
 
     /**
      * Construct from Zenodo file
+     * @param zf Zenodo file
      */
     public StorageElement(ZenodoFile zf) {
         super("StorageElement", zf.filename);
@@ -77,7 +81,26 @@ public class StorageElement extends StorageElementBase {
     }
 
     /**
+     * Construct from ESRF file
+     * @param ef ESRF file
+     * @param baseUrl The base URL for the access URL, as the ESRF file
+     *                only contains the path to the file
+     */
+    public StorageElement(EsrfDataFile ef, String baseUrl) {
+        super("StorageElement", ef.Datafile.name);
+        this.size = ef.Datafile.fileSize;
+        this.accessUrl = baseUrl + ef.Datafile.location;
+
+        if(null != ef.Datafile.createTime)
+            this.createdAt = ef.Datafile.createTime;
+
+        if(null != ef.Datafile.modTime)
+            this.modifiedAt = ef.Datafile.modTime;
+    }
+
+    /**
      * Construct from B2Share file
+     * @param b2sf B2SHARE file
      */
     public StorageElement(B2ShareFile b2sf) {
         super("StorageElement", b2sf.name);
@@ -94,6 +117,7 @@ public class StorageElement extends StorageElementBase {
 
     /**
      * Construct from FTS object
+     * @param obj Information about an object returned by FTS
      */
     public StorageElement(ObjectInfo obj) {
         super("StorageElement");

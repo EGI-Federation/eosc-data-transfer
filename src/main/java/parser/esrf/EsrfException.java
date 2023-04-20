@@ -1,17 +1,17 @@
-package parser.zenodo;
+package parser.esrf;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
 
 /**
- * Exception class for Zenodo API calls
+ * Exception class for ESRF API calls
  */
-public class ZenodoException extends WebApplicationException {
+public class EsrfException extends WebApplicationException {
 
     private String responseBody;
 
-    public ZenodoException() {
+    public EsrfException() {
         super();
     }
 
@@ -20,7 +20,7 @@ public class ZenodoException extends WebApplicationException {
      * @param resp Response object
      * @param body Response body
      */
-    public ZenodoException(Response resp, String body) {
+    public EsrfException(Response resp, String body) {
         super(resp);
         this.responseBody = body;
     }

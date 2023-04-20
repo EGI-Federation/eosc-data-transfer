@@ -41,14 +41,12 @@ public class ZenodoParser implements ParserService {
     public ZenodoParser(String id) { this.id = id; }
 
     /***
-     * Initialize the REST client for B2Share.
-     * The hostname of the B2Share server should be already determined by a previous call to canParseDOI().
+     * Initialize the REST client for Zenodo.
      * @param config Configuration of the parser, from the config file.
      * @param port The port on which the application runs, from the config file.
      * @return true on success
      */
     public boolean init(ParserConfig config, PortConfig port) {
-
         this.name = config.name();
         this.timeout = config.timeout();
 
@@ -108,7 +106,6 @@ public class ZenodoParser implements ParserService {
      * @return Return true if the parser service can parse this DOI.
      */
     public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper) {
-        // Validate DOI without actually fetching the URL
         boolean isValid = null != doi && !doi.isBlank();
         if(!isValid)
             return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));

@@ -52,7 +52,6 @@ public class SignpostParser implements ParserService {
      * @return true on success
      */
     public boolean init(ParserConfig config, PortConfig port) {
-
         this.name = config.name();
         this.timeout = config.timeout();
 

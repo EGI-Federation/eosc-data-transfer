@@ -1,4 +1,4 @@
-package parser.b2share;
+package parser.esrf;
 
 import eosc.eu.PortConfig;
 import io.smallrye.mutiny.Uni;
@@ -10,6 +10,7 @@ import org.jboss.logging.Logger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,31 +19,33 @@ import eosc.eu.ParserService;
 import eosc.eu.TransferServiceException;
 import eosc.eu.model.*;
 import parser.ParserHelper;
+import parser.esrf.model.EsrfCredentials;
 
 
 /***
- * Class for parsing B2Share DOIs
+ * Class for parsing ESRF DOIs
  */
-public class B2ShareParser implements ParserService {
+public class EsrfParser implements ParserService {
 
-    private static final Logger LOG = Logger.getLogger(B2ShareParser.class);
+    private static final Logger LOG = Logger.getLogger(EsrfParser.class);
 
     private String id;
     private String name;
-    private URL urlServer;
-    private String recordId;
     private int timeout;
-    private B2Share parser;
+    private String baseUrl;
+    private String authority;
+    private String recordId;
+    private static Esrf parser;
 
 
     /***
      * Constructor
      * @param id The key of the parser in the config file
      */
-    public B2ShareParser(String id) { this.id = id; }
+    public EsrfParser(String id) { this.id = id; }
 
     /***
-     * Initialize the REST client for B2Share
+     * Initialize the REST client for ESRF.
      * @param config Configuration of the parser, from the config file.
      * @param port The port on which the application runs, from the config file.
      * @return true on success
@@ -51,21 +54,30 @@ public class B2ShareParser implements ParserService {
         this.name = config.name();
         this.timeout = config.timeout();
 
-        if (null != this.parser)
+        if (null != parser)
             return true;
 
-        if(null == this.urlServer) {
-            LOG.error("Missing B2Share server, call canParseDOI() first");
+        LOG.debug("Obtaining REST client for ESRF");
+
+        // Check if base URL is valid
+        URL urlParserService;
+        try {
+            this.baseUrl = config.url().isPresent() ? config.url().get() : "";
+            urlParserService = new URL(this.baseUrl);
+
+            if(!this.baseUrl.isEmpty() && '/' == this.baseUrl.charAt(this.baseUrl.length() - 1))
+                this.baseUrl = this.baseUrl.replaceAll("[/]+$", "");
+
+        } catch (MalformedURLException e) {
+            LOG.error(e.getMessage());
             return false;
         }
 
-        LOG.debugf("Obtaining REST client for B2Share server %s", this.urlServer);
-
         try {
             // Create the REST client for the parser service
-            this.parser = RestClientBuilder.newBuilder()
-                            .baseUrl(this.urlServer)
-                            .build(B2Share.class);
+            parser = RestClientBuilder.newBuilder()
+                            .baseUrl(urlParserService)
+                            .build(Esrf.class);
 
             return true;
         }
@@ -106,7 +118,7 @@ public class B2ShareParser implements ParserService {
         if(!isValid)
             return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
 
-        // Check if DOI points/redirects to a B2Share record
+        // Check if DOI points/redirects to an ESRF record
         var result = Uni.createFrom().item(helper.redirectedToUrl())
 
             .chain(redirectedToUrl -> {
@@ -122,25 +134,20 @@ public class B2ShareParser implements ParserService {
                     LOG.debugf("Redirected DOI %s", redirectedToUrl);
 
                 // Validate URL
-                Pattern p = Pattern.compile("^(https?://[^/:]*b2share[^/:]*:?[\\d]*)/records/(.+)",
+                Pattern p = Pattern.compile("^https?://([\\w\\.]*esrf.fr)/doi/([^/]+)/([^/#\\?]+)",
                                             Pattern.CASE_INSENSITIVE);
                 Matcher m = p.matcher(redirectedToUrl);
                 boolean isSupported = m.matches();
 
                 if(isSupported) {
-                    this.recordId = m.group(2);
-                    try {
-                        this.urlServer = new URL(m.group(1));
-                    } catch (MalformedURLException e) {
-                        LOG.error(e.getMessage());
-                        isSupported = false;
-                    }
+                    this.authority = m.group(2);
+                    this.recordId = m.group(3);
                 }
 
                 return Uni.createFrom().item(Tuple2.of(isSupported, (ParserService)this));
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Failed to check if DOI %s points to B2Share record", doi);
+                LOG.errorf("Failed to check if DOI %s points to ESRF record", doi);
             });
 
         return result;
@@ -154,44 +161,51 @@ public class B2ShareParser implements ParserService {
      * @return List of files in the data set.
      */
     public Uni<StorageContent> parseDOI(String auth, String doi, int level) {
-        if(null == this.parser)
+        if(null == doi || doi.isBlank())
+            return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
+
+        if(null == parser)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
-        if(null == this.recordId || this.recordId.isEmpty())
+        if(null == this.authority || this.authority.isEmpty() ||
+           null == this.recordId || this.recordId.isEmpty())
             return Uni.createFrom().failure(new TransferServiceException("noRecordId"));
 
+        AtomicReference<String> sessionId = new AtomicReference<>(null);
         Uni<StorageContent> result = Uni.createFrom().nullItem()
 
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("doiParseTimeout"))
             .chain(unused -> {
-                // Get B2Share record details
-                return this.parser.getRecordAsync(this.recordId);
+                // Get an ESRF session
+                return parser.getSessionAsync(new EsrfCredentials("reader", "reader"));
             })
-            .chain(record -> {
-                // Got B2Share record
-                LOG.infof("Got B2Share record %s", record.id);
+            .chain(session -> {
+                // Got a session
+                if(null == session || null == session.sessionId)
+                    return Uni.createFrom().failure(new TransferServiceException("noSessionId"));
 
-                // Get bucket that holds the files
-                String linkToFiles = (null != record.links) ? record.links.get("files") : null;
-                if(null != linkToFiles) {
-                    Pattern p = Pattern.compile("^https?://[^/:]+/api/files/(.+)", Pattern.CASE_INSENSITIVE);
-                    Matcher m = p.matcher(linkToFiles);
-                    if(m.matches()) {
-                        // Get files in the bucket
-                        var bucket = m.group(1);
-                        return this.parser.getFilesInBucketAsync(bucket);
-                    }
-                }
+                sessionId.set(session.sessionId);
 
-                return Uni.createFrom().failure(new TransferServiceException("noFilesLink"));
+                // Get the dataset
+                return parser.getDataSetsAsync(sessionId.get(), this.authority, this.recordId);
             })
-            .chain(bucket -> {
-                // Build list of source files
-                StorageContent srcFiles = new StorageContent(bucket.contents.size());
-                for(var file : bucket.contents) {
-                    srcFiles.elements.add(new StorageElement(file));
+            .chain(datasets -> {
+                // Got dataset(s)
+                LOG.infof("Found %d datasets at DOI %s", datasets.size(), doi);
+
+                // Handle the first dataset, ignore the rest
+                var dataset = datasets.get(0);
+                LOG.infof("First dataset has ID %s", dataset.id);
+
+                return parser.getDataFilesAsync(sessionId.get(), dataset.id);
+            })
+            .chain(files -> {
+                // Got the files in the dataset
+                StorageContent srcFiles = new StorageContent(files.size());
+                for(var file : files) {
+                    srcFiles.elements.add(new StorageElement(file, this.baseUrl));
                 }
 
                 srcFiles.count = srcFiles.elements.size();
@@ -200,7 +214,7 @@ public class B2ShareParser implements ParserService {
                 return Uni.createFrom().item(srcFiles);
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Failed to parse B2Share DOI %s", doi);
+                LOG.errorf("Failed to parse ESRF DOI %s", doi);
             });
 
         return result;

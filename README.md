@@ -85,6 +85,7 @@ use the correct parser to retrieve the list of source files.
 The API supports parsing DOIs to the following data repositories:
 - [Zenodo](https://zenodo.org/)
 - [B2SHARE](https://eudat.eu/catalogue/B2SHARE)
+- [European Synchotron Radiation Facility](https://esrf.fr/)
 - Any data repository that supports [Signposting](https://signposting.org)
 
 

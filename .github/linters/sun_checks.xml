@@ -118,12 +118,14 @@
     <module name="ConstantName"/>
     <module name="LocalFinalVariableName"/>
     <module name="LocalVariableName"/>
-    <module name="MemberName"/>
     <module name="MethodName"/>
     <module name="PackageName"/>
     <module name="ParameterName"/>
     <module name="StaticVariableName"/>
     <module name="TypeName"/>
+    <!--
+    <module name="MemberName"/>
+    -->
 
     <!-- Checks for imports                              -->
     <!-- See https://checkstyle.org/config_imports.html -->
@@ -178,13 +180,13 @@
     <module name="EqualsHashCode"/>
     <module name="IllegalInstantiation"/>
     <module name="InnerAssignment"/>
-    <module name="MissingSwitchDefault"/>
     <module name="MultipleVariableDeclarations"/>
     <module name="SimplifyBooleanExpression"/>
     <module name="SimplifyBooleanReturn"/>
     <!--
     <module name="MagicNumber"/>
     <module name="HiddenField"/>
+    <module name="MissingSwitchDefault"/>
     -->
 
     <!-- Checks for class design                         -->

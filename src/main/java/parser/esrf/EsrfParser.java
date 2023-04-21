@@ -32,9 +32,9 @@ public class EsrfParser implements ParserService {
     private String id;
     private String name;
     private int timeout;
-    private String baseUrl;
     private String authority;
     private String recordId;
+    private static String baseUrl;
     private static Esrf parser;
 
 
@@ -62,11 +62,11 @@ public class EsrfParser implements ParserService {
         // Check if base URL is valid
         URL urlParserService;
         try {
-            this.baseUrl = config.url().isPresent() ? config.url().get() : "";
-            urlParserService = new URL(this.baseUrl);
+            baseUrl = config.url().isPresent() ? config.url().get() : "";
+            urlParserService = new URL(baseUrl);
 
-            if(!this.baseUrl.isEmpty() && '/' == this.baseUrl.charAt(this.baseUrl.length() - 1))
-                this.baseUrl = this.baseUrl.replaceAll("[/]+$", "");
+            if(!baseUrl.isEmpty() && '/' == baseUrl.charAt(baseUrl.length() - 1))
+                baseUrl = baseUrl.replaceAll("[/]+$", "");
 
         } catch (MalformedURLException e) {
             LOG.error(e.getMessage());
@@ -206,7 +206,7 @@ public class EsrfParser implements ParserService {
                 var session = sessionId.get();
                 StorageContent srcFiles = new StorageContent(files.size());
                 for(var file : files) {
-                    srcFiles.elements.add(new StorageElement(file, this.baseUrl, session));
+                    srcFiles.elements.add(new StorageElement(file, baseUrl, session));
                 }
 
                 srcFiles.count = srcFiles.elements.size();

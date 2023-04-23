@@ -196,7 +196,7 @@ public class DigitalObjectIdentifier {
     })
     public Uni<Response> parseDOI(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                   @Parameter(description = "The DOI to parse", required = true,
-                                             example = "https://doi.org/12.3456/zenodo.12345678")
+                                             example = "https://doi.org/10.5281/zenodo.6511035")
                                   @RestQuery String doi,
                                   @Parameter(hidden = true) @DefaultValue("1")
                                   @RestQuery int level) {

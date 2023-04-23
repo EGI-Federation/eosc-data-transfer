@@ -42,13 +42,22 @@ public class ParserHelper {
     public MultiMap headers() { return this.headers; }
 
     /***
-     * Check if a URL is being redirected
-     * @param url URL to request
-     * @return the URL where the passed in URL is redirected, null if not redirected
+     * Convert canonical DOI to regular URL (with HTTPS schema)
+     * @param uri URI with "doi" schema (doi://...)
+     * @return URL to doi.org or the unchanged URI if it is not using the "doi" schema
      */
-    public Uni<String> checkRedirect(String url) {
+    private String doiToUrl(String uri) {
+        return uri.replace("doi://", "https://doi.org/");
+    }
 
-        var result = client.headAbs(url)
+    /***
+     * Check if URI is being redirected
+     * @param uri URI to request, can start with doi://
+     * @return the URL where the passed in URI is redirected, null if not redirected
+     */
+    public Uni<String> checkRedirect(String uri) {
+
+        var result = client.headAbs(doiToUrl(uri))
             .send()
             .chain(resp -> {
                 var redirects = resp.followedRedirects();
@@ -63,23 +72,23 @@ public class ParserHelper {
                 return Uni.createFrom().nullItem();
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Error in request HEAD %s", url);
+                LOG.errorf("Error in request HEAD %s", uri);
             });
 
         return result;
     }
 
     /***
-     * Get the response HTTP headers from passed in URL
-     * @param url URL to request
+     * Get the response HTTP headers from passed in URI
+     * @param uri URI to request, can start with doi://
      * @return HTTP headers
      */
-    public Uni<Tuple2<String, MultiMap>> fetchHeaders(String url) {
+    public Uni<Tuple2<String, MultiMap>> fetchHeaders(String uri) {
 
-        var result = client.headAbs(url)
+        var result = client.headAbs(doiToUrl(uri))
             .send()
             .chain(resp -> {
-                var urlTarget = url;
+                var urlTarget = uri;
                 var redirects = resp.followedRedirects();
                 if(!redirects.isEmpty()) {
                     // Redirected
@@ -92,20 +101,20 @@ public class ParserHelper {
                 return Uni.createFrom().item(Tuple2.of(urlTarget, this.headers));
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Error in request HEAD %s", url);
+                LOG.errorf("Error in request HEAD %s", uri);
             });
 
         return result;
     }
 
     /***
-     * Fetch the Linkset from passed in URL
-     * @param url URL to request
+     * Fetch the Linkset from passed in URI
+     * @param uri URI to request, can start with doi://
      * @return Parsed Linkset
      */
-    public Uni<StorageContent> fetchLinkset(String url) {
+    public Uni<StorageContent> fetchLinkset(String uri) {
 
-        var result = client.getAbs(url)
+        var result = client.getAbs(doiToUrl(uri))
             .send()
             .onItem().transform(resp -> resp.bodyAsJsonObject())
             .chain(json -> {
@@ -127,7 +136,7 @@ public class ParserHelper {
                 return Uni.createFrom().item(content);
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Error in request HEAD %s", url);
+                LOG.errorf("Error in request HEAD %s", uri);
             });
 
         return result;

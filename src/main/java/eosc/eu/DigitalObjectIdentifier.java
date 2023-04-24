@@ -195,8 +195,9 @@ public class DigitalObjectIdentifier {
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> parseDOI(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                  @Parameter(description = "The DOI to parse", required = true,
-                                             example = "https://doi.org/10.5281/zenodo.6511035")
+                                  @Parameter(description = "The DOI to parse. Both canonical DOI notation "+
+                                                           "and HTTP URLs are supported. ", required = true,
+                                             example = "doi://10.5281/zenodo.6511035")
                                   @RestQuery String doi,
                                   @Parameter(hidden = true) @DefaultValue("1")
                                   @RestQuery int level) {

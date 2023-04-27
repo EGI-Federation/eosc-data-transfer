@@ -23,7 +23,7 @@ public class TransferPayload {
     @Schema(description="Transfer priority for this file, from 1 to 5, 1 being the lowest priority")
     public int priority = 0;
 
-    @Schema(description="User defined checksum in the form algorithm:value")
+    @Schema(description="User defined checksum in the form 'algorithm:value'")
     public String checksum;
 
 

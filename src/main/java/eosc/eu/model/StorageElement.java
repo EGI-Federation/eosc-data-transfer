@@ -20,6 +20,7 @@ import egi.fts.model.ObjectInfo;
 public class StorageElement extends StorageElementBase {
 
     public boolean isFolder = false;
+    public boolean isAccessible = true;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public long size;
@@ -48,6 +49,12 @@ public class StorageElement extends StorageElementBase {
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String downloadUrl;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String checksum;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String checksumType;
 
 
     /**

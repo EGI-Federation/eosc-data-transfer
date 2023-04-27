@@ -51,10 +51,14 @@ public class StorageElement extends StorageElementBase {
     public String downloadUrl;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description="File checksum in the form `algorithm:value`")
     public String checksum;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String checksumType;
+    @Schema(description="Can be used to group files in file sets (collections). This only " +
+                        "allows one level of grouping, for a deeper hierarchical structure " +
+                        "use the field 'path'.")
+    public String collection;
 
 
     /**

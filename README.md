@@ -146,10 +146,10 @@ new parser, with the following settings:
 The API supports creation of new data transfers (aka jobs), finding data transfers, querying information
 about data transfers, and canceling data transfers.
 
-Every API endpoint that performs operations or queries on data transfers or on storage elements
-in a destination storage has to be passed a destination type. This selects the data transfer
+Every API endpoint that performs operations on or queries information about data transfers or storage elements
+in a destination storage has to be passed the destination storage type. This selects the data transfer
 service that will be used to perform the data transfer, freeing the clients of the API from
-having to know which data transfer service to pick for each destination. **Each destination type
+having to know which data transfer service to pick for each destination. **Each destination storage type
 is mapped to exactly one data transfer service** in the
 [configuration](#3-register-new-destinations-serviced-by-the-new-data-transfer-service).
 
@@ -169,9 +169,11 @@ Initially, the [EGI Data Transfer](https://docs.egi.eu/users/data/management/dat
 is integrated into the EOSC Data Transfer API, supporting the following destination storages:
 
 - [EGI dCache](https://www.dcache.org)
-- [FTP servers](https://en.wikipedia.org/wiki/File_Transfer_Protocol)
 - [S3-compatible](https://en.wikipedia.org/wiki/Amazon_S3) object storages
+- [FTP servers](https://en.wikipedia.org/wiki/File_Transfer_Protocol)
 
+> Multiple instances of each supported transfer service can be configured, then you can mix and match
+> what protocol(s) and/or storage type(s) each of them will handle.
 
 ### Integrating new data transfer services
 

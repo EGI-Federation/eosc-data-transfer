@@ -10,7 +10,6 @@ receivers:
   filelog:
     start_at: beginning
     include:
-      - /usr/logs/data-transfer/*.log*
       - /usr/logs/data-transfer/*.json*
 
 exporters:
@@ -29,8 +28,7 @@ exporters:
 processors:
   batch:
   attributes:
-    # Adding a Loki label based on OTLP attribute "log.file.name"
-    # happens in two step:
+    # Adding a Loki label based on OTLP attribute "log.file.name" happens in two steps:
     actions:
       # Insert a new attribute "file_name" from the OTLP attribute "log.file.name"
       - action: insert

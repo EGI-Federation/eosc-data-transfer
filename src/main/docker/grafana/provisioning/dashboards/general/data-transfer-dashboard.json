@@ -1611,7 +1611,7 @@
             "uid": "my-logs"
           },
           "editorMode": "builder",
-          "expr": "{filename=~\"${service}.*\"} | json | line_format `{{.level}} sequence:{{.sequence}} span:{{.mdc_spanId}} trace:{{.mdc_traceId}} {{.message}} | {{.loggerName}}`",
+          "expr": "{filename=~\"${service}.*\"} | json | line_format `{{.body}}` | json | line_format `{{.level}} sequence:{{.sequence}} span:{{.mdc_spanId}} trace:{{.mdc_traceId}} {{.message}} | {{.loggerName}}`",
           "queryType": "range",
           "refId": "A"
         }

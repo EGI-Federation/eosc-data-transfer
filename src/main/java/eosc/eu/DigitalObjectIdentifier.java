@@ -10,13 +10,14 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
-import org.jboss.logging.Logger;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
 
@@ -79,7 +80,7 @@ public class DigitalObjectIdentifier {
             return Uni.createFrom().item(false);
         }
 
-        log.debugf("Selecting parser for DOI %s", doi);
+        log.debug("Selecting DOI parser");
 
         // Now try each parser until we find one that can parse the specified DOI
         ParserHelper helper = new ParserHelper(this.client);
@@ -92,7 +93,8 @@ public class DigitalObjectIdentifier {
             .onItem().transformToUniAndConcatenate(parserId -> {
                 // Instantiate parser
                 var parserConfig = this.config.parsers().get(parserId);
-                log.debugf("Trying parser %s", parserConfig.name());
+                MDC.put("doiParser", parserConfig.name());
+                log.debug("Trying next parser");
 
                 ParserService parser = null;
 
@@ -153,14 +155,15 @@ public class DigitalObjectIdentifier {
 //                        sub.cancel();
 //                    }
 
-                    log.infof("Using parser %s for DOI %s", params.parser.getName(), doi);
+                    log.info("Found parser for DOI");
                     return Uni.createFrom().item(initOK);
                 }
 
+                MDC.remove("doiParser");
                 return Uni.createFrom().item(false);
             })
             .onFailure().invoke(e -> {
-                log.errorf("Failed to query configured parsers for support of DOI %s", doi);
+                log.error("Failed to query configured parsers for support of DOI");
             })
             .collect()
             .in(BooleanAccumulator::new, (acc, supported) -> {
@@ -175,7 +178,7 @@ public class DigitalObjectIdentifier {
      * Parse Digital Object Identifier at specified URL and return list of files.
      * @param auth  Optional access token for accessing the data repository.
      * @param doi   The DOI to parse.
-     * @param level The level of recursion. If we have to call ourselves, this gets increased
+     * @param depth The level of recursion. If we have to call ourselves, this gets increased
      *              each time, providing for a mechanism to avoid infinite recursion.
      * @return API Response, wraps an ActionSuccess or an ActionError entity
      */
@@ -200,9 +203,12 @@ public class DigitalObjectIdentifier {
                                              example = "doi://10.5281/zenodo.6511035")
                                   @RestQuery String doi,
                                   @Parameter(hidden = true) @DefaultValue("1")
-                                  @RestQuery int level) {
+                                  @RestQuery int depth) {
 
-        log.infof("Parse DOI %s (level %d)", doi, level);
+        MDC.put("doi", doi);
+        MDC.put("depth", Integer.toString(depth));
+
+        log.info("Parse DOI");
 
         var params = new ActionParameters();
         Uni<Response> result = Uni.createFrom().nullItem()
@@ -214,22 +220,23 @@ public class DigitalObjectIdentifier {
             .chain(canParse -> {
                 if (!canParse) {
                     // Could not find suitable parser
-                    log.errorf("No parser can handle DOI %s", doi);
+                    log.error("No parser can handle DOI");
                     return Uni.createFrom().failure(new TransferServiceException("doiNotSupported"));
                 }
 
                 // Parse DOI and get source files
-                return params.parser.parseDOI(auth, doi, level);
+                return params.parser.parseDOI(auth, doi, depth);
             })
             .chain(sourceFiles -> {
                 // Got list of source files
+                MDC.put("fileCount", sourceFiles.count);
                 log.infof("Got %d source files", sourceFiles.count);
 
                 // Success
                 return Uni.createFrom().item(Response.ok(sourceFiles).build());
             })
             .onFailure().recoverWithItem(e -> {
-                log.errorf("Failed to parse DOI %s", doi);
+                log.error("Failed to parse DOI");
                 return new ActionError(e, Tuple2.of("doi", doi)).toResponse();
             });
 

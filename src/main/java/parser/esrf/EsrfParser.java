@@ -6,6 +6,7 @@ import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -114,6 +115,9 @@ public class EsrfParser implements ParserService {
      * @return Return true if the parser service can parse this DOI.
      */
     public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper) {
+
+        log.debug("Check if DOI points to ESRF record");
+
         boolean isValid = null != doi && !doi.isBlank();
         if(!isValid)
             return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
@@ -130,8 +134,10 @@ public class EsrfParser implements ParserService {
             .chain(redirectedToUrl -> {
                 if(null == redirectedToUrl)
                     redirectedToUrl = doi;
-                else if(!doi.equals(redirectedToUrl))
-                    log.debugf("Redirected DOI %s", redirectedToUrl);
+                else if(!doi.equals(redirectedToUrl)) {
+                    MDC.put("redirectedTo", redirectedToUrl);
+                    log.debug("DOI is redirected");
+                }
 
                 // Validate URL
                 Pattern p = Pattern.compile("^https?://([\\w\\.]*esrf.fr)/doi/([^/]+)/([^/#\\?]+)",
@@ -142,12 +148,15 @@ public class EsrfParser implements ParserService {
                 if(isSupported) {
                     this.authority = m.group(2);
                     this.recordId = m.group(3);
+                    MDC.put("authority", this.authority);
+                    MDC.put("recordId", this.recordId);
+                    MDC.put("doiType", this.id);
                 }
 
                 return Uni.createFrom().item(Tuple2.of(isSupported, (ParserService)this));
             })
             .onFailure().invoke(e -> {
-                log.errorf("Failed to check if DOI %s points to ESRF record", doi);
+                log.error("Failed to check if DOI points to ESRF record");
             });
 
         return result;
@@ -161,6 +170,9 @@ public class EsrfParser implements ParserService {
      * @return List of files in the data set.
      */
     public Uni<StorageContent> parseDOI(String auth, String doi, int level) {
+
+        log.debug("Parse ESRF DOI");
+
         if(null == doi || doi.isBlank())
             return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
 
@@ -215,7 +227,7 @@ public class EsrfParser implements ParserService {
                 return Uni.createFrom().item(srcFiles);
             })
             .onFailure().invoke(e -> {
-                log.errorf("Failed to parse ESRF DOI %s", doi);
+                log.error("Failed to parse ESRF DOI");
             });
 
         return result;

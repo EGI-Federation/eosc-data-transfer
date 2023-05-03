@@ -72,7 +72,7 @@ public class ParserHelper {
                 return Uni.createFrom().nullItem();
             })
             .onFailure().invoke(e -> {
-                log.errorf("Error in request HEAD %s", uri);
+                log.error("Error in HEAD request");
             });
 
         return result;
@@ -101,7 +101,7 @@ public class ParserHelper {
                 return Uni.createFrom().item(Tuple2.of(urlTarget, this.headers));
             })
             .onFailure().invoke(e -> {
-                log.errorf("Error in request HEAD %s", uri);
+                log.error("Error in HEAD request");
             });
 
         return result;
@@ -136,7 +136,7 @@ public class ParserHelper {
                 return Uni.createFrom().item(content);
             })
             .onFailure().invoke(e -> {
-                log.errorf("Error in request HEAD %s", uri);
+                log.error("Error in HEAD request");
             });
 
         return result;

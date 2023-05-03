@@ -8,6 +8,7 @@ import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -111,6 +112,9 @@ public class SignpostParser implements ParserService {
      * @return Return true if the parser service can parse this DOI.
      */
     public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper) {
+
+        log.debug("Check if DOI supports Signposting");
+
         boolean isValid = null != doi && !doi.isBlank();
         if(!isValid)
             return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
@@ -121,8 +125,11 @@ public class SignpostParser implements ParserService {
         var result = Uni.createFrom().item(helper.redirectedToUrl())
 
             .chain(redirectedToUrl -> {
-                if(null != redirectedToUrl)
+                if(null != redirectedToUrl) {
+                    MDC.put("redirectedTo", redirectedToUrl);
+                    log.debug("DOI is redirected");
                     return Uni.createFrom().item(Tuple2.of(redirectedToUrl, helper.headers()));
+                }
 
                 return helper.fetchHeaders(doi);
             })
@@ -132,10 +139,15 @@ public class SignpostParser implements ParserService {
                 var links = headers.getAll("Link");
                 boolean hasLinks = (null != links) && !links.isEmpty();
 
+                if(hasLinks) {
+                    MDC.put("links", links);
+                    MDC.put("doiType", this.id);
+                }
+
                 return Uni.createFrom().item(Tuple2.of(hasLinks, (ParserService)this));
             })
             .onFailure().invoke(e -> {
-                log.errorf("Failed to check if DOI %s supports Signposting", doi);
+                log.error("Failed to check if DOI supports Signposting");
             });
 
         return result;
@@ -150,6 +162,9 @@ public class SignpostParser implements ParserService {
      * @return List of files in the data set.
      */
     public Uni<StorageContent> parseDOI(String auth, String doi, int level) {
+
+        log.debug("Parse Signposting DOI");
+
         if(null == doi || doi.isBlank())
             return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
 
@@ -160,8 +175,11 @@ public class SignpostParser implements ParserService {
         var result = Uni.createFrom().item(helper.redirectedToUrl())
 
                 .chain(redirectedToUrl -> {
-                    if(null != redirectedToUrl)
+                    if(null != redirectedToUrl) {
+                        MDC.put("redirectedTo", redirectedToUrl);
+                        log.debug("DOI is redirected");
                         return Uni.createFrom().item(redirectedToUrl);
+                    }
 
                     return Uni.createFrom().item(doi);
                 })
@@ -183,6 +201,8 @@ public class SignpostParser implements ParserService {
                                link.relation.equalsIgnoreCase("identifier")) {
                                 // This link we can try to handle
                                 links.add(link);
+                                MDC.put("linkRelation", link.relation);
+                                MDC.put("linkUrl", link.url);
                             }
                         }
                     }
@@ -193,7 +213,7 @@ public class SignpostParser implements ParserService {
                     // Got some links
                     if(link.relation.equalsIgnoreCase("item")) {
                         // Content with one element
-                        log.debugf("Signposting relation (%s) is %s", link.relation, link.url);
+                        log.debug("Signposting relation 'item' is supported");
                         var content = new StorageContent();
                         var element = new StorageElement(link.url, link.type);
                         content.add(element);
@@ -201,20 +221,23 @@ public class SignpostParser implements ParserService {
                     }
                     else if(link.relation.equalsIgnoreCase("linkset")){
                         // Content with multiple elements
-                        log.debugf("Signposting relation (%s) is %s", link.relation, link.url);
+                        log.debug("Signposting relation 'linkset' is supported");
                         return this.helper.fetchLinkset(link.url);
                     }
                     else if(link.relation.equalsIgnoreCase("identifier")){
                         // Content with a DOI
-                        log.debugf("Signposting relation (%s) is %s", link.relation, link.url);
-                        if(!doi.equalsIgnoreCase(link.url) && level <= MAX_RECURSION)
+                        if(!doi.equalsIgnoreCase(link.url) && level <= MAX_RECURSION) {
+                            log.debug("Signposting relation 'identifier' to be tried");
                             return parser.parseDOIAsync(auth, link.url, level + 1);
+                        }
+
+                        log.error("Signposting relation 'identifier' max recursion depth reached");
                     }
 
                     return Uni.createFrom().nullItem();
                 })
                 .onFailure().invoke(e -> {
-                    log.errorf("Failed to parse Signposting DOI %s", doi);
+                    log.error("Failed to parse Signposting DOI");
                 })
                 .collect()
                 .in(StorageContent::new, (acc, storage) -> {

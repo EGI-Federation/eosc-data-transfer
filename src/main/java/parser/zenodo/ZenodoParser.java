@@ -6,6 +6,7 @@ import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -106,6 +107,9 @@ public class ZenodoParser implements ParserService {
      * @return Return true if the parser service can parse this DOI.
      */
     public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper) {
+
+        log.debug("Check if DOI points to Zenodo record");
+
         boolean isValid = null != doi && !doi.isBlank();
         if(!isValid)
             return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
@@ -122,8 +126,10 @@ public class ZenodoParser implements ParserService {
             .chain(redirectedToUrl -> {
                 if(null == redirectedToUrl)
                     redirectedToUrl = doi;
-                else if(!doi.equals(redirectedToUrl))
-                    log.debugf("Redirected DOI %s", redirectedToUrl);
+                else if(!doi.equals(redirectedToUrl)) {
+                    MDC.put("redirectedTo", redirectedToUrl);
+                    log.debug("DOI is redirected");
+                }
 
                 // Validate URL
                 Pattern p = Pattern.compile("^https?://([\\w\\.]*zenodo.org)/(record|api/records)/(\\d+)",
@@ -131,13 +137,16 @@ public class ZenodoParser implements ParserService {
                 Matcher m = p.matcher(redirectedToUrl);
                 boolean isSupported = m.matches();
 
-                if(isSupported)
+                if(isSupported) {
                     this.recordId = m.group(3);
+                    MDC.put("recordId", this.recordId);
+                    MDC.put("doiType", this.id);
+                }
 
                 return Uni.createFrom().item(Tuple2.of(isSupported, (ParserService)this));
             })
             .onFailure().invoke(e -> {
-                log.errorf("Failed to check if DOI %s points to Zenodo record", doi);
+                log.error("Failed to check if DOI points to Zenodo record");
             });
 
         return result;
@@ -151,6 +160,9 @@ public class ZenodoParser implements ParserService {
      * @return List of files in the data set.
      */
     public Uni<StorageContent> parseDOI(String auth, String doi, int level) {
+
+        log.debug("Parse Zenodo DOI");
+
         if(null == doi || doi.isBlank())
             return Uni.createFrom().failure(new TransferServiceException("doiInvalid"));
 
@@ -171,7 +183,7 @@ public class ZenodoParser implements ParserService {
             })
             .chain(record -> {
                 // Got Zenodo record
-                log.infof("Got Zenodo record %s", record.id);
+                log.info("Got Zenodo record");
 
                 // Build list of source files
                 StorageContent srcFiles = new StorageContent(record.files.size());
@@ -185,7 +197,7 @@ public class ZenodoParser implements ParserService {
                 return Uni.createFrom().item(srcFiles);
             })
             .onFailure().invoke(e -> {
-                log.errorf("Failed to parse Zenodo DOI %s", doi);
+                log.error("Failed to parse Zenodo DOI");
             });
 
         return result;

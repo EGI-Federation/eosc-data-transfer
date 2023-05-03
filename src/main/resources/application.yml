@@ -51,17 +51,16 @@ quarkus:
   application:
     name: data-transfer
   log:
+    level: INFO
     min-level: DEBUG
     console:
       enable: true
-      level: INFO
       format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
       json:
         ~: false
     file:
       enable: true
       path: logs/data-transfer.json
-      level: DEBUG
       format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
       rotation:
         max-file-size: 1M
@@ -94,7 +93,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.46
+    info-version: 1.1.47
   jackson:
     fail-on-unknown-properties: false
   http:

@@ -10,7 +10,7 @@ receivers:
   filelog:
     start_at: beginning
     include:
-      - /usr/logs/data-transfer/*.log*
+      - /usr/logs/data-transfer/*.json*
 
 exporters:
   otlp:

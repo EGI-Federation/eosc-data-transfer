@@ -10,6 +10,7 @@ receivers:
   filelog:
     start_at: beginning
     include:
+      - /usr/logs/data-transfer/*.log*
       - /usr/logs/data-transfer/*.json*
 
 exporters:
@@ -24,13 +25,21 @@ exporters:
       enabled: true
   loki:
     endpoint: "http://loki:3100/loki/api/v1/push"
-    tenant_id: "local"
-    labels:
-      attributes:
-        log.file.name: "filename"
 
 processors:
   batch:
+  attributes:
+    # Adding a Loki label based on OTLP attribute "log.file.name"
+    # happens in two step:
+    actions:
+      # Insert a new attribute "file_name" from the OTLP attribute "log.file.name"
+      - action: insert
+        key: filename
+        from_attribute: log.file.name
+      # Add hint for Loki that the attribute "filename" should be placed as a Loki label
+      - action: insert
+        key: loki.attribute.labels
+        value: filename
 
 extensions:
   health_check:
@@ -48,5 +57,5 @@ service:
       exporters: [prometheus]
     logs:
       receivers: [filelog]
-      processors: [batch]
+      processors: [attributes]
       exporters: [loki]

@@ -67,7 +67,6 @@ quarkus:
         max-backup-index: 10
       json:
         ~: true
-        record-delimiter: ",\n"
   otel:
     enabled: true
     exporter:

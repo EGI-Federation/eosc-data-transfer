@@ -16,12 +16,12 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestHeader;
 
 import java.util.Arrays;
-import javax.inject.Inject;
-import javax.ws.rs.*;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import eosc.eu.model.*;
 import eosc.eu.model.Transfer.Destination;
@@ -41,7 +41,7 @@ import org.jboss.resteasy.reactive.RestQuery;
 @Produces(MediaType.APPLICATION_JSON)
 public class DataStorage extends DataTransferBase {
 
-    private static final Logger LOG = Logger.getLogger(DataStorage.class);
+    private static final Logger log = Logger.getLogger(DataStorage.class);
 
     @Inject
     TransfersConfig config;
@@ -51,7 +51,7 @@ public class DataStorage extends DataTransferBase {
      * Constructor
      */
     public DataStorage() {
-        super(LOG);
+        super(log);
     }
 
     /**
@@ -73,7 +73,7 @@ public class DataStorage extends DataTransferBase {
     })
     public Uni<Response> listStorageTypes() {
 
-        LOG.infof("List supported storage types");
+        log.infof("List supported storage types");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -103,7 +103,7 @@ public class DataStorage extends DataTransferBase {
                 return Uni.createFrom().item(storageTypes.toResponse());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.error("Failed to list supported storage destinations");
+                log.error("Failed to list supported storage destinations");
                 return new ActionError(e).toResponse();
             });
 
@@ -133,7 +133,7 @@ public class DataStorage extends DataTransferBase {
                                                    description = DESTINATION_STORAGE)
                                         String destination) {
 
-        LOG.infof("Retrieve information about storage type %s", destination);
+        log.infof("Retrieve information about storage type %s", destination);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -164,13 +164,13 @@ public class DataStorage extends DataTransferBase {
                                                   params.ts.getServiceName(),
                                                   storageDescription);
 
-                LOG.infof("Destination storage %s does%s support browsing", destination,
+                log.infof("Destination storage %s does%s support browsing", destination,
                           storageInfo.canBrowse.get() ? "" : " not");
 
                 return Uni.createFrom().item(storageInfo.toResponse());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.errorf("Failed to retrieve info about storage type %s", destination);
+                log.errorf("Failed to retrieve info about storage type %s", destination);
                 return new ActionError(e, Tuple2.of("destination", destination)).toResponse();
             });
 
@@ -228,7 +228,7 @@ public class DataStorage extends DataTransferBase {
                                                       description = STORAGE_AUTH)
                                            String storageAuth) {
 
-        LOG.infof("List content of folder %s", folderUrl);
+        log.infof("List content of folder %s", folderUrl);
 
         final String folderUrlWithAuth = applyStorageCredentials(destination, folderUrl, storageAuth);
 
@@ -253,13 +253,13 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(content -> {
                 // Got folder content
-                LOG.infof("Found %d element(s) in folder %s", content.count, folderUrl);
+                log.infof("Found %d element(s) in folder %s", content.count, folderUrl);
 
                 // Success
                 return Uni.createFrom().item(Response.ok(content).build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.errorf("Failed to list content of folder %s", folderUrl);
+                log.errorf("Failed to list content of folder %s", folderUrl);
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("folderUrl", folderUrl),
                              Tuple2.of("destination", destination)) ).toResponse();
@@ -316,7 +316,7 @@ public class DataStorage extends DataTransferBase {
                                      @Parameter(required = false, description = STORAGE_AUTH)
                                      String storageAuth) {
 
-        LOG.infof("Get details of storage element %s", seUrl);
+        log.infof("Get details of storage element %s", seUrl);
 
         final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
 
@@ -341,13 +341,13 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(seinfo -> {
                 // Got storage element info
-                LOG.infof("Got info for %s %s", seinfo.isFolder ? "folder" : "file", seUrl);
+                log.infof("Got info for %s %s", seinfo.isFolder ? "folder" : "file", seUrl);
 
                 // Success
                 return Uni.createFrom().item(Response.ok(seinfo).build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.errorf("Failed to get info about storage element %s", seUrl);
+                log.errorf("Failed to get info about storage element %s", seUrl);
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("seUrl", seUrl),
                              Tuple2.of("destination", destination)) ).toResponse();
@@ -450,7 +450,7 @@ public class DataStorage extends DataTransferBase {
                                       @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
 
-        LOG.infof("Create folder %s", seUrl);
+        log.infof("Create folder %s", seUrl);
 
         final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
 
@@ -475,13 +475,13 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(created -> {
                 // Folder got created
-                LOG.infof("Created folder %s (%s)", seUrl, created);
+                log.infof("Created folder %s (%s)", seUrl, created);
 
                 // Success
                 return Uni.createFrom().item(Response.ok().build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.errorf("Failed to create folder %s", seUrl);
+                log.errorf("Failed to create folder %s", seUrl);
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("seUrl", seUrl),
                              Tuple2.of("destination", destination)) ).toResponse();
@@ -537,7 +537,7 @@ public class DataStorage extends DataTransferBase {
                                       @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
 
-        LOG.infof("Delete folder %s", seUrl);
+        log.infof("Delete folder %s", seUrl);
 
         final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
 
@@ -562,13 +562,13 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(deleted -> {
                 // Folder got deleted
-                LOG.infof("Deleted folder %s (%s)", seUrl, deleted);
+                log.infof("Deleted folder %s (%s)", seUrl, deleted);
 
                 // Success
                 return Uni.createFrom().item(Response.ok().build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.errorf("Failed to delete folder %s", seUrl);
+                log.errorf("Failed to delete folder %s", seUrl);
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("seUrl", seUrl),
                              Tuple2.of("destination", destination)) ).toResponse();
@@ -624,7 +624,7 @@ public class DataStorage extends DataTransferBase {
                                     @Parameter(required = false, description = STORAGE_AUTH)
                                     String storageAuth) {
 
-        LOG.infof("Delete file %s", seUrl);
+        log.infof("Delete file %s", seUrl);
 
         final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
 
@@ -649,13 +649,13 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(deleted -> {
                 // File got deleted
-                LOG.infof("Deleted file %s (%s)", seUrl, deleted);
+                log.infof("Deleted file %s (%s)", seUrl, deleted);
 
                 // Success
                 return Uni.createFrom().item(Response.ok().build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.errorf("Failed to delete file %s", seUrl);
+                log.errorf("Failed to delete file %s", seUrl);
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("seUrl", seUrl),
                              Tuple2.of("destination", destination)) ).toResponse();
@@ -709,9 +709,9 @@ public class DataStorage extends DataTransferBase {
                                     String storageAuth) {
 
         if(null != operation && null != operation.seUrlOld && null != operation.seUrlNew)
-            LOG.infof("Renaming storage element %s to %s", operation.seUrlOld, operation.seUrlNew);
+            log.infof("Renaming storage element %s to %s", operation.seUrlOld, operation.seUrlNew);
         else {
-            LOG.error("Cannot rename storage element");
+            log.error("Cannot rename storage element");
             return Uni.createFrom().item(new ActionError("missingOperationParameters",
                                          Arrays.asList(Tuple2.of("seUrlOld", operation.seUrlOld),
                                                        Tuple2.of("seUrlNew", operation.seUrlNew),
@@ -744,14 +744,14 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(renamed -> {
                 // Storage element got renamed
-                LOG.infof("Renamed storage element %s to %s (%s)",
+                log.infof("Renamed storage element %s to %s (%s)",
                           operation.seUrlOld, operation.seUrlNew, renamed);
 
                 // Success
                 return Uni.createFrom().item(Response.ok().build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.errorf("Failed to rename storage element %s", operation.seUrlOld);
+                log.errorf("Failed to rename storage element %s", operation.seUrlOld);
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("seUrlOld", operation.seUrlOld),
                              Tuple2.of("seUrlNew", operation.seUrlNew),

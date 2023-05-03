@@ -3,7 +3,7 @@ package eosc.eu;
 import eosc.eu.model.Transfer;
 import org.jboss.logging.Logger;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -24,7 +24,7 @@ public class DataTransferBase {
     @Inject
     protected TransfersConfig config;
 
-    protected Logger LOG;
+    private Logger log;
 
 
     /***
@@ -32,7 +32,7 @@ public class DataTransferBase {
      * @param log The logger (of subclass) to use
      */
     public DataTransferBase(Logger log) {
-        this.LOG = log;
+        this.log = log;
     }
 
     /**
@@ -43,29 +43,29 @@ public class DataTransferBase {
      */
     protected boolean getTransferService(ActionParameters params) {
 
-        LOG.debug("Selecting transfer service...");
+        log.debug("Selecting transfer service...");
 
         if (null != params.ts)
             return true;
 
         if(null == params.destination || params.destination.isEmpty()) {
-            LOG.error("No destination specified");
+            log.error("No destination specified");
             return false;
         }
 
-        LOG.infof("Destination is <%s>", params.destination);
+        log.infof("Destination is <%s>", params.destination);
 
         var storageConfig = config.destinations().get(params.destination);
         if (null == storageConfig) {
             // Unsupported destination
-            LOG.errorf("No transfer service configured for destination <%s>", params.destination);
+            log.errorf("No transfer service configured for destination <%s>", params.destination);
             return false;
         }
 
         var serviceConfig = config.services().get(storageConfig.serviceId());
         if (null == serviceConfig) {
             // Unsupported transfer service
-            LOG.errorf("No configuration found for transfer service <%s>", storageConfig.serviceId());
+            log.errorf("No configuration found for transfer service <%s>", storageConfig.serviceId());
             return false;
         }
 
@@ -74,27 +74,27 @@ public class DataTransferBase {
             var classType = Class.forName(serviceConfig.className());
             params.ts = (TransferService)classType.getDeclaredConstructor().newInstance();
             if(params.ts.initService(serviceConfig)) {
-                LOG.infof("Selected transfer service <%s>", params.ts.getServiceName());
+                log.infof("Selected transfer service <%s>", params.ts.getServiceName());
                 return true;
             }
         }
         catch (ClassNotFoundException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
         catch (NoSuchMethodException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
         catch (InstantiationException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
         catch (InvocationTargetException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
         catch (IllegalAccessException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
         catch (IllegalArgumentException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
 
         return false;
@@ -138,8 +138,8 @@ public class DataTransferBase {
                     seUrl += ("?" + uri.getQuery());
             }
             catch(URISyntaxException e) {
-                LOG.errorf("Invalid destination URL %s", seUrl);
-                LOG.error(e.getMessage());
+                log.errorf("Invalid destination URL %s", seUrl);
+                log.error(e.getMessage());
                 return null;
             }
         }

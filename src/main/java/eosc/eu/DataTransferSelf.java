@@ -2,8 +2,8 @@ package eosc.eu;
 
 import io.smallrye.mutiny.Uni;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 
 import eosc.eu.model.StorageContent;
 import org.jboss.resteasy.reactive.RestHeader;

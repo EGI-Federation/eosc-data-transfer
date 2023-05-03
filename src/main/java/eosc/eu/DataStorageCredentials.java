@@ -18,7 +18,7 @@ public class DataStorageCredentials {
     private String username;
     private String password;
 
-    private static final Logger LOG = Logger.getLogger(DataStorageCredentials.class);
+    private static final Logger log = Logger.getLogger(DataStorageCredentials.class);
 
 
     /***
@@ -50,7 +50,7 @@ public class DataStorageCredentials {
     public static Tuple2<String, String> extractStorageCredentials(String storageAuth) {
         if(null == storageAuth || storageAuth.isBlank()) {
             // No credentials?
-            LOG.warn("Storage credentials missing");
+            log.warn("Storage credentials missing");
             return null;
         }
 
@@ -68,7 +68,7 @@ public class DataStorageCredentials {
             return Tuple2.of(username, password);
         }
 
-        LOG.warn("Storage credentials bad format");
+        log.warn("Storage credentials bad format");
         return null;
     }
 

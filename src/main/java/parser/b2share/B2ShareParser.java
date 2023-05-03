@@ -25,7 +25,7 @@ import parser.ParserHelper;
  */
 public class B2ShareParser implements ParserService {
 
-    private static final Logger LOG = Logger.getLogger(B2ShareParser.class);
+    private static final Logger log = Logger.getLogger(B2ShareParser.class);
 
     private String id;
     private String name;
@@ -55,11 +55,11 @@ public class B2ShareParser implements ParserService {
             return true;
 
         if(null == this.urlServer) {
-            LOG.error("Missing B2Share server, call canParseDOI() first");
+            log.error("Missing B2Share server, call canParseDOI() first");
             return false;
         }
 
-        LOG.debugf("Obtaining REST client for B2Share server %s", this.urlServer);
+        log.debugf("Obtaining REST client for B2Share server %s", this.urlServer);
 
         try {
             // Create the REST client for the parser service
@@ -70,7 +70,7 @@ public class B2ShareParser implements ParserService {
             return true;
         }
         catch (RestClientDefinitionException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
 
         return false;
@@ -119,7 +119,7 @@ public class B2ShareParser implements ParserService {
                 if(null == redirectedToUrl)
                     redirectedToUrl = doi;
                 else if(!doi.equals(redirectedToUrl))
-                    LOG.debugf("Redirected DOI %s", redirectedToUrl);
+                    log.debugf("Redirected DOI %s", redirectedToUrl);
 
                 // Validate URL
                 Pattern p = Pattern.compile("^(https?://[^/:]*b2share[^/:]*:?[\\d]*)/records/(.+)",
@@ -132,7 +132,7 @@ public class B2ShareParser implements ParserService {
                     try {
                         this.urlServer = new URL(m.group(1));
                     } catch (MalformedURLException e) {
-                        LOG.error(e.getMessage());
+                        log.error(e.getMessage());
                         isSupported = false;
                     }
                 }
@@ -140,7 +140,7 @@ public class B2ShareParser implements ParserService {
                 return Uni.createFrom().item(Tuple2.of(isSupported, (ParserService)this));
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Failed to check if DOI %s points to B2Share record", doi);
+                log.errorf("Failed to check if DOI %s points to B2Share record", doi);
             });
 
         return result;
@@ -171,7 +171,7 @@ public class B2ShareParser implements ParserService {
             })
             .chain(record -> {
                 // Got B2Share record
-                LOG.infof("Got B2Share record %s", record.id);
+                log.infof("Got B2Share record %s", record.id);
 
                 // Get bucket that holds the files
                 String linkToFiles = (null != record.links) ? record.links.get("files") : null;
@@ -200,7 +200,7 @@ public class B2ShareParser implements ParserService {
                 return Uni.createFrom().item(srcFiles);
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Failed to parse B2Share DOI %s", doi);
+                log.errorf("Failed to parse B2Share DOI %s", doi);
             });
 
         return result;

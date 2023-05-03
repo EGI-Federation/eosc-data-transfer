@@ -16,11 +16,11 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.micrometer.core.instrument.MeterRegistry;
 
-import javax.inject.Inject;
-import javax.ws.rs.*;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import eosc.eu.model.*;
 import eosc.eu.model.Transfer.Destination;
@@ -40,7 +40,7 @@ import org.jboss.resteasy.reactive.RestQuery;
 @Produces(MediaType.APPLICATION_JSON)
 public class DataTransferUser extends DataTransferBase {
 
-    private static final Logger LOG = Logger.getLogger(DataTransferUser.class);
+    private static final Logger log = Logger.getLogger(DataTransferUser.class);
 
     @Inject
     TransfersConfig config;
@@ -52,7 +52,7 @@ public class DataTransferUser extends DataTransferBase {
     /***
      * Construct with meter
      */
-    public DataTransferUser() { super(LOG); }
+    public DataTransferUser() { super(log); }
 
     /**
      * Retrieve information about current user.
@@ -90,7 +90,7 @@ public class DataTransferUser extends DataTransferBase {
                                                 description = "The destination storage")
                                      String destination) {
 
-        LOG.info("Get current user info");
+        log.info("Get current user info");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -110,13 +110,13 @@ public class DataTransferUser extends DataTransferBase {
             })
             .chain(userinfo -> {
                 // Got user info
-                LOG.infof("Got user info for user_dn:%s", userinfo.user_dn);
+                log.infof("Got user info for user_dn:%s", userinfo.user_dn);
 
                 // Success
                 return Uni.createFrom().item(Response.ok(userinfo).build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.error("Failed to get user info");
+                log.error("Failed to get user info");
                 return new ActionError(e, Tuple2.of("destination", destination)).toResponse();
             });
 

@@ -1,7 +1,7 @@
 package eosc.eu;
 
 import io.smallrye.mutiny.Uni;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import eosc.eu.model.*;
 import eosc.eu.TransfersConfig.TransferServiceConfig;

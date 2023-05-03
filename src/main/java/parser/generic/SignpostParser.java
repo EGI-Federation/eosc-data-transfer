@@ -29,7 +29,7 @@ import parser.ParserHelper;
 public class SignpostParser implements ParserService {
 
     private static final int MAX_RECURSION = 3;
-    private static final Logger LOG = Logger.getLogger(SignpostParser.class);
+    private static final Logger log = Logger.getLogger(SignpostParser.class);
 
     private String id;
     private String name;
@@ -58,7 +58,7 @@ public class SignpostParser implements ParserService {
         if (null != parser)
             return true;
 
-        LOG.debug("Obtaining REST client for ourselves");
+        log.debug("Obtaining REST client for ourselves");
 
         // Check if base URL is valid
         URL urlParserService;
@@ -66,7 +66,7 @@ public class SignpostParser implements ParserService {
             var urlSelf = String.format("http://localhost:%d", port.port());
             urlParserService = new URL(urlSelf);
         } catch (MalformedURLException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
             return false;
         }
 
@@ -79,7 +79,7 @@ public class SignpostParser implements ParserService {
             return true;
         }
         catch (RestClientDefinitionException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
 
         return false;
@@ -135,7 +135,7 @@ public class SignpostParser implements ParserService {
                 return Uni.createFrom().item(Tuple2.of(hasLinks, (ParserService)this));
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Failed to check if DOI %s supports Signposting", doi);
+                log.errorf("Failed to check if DOI %s supports Signposting", doi);
             });
 
         return result;
@@ -193,7 +193,7 @@ public class SignpostParser implements ParserService {
                     // Got some links
                     if(link.relation.equalsIgnoreCase("item")) {
                         // Content with one element
-                        LOG.debugf("Signposting relation (%s) is %s", link.relation, link.url);
+                        log.debugf("Signposting relation (%s) is %s", link.relation, link.url);
                         var content = new StorageContent();
                         var element = new StorageElement(link.url, link.type);
                         content.add(element);
@@ -201,12 +201,12 @@ public class SignpostParser implements ParserService {
                     }
                     else if(link.relation.equalsIgnoreCase("linkset")){
                         // Content with multiple elements
-                        LOG.debugf("Signposting relation (%s) is %s", link.relation, link.url);
+                        log.debugf("Signposting relation (%s) is %s", link.relation, link.url);
                         return this.helper.fetchLinkset(link.url);
                     }
                     else if(link.relation.equalsIgnoreCase("identifier")){
                         // Content with a DOI
-                        LOG.debugf("Signposting relation (%s) is %s", link.relation, link.url);
+                        log.debugf("Signposting relation (%s) is %s", link.relation, link.url);
                         if(!doi.equalsIgnoreCase(link.url) && level <= MAX_RECURSION)
                             return parser.parseDOIAsync(auth, link.url, level + 1);
                     }
@@ -214,7 +214,7 @@ public class SignpostParser implements ParserService {
                     return Uni.createFrom().nullItem();
                 })
                 .onFailure().invoke(e -> {
-                    LOG.errorf("Failed to parse Signposting DOI %s", doi);
+                    log.errorf("Failed to parse Signposting DOI %s", doi);
                 })
                 .collect()
                 .in(StorageContent::new, (acc, storage) -> {

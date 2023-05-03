@@ -51,7 +51,6 @@ quarkus:
   application:
     name: data-transfer
   log:
-    level: INFO
     min-level: DEBUG
     console:
       enable: true
@@ -72,10 +71,10 @@ quarkus:
         record-delimiter: ",\n"
   otel:
     enabled: true
-    tracer:
-      exporter:
-        otlp:
-          endpoint: http://localhost:4317
+    exporter:
+      otlp:
+        traces:
+          legacy-endpoint: http://localhost:4317
   micrometer:
     enabled: true
     export:

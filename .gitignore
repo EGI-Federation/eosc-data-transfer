@@ -19,8 +19,8 @@ bin/
 *.log
 *.log.*
 gen/
-log/*.json
-log/*.json.*
+logs/*.json
+logs/*.json.*
 
 # NetBeans
 nb-configuration.xml

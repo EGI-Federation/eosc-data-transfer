@@ -22,7 +22,7 @@ eosc:
         service: fts
         auth: token
         protocol: https
-        description: EGI dCache
+        description: dCache
         browse: true
       s3:
         service: fts
@@ -57,15 +57,20 @@ quarkus:
       enable: true
       level: INFO
       format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
+      json:
+        ~: false
     file:
       enable: true
-      path: logs/data-transfer.log
+      path: logs/data-transfer.json
       level: DEBUG
       format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
       rotation:
         max-file-size: 1M
         max-backup-index: 10
-  opentelemetry:
+      json:
+        ~: true
+        record-delimiter: ",\n"
+  otel:
     enabled: true
     tracer:
       exporter:

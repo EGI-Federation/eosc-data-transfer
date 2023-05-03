@@ -15,7 +15,7 @@ import eosc.eu.model.StorageElement;
  */
 public class ParserHelper {
 
-    private static final Logger LOG = Logger.getLogger(ParserHelper.class);
+    private static final Logger log = Logger.getLogger(ParserHelper.class);
     private WebClient client;
     private String redirectedToUrl;
     private MultiMap headers;
@@ -72,7 +72,7 @@ public class ParserHelper {
                 return Uni.createFrom().nullItem();
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Error in request HEAD %s", uri);
+                log.errorf("Error in request HEAD %s", uri);
             });
 
         return result;
@@ -101,7 +101,7 @@ public class ParserHelper {
                 return Uni.createFrom().item(Tuple2.of(urlTarget, this.headers));
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Error in request HEAD %s", uri);
+                log.errorf("Error in request HEAD %s", uri);
             });
 
         return result;
@@ -136,7 +136,7 @@ public class ParserHelper {
                 return Uni.createFrom().item(content);
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Error in request HEAD %s", uri);
+                log.errorf("Error in request HEAD %s", uri);
             });
 
         return result;

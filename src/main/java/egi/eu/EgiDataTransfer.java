@@ -21,13 +21,13 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.PostConstruct;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import static javax.ws.rs.core.HttpHeaders.*;
+import jakarta.annotation.PostConstruct;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import static jakarta.ws.rs.core.HttpHeaders.*;
 
 import egi.fts.model.*;
 import egi.fts.model.UserInfo;
@@ -46,7 +46,7 @@ import org.jboss.resteasy.reactive.ClientWebApplicationException;
  */
 public class EgiDataTransfer implements TransferService {
 
-    private static final Logger LOG = Logger.getLogger(EgiDataTransfer.class);
+    private static final Logger log = Logger.getLogger(EgiDataTransfer.class);
     private static Set<String> infoFieldsAsIs;
     private static Map<String, String> infoFieldsRenamed;
 
@@ -80,19 +80,19 @@ public class EgiDataTransfer implements TransferService {
             oks = Optional.of(ks);
         }
         catch (FileNotFoundException e) {
-            LOG.error(e);
+            log.error(e);
         }
         catch (KeyStoreException e) {
-            LOG.error(e);
+            log.error(e);
         }
         catch (CertificateException e) {
-            LOG.error(e);
+            log.error(e);
         }
         catch (IOException e) {
-            LOG.error(e);
+            log.error(e);
         }
         catch (NoSuchAlgorithmException e) {
-            LOG.error(e);
+            log.error(e);
         }
 
         return oks;
@@ -112,14 +112,14 @@ public class EgiDataTransfer implements TransferService {
         if (null != fts)
             return true;
 
-        LOG.debug("Obtaining REST client(s) for File Transfer Service");
+        log.debug("Obtaining REST client(s) for File Transfer Service");
 
         // Check if transfer service base URL is valid
         URL urlTransferService;
         try {
             urlTransferService = new URL(serviceConfig.url());
         } catch (MalformedURLException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
             return false;
         }
 
@@ -151,10 +151,10 @@ public class EgiDataTransfer implements TransferService {
             return true;
         }
         catch(IllegalStateException ise) {
-            LOG.error(ise.getMessage());
+            log.error(ise.getMessage());
         }
         catch (RestClientDefinitionException rcde) {
-            LOG.error(rcde.getMessage());
+            log.error(rcde.getMessage());
         }
 
         return false;
@@ -238,7 +238,7 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(new eosc.eu.model.UserInfo(userInfo));
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                log.error(e);
             });
 
         return result;
@@ -251,7 +251,7 @@ public class EgiDataTransfer implements TransferService {
      */
     private Uni<Boolean> registerStorage(String storageHost) {
 
-        LOG.infof("Registering S3 destination %s", storageHost);
+        log.infof("Registering S3 destination %s", storageHost);
 
         if (null == ftsConfig)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
@@ -288,8 +288,8 @@ public class EgiDataTransfer implements TransferService {
                     }
                 }
 
-                LOG.error(e);
-                LOG.errorf("Failed to register S3 destination %s", storageHost);
+                log.error(e);
+                log.errorf("Failed to register S3 destination %s", storageHost);
                 return Uni.createFrom().failure(e);
             });
 
@@ -333,7 +333,7 @@ public class EgiDataTransfer implements TransferService {
             })
             .chain(userInfo -> {
                 // Configure S3 destination with provided credentials
-                LOG.infof("Configuring S3 destination %s", storageHost);
+                log.infof("Configuring S3 destination %s", storageHost);
 
                 var voName = (null == userInfo.vos || userInfo.vos.isEmpty()) ? null : userInfo.vos.get(0);
                 var s3info = new S3Info(userInfo.user_dn, voName, accessKey, secretKey);
@@ -344,8 +344,8 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(true);
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
-                LOG.errorf("Failed to configure S3 destination %s", storageHost);
+                log.error(e);
+                log.errorf("Failed to configure S3 destination %s", storageHost);
             });
 
         return result;
@@ -386,7 +386,7 @@ public class EgiDataTransfer implements TransferService {
                                               dest, userInfo);
             })
             .onFailure().invoke(e -> {
-                LOG.error("Failed to configure S3 destinations");
+                log.error("Failed to configure S3 destinations");
             })
             .collect()
             .in(BooleanAccumulator::new, (acc, supported) -> {
@@ -439,7 +439,7 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(new TransferInfo(jobInfo));
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                log.error(e);
             });
 
         return result;
@@ -503,7 +503,7 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(new TransferList(jobs));
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                log.error(e);
             });
 
         return result;
@@ -533,7 +533,7 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(new TransferInfoExtended(jobInfoExt));
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                log.error(e);
             });
 
         return result;
@@ -580,7 +580,7 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(response);
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                log.error(e);
             });
 
         return result;
@@ -610,7 +610,7 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(new TransferInfoExtended(jobInfoExt));
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                log.error(e);
             });
 
         return result;
@@ -648,7 +648,7 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(new StorageContent(folderUrl, contentList));
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                log.error(e);
             });
 
         return result;
@@ -687,7 +687,7 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(new StorageElement(objInfo));
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                log.error(e);
             });
 
         return result;
@@ -726,7 +726,7 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(code);
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                log.error(e);
             });
 
         return result;
@@ -765,7 +765,7 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(code);
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                log.error(e);
             });
 
         return result;
@@ -804,7 +804,7 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(code);
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                log.error(e);
             });
 
         return result;
@@ -844,7 +844,7 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(code);
             })
             .onFailure().invoke(e -> {
-                LOG.error(e);
+                log.error(e);
             });
 
         return result;

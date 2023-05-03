@@ -1,7 +1,7 @@
 package eosc.eu;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status.Family;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status.Family;
 
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.Multi;

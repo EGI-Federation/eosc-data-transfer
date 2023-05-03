@@ -20,11 +20,11 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
-import javax.inject.Inject;
-import javax.ws.rs.*;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import eosc.eu.model.*;
 import eosc.eu.model.Transfer.Destination;
@@ -43,7 +43,7 @@ import eosc.eu.model.Transfer.Destination;
 @Produces(MediaType.APPLICATION_JSON)
 public class DataTransfer extends DataTransferBase {
 
-    private static final Logger LOG = Logger.getLogger(DataTransfer.class);
+    private static final Logger log = Logger.getLogger(DataTransfer.class);
 
     @Inject
     TransfersConfig config;
@@ -55,7 +55,7 @@ public class DataTransfer extends DataTransferBase {
     /***
      * Constructor
      */
-    public DataTransfer() { super(LOG); }
+    public DataTransfer() { super(log); }
 
     /**
      * Initiate new transfer of multiple sets of files.
@@ -96,7 +96,7 @@ public class DataTransfer extends DataTransferBase {
                                        @Parameter(required = false, description = STORAGE_AUTH)
                                        String storageAuth) {
 
-        LOG.info("Start new data transfer");
+        log.info("Start new data transfer");
 
         // If authentication info is provided for the storage, embed it in every FTP destination URL
         if(null != storageAuth && !storageAuth.isBlank() && destination.equalsIgnoreCase(Destination.ftp.toString())) {
@@ -108,7 +108,7 @@ public class DataTransfer extends DataTransferBase {
                     var seUrlFixed = applyStorageCredentials(destination, seUrl, storageAuth);
                     if(null == seUrlFixed) {
                         // Could not add credentials to invalid URL
-                        LOG.error("Failed to start new transfer");
+                        log.error("Failed to start new transfer");
                         return Uni.createFrom().item(new ActionError("urlInvalid", Arrays.asList(
                                                                          Tuple2.of("url", seUrl),
                                                                          Tuple2.of("destination", destination) ))
@@ -140,13 +140,13 @@ public class DataTransfer extends DataTransferBase {
             })
             .chain(transferInfo -> {
                 // Transfer started
-                LOG.infof("Started new transfer %s", transferInfo.jobId);
+                log.infof("Started new transfer %s", transferInfo.jobId);
 
                 // Success
                 return Uni.createFrom().item(Response.accepted(transferInfo).build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.error("Failed to start new transfer");
+                log.error("Failed to start new transfer");
                 return new ActionError(e, Tuple2.of("destination", destination)).toResponse();
             });
 
@@ -254,7 +254,7 @@ public class DataTransfer extends DataTransferBase {
         if(null != userDN && !userDN.isEmpty())
             filters = String.format("%s%suser_dn = %s", filters, criteriaPrefix, userDN);
 
-        LOG.infof("Find data transfers matching criteria: %s", filters);
+        log.infof("Find data transfers matching criteria: %s", filters);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -276,13 +276,13 @@ public class DataTransfer extends DataTransferBase {
             })
             .chain(matches -> {
                 // Found transfers
-                LOG.infof("Found %d matching transfers", matches.transfers.size());
+                log.infof("Found %d matching transfers", matches.transfers.size());
 
                 // Success
                 return Uni.createFrom().item(Response.ok(matches).build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.error("Failed to find matching transfers");
+                log.error("Failed to find matching transfers");
 
                 List<Tuple2<String, String>> details = new ArrayList<>();
                 details.add(Tuple2.of("destination", destination));
@@ -350,7 +350,7 @@ public class DataTransfer extends DataTransferBase {
                                                     description = DESTINATION_STORAGE)
                                          String destination) {
 
-        LOG.infof("Retrieve details of transfer %s", jobId);
+        log.infof("Retrieve details of transfer %s", jobId);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -370,13 +370,13 @@ public class DataTransfer extends DataTransferBase {
             })
             .chain(transferInfo -> {
                 // Got transfer details
-                LOG.infof("Transfer %s is %s", transferInfo.jobId, transferInfo.jobState);
+                log.infof("Transfer %s is %s", transferInfo.jobId, transferInfo.jobState);
 
                 // Success
                 return Uni.createFrom().item(Response.ok(transferInfo).build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.errorf("Failed to get details of transfer %s", jobId);
+                log.errorf("Failed to get details of transfer %s", jobId);
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("jobId", jobId),
                              Tuple2.of("destination", destination)) ).toResponse();
@@ -426,7 +426,7 @@ public class DataTransfer extends DataTransferBase {
                                                          description = DESTINATION_STORAGE)
                                               String destination) {
 
-        LOG.infof("Retrieve field '%s' from details of transfer %s", fieldName, jobId);
+        log.infof("Retrieve field '%s' from details of transfer %s", fieldName, jobId);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -447,14 +447,14 @@ public class DataTransfer extends DataTransferBase {
             .chain(fieldValue -> {
                 // Found transfer and field
                 var entity = fieldValue.getEntity();
-                LOG.infof("Field %s of transfer %s is %s", fieldName, jobId,
+                log.infof("Field %s of transfer %s is %s", fieldName, jobId,
                          (null != entity) ? entity.toString() : "null");
 
                 // Success
                 return Uni.createFrom().item(Response.ok(fieldValue).build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.errorf("Failed to get field %s of transfer %s", fieldName, jobId);
+                log.errorf("Failed to get field %s of transfer %s", fieldName, jobId);
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("jobId", jobId),
                              Tuple2.of("fieldName", fieldName),
@@ -506,7 +506,7 @@ public class DataTransfer extends DataTransferBase {
                                                    description = DESTINATION_STORAGE)
                                         String destination) {
 
-        LOG.infof("Cancel transfer %s", jobId);
+        log.infof("Cancel transfer %s", jobId);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -526,13 +526,13 @@ public class DataTransfer extends DataTransferBase {
             })
             .chain(transferInfo -> {
                 // Canceled transfer
-                LOG.infof("Transfer %s is %s", transferInfo.jobId, transferInfo.jobState);
+                log.infof("Transfer %s is %s", transferInfo.jobId, transferInfo.jobState);
 
                 // Success
                 return Uni.createFrom().item(Response.ok(transferInfo).build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.errorf("Failed to cancel transfer %s", jobId);
+                log.errorf("Failed to cancel transfer %s", jobId);
                 return new ActionError(e, Arrays.asList(
                         Tuple2.of("jobId", jobId),
                         Tuple2.of("destination", destination)) ).toResponse();

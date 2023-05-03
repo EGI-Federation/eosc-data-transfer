@@ -27,7 +27,7 @@ import parser.esrf.model.EsrfCredentials;
  */
 public class EsrfParser implements ParserService {
 
-    private static final Logger LOG = Logger.getLogger(EsrfParser.class);
+    private static final Logger log = Logger.getLogger(EsrfParser.class);
 
     private String id;
     private String name;
@@ -57,7 +57,7 @@ public class EsrfParser implements ParserService {
         if (null != parser)
             return true;
 
-        LOG.debug("Obtaining REST client for ESRF");
+        log.debug("Obtaining REST client for ESRF");
 
         // Check if base URL is valid
         URL urlParserService;
@@ -69,7 +69,7 @@ public class EsrfParser implements ParserService {
                 baseUrl = baseUrl.replaceAll("[/]+$", "");
 
         } catch (MalformedURLException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
             return false;
         }
 
@@ -82,7 +82,7 @@ public class EsrfParser implements ParserService {
             return true;
         }
         catch (RestClientDefinitionException e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
 
         return false;
@@ -131,7 +131,7 @@ public class EsrfParser implements ParserService {
                 if(null == redirectedToUrl)
                     redirectedToUrl = doi;
                 else if(!doi.equals(redirectedToUrl))
-                    LOG.debugf("Redirected DOI %s", redirectedToUrl);
+                    log.debugf("Redirected DOI %s", redirectedToUrl);
 
                 // Validate URL
                 Pattern p = Pattern.compile("^https?://([\\w\\.]*esrf.fr)/doi/([^/]+)/([^/#\\?]+)",
@@ -147,7 +147,7 @@ public class EsrfParser implements ParserService {
                 return Uni.createFrom().item(Tuple2.of(isSupported, (ParserService)this));
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Failed to check if DOI %s points to ESRF record", doi);
+                log.errorf("Failed to check if DOI %s points to ESRF record", doi);
             });
 
         return result;
@@ -193,11 +193,11 @@ public class EsrfParser implements ParserService {
             })
             .chain(datasets -> {
                 // Got dataset(s)
-                LOG.infof("Found %d datasets at DOI %s", datasets.size(), doi);
+                log.infof("Found %d datasets at DOI %s", datasets.size(), doi);
 
                 // Handle the first dataset, ignore the rest
                 var dataset = datasets.get(0);
-                LOG.infof("First dataset has ID %s", dataset.id);
+                log.infof("First dataset has ID %s", dataset.id);
 
                 return parser.getDataFilesAsync(sessionId.get(), dataset.id);
             })
@@ -215,7 +215,7 @@ public class EsrfParser implements ParserService {
                 return Uni.createFrom().item(srcFiles);
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Failed to parse ESRF DOI %s", doi);
+                log.errorf("Failed to parse ESRF DOI %s", doi);
             });
 
         return result;

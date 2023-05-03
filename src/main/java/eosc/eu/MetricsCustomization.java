@@ -1,8 +1,8 @@
 package eosc.eu;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.ws.rs.Produces;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.Produces;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.config.MeterFilter;
@@ -20,7 +20,7 @@ import java.util.ArrayList;
 @Singleton
 public class MetricsCustomization {
 
-    private static final Logger LOG = Logger.getLogger(MetricsConfig.class);
+    private static final Logger log = Logger.getLogger(MetricsConfig.class);
 
     @Inject
     MetricsConfig qos;
@@ -36,7 +36,7 @@ public class MetricsCustomization {
             @Override
             public DistributionStatisticConfig configure(Meter.Id id, DistributionStatisticConfig config) {
 
-                LOG.debugf("Metric: %s", id.getName());
+                log.debugf("Metric: %s", id.getName());
 
                 if(id.getName().startsWith("http.server.requests")) {
 

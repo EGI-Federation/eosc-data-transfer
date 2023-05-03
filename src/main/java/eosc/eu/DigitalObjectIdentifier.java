@@ -19,14 +19,14 @@ import io.vertx.mutiny.ext.web.client.WebClient;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
-import org.reactivestreams.Subscription;
 
-import javax.inject.Inject;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.Flow;
 
 import eosc.eu.model.*;
 import parser.ParserHelper;
@@ -41,9 +41,9 @@ import parser.ParserHelper;
 @Produces(MediaType.APPLICATION_JSON)
 public class DigitalObjectIdentifier {
 
-    private static final Logger LOG = Logger.getLogger(DigitalObjectIdentifier.class);
+    private static final Logger log = Logger.getLogger(DigitalObjectIdentifier.class);
     private static WebClient client;
-    private Subscription subscription;
+    private Flow.Subscription subscription;
 
     @Inject
     MeterRegistry registry;
@@ -75,11 +75,11 @@ public class DigitalObjectIdentifier {
     private Uni<Boolean> getParser(String auth, ActionParameters params, String doi) {
 
         if(null == doi || doi.isBlank()) {
-            LOG.error("No DOI specified");
+            log.error("No DOI specified");
             return Uni.createFrom().item(false);
         }
 
-        LOG.debugf("Selecting parser for DOI %s", doi);
+        log.debugf("Selecting parser for DOI %s", doi);
 
         // Now try each parser until we find one that can parse the specified DOI
         ParserHelper helper = new ParserHelper(this.client);
@@ -92,7 +92,7 @@ public class DigitalObjectIdentifier {
             .onItem().transformToUniAndConcatenate(parserId -> {
                 // Instantiate parser
                 var parserConfig = this.config.parsers().get(parserId);
-                LOG.debugf("Trying parser %s", parserConfig.name());
+                log.debugf("Trying parser %s", parserConfig.name());
 
                 ParserService parser = null;
 
@@ -104,22 +104,22 @@ public class DigitalObjectIdentifier {
                     parser = (ParserService)classType.getDeclaredConstructor(String.class).newInstance(parserId);
                 }
                 catch (ClassNotFoundException e) {
-                    LOG.error(e.getMessage());
+                    log.error(e.getMessage());
                 }
                 catch (NoSuchMethodException e) {
-                    LOG.error(e.getMessage());
+                    log.error(e.getMessage());
                 }
                 catch (InstantiationException e) {
-                    LOG.error(e.getMessage());
+                    log.error(e.getMessage());
                 }
                 catch (InvocationTargetException e) {
-                    LOG.error(e.getMessage());
+                    log.error(e.getMessage());
                 }
                 catch (IllegalAccessException e) {
-                    LOG.error(e.getMessage());
+                    log.error(e.getMessage());
                 }
                 catch (IllegalArgumentException e) {
-                    LOG.error(e.getMessage());
+                    log.error(e.getMessage());
                 }
 
                 return null != parser ?
@@ -153,14 +153,14 @@ public class DigitalObjectIdentifier {
 //                        sub.cancel();
 //                    }
 
-                    LOG.infof("Using parser %s for DOI %s", params.parser.getName(), doi);
+                    log.infof("Using parser %s for DOI %s", params.parser.getName(), doi);
                     return Uni.createFrom().item(initOK);
                 }
 
                 return Uni.createFrom().item(false);
             })
             .onFailure().invoke(e -> {
-                LOG.errorf("Failed to query configured parsers for support of DOI %s", doi);
+                log.errorf("Failed to query configured parsers for support of DOI %s", doi);
             })
             .collect()
             .in(BooleanAccumulator::new, (acc, supported) -> {
@@ -202,7 +202,7 @@ public class DigitalObjectIdentifier {
                                   @Parameter(hidden = true) @DefaultValue("1")
                                   @RestQuery int level) {
 
-        LOG.infof("Parse DOI %s (level %d)", doi, level);
+        log.infof("Parse DOI %s (level %d)", doi, level);
 
         var params = new ActionParameters();
         Uni<Response> result = Uni.createFrom().nullItem()
@@ -214,7 +214,7 @@ public class DigitalObjectIdentifier {
             .chain(canParse -> {
                 if (!canParse) {
                     // Could not find suitable parser
-                    LOG.errorf("No parser can handle DOI %s", doi);
+                    log.errorf("No parser can handle DOI %s", doi);
                     return Uni.createFrom().failure(new TransferServiceException("doiNotSupported"));
                 }
 
@@ -223,13 +223,13 @@ public class DigitalObjectIdentifier {
             })
             .chain(sourceFiles -> {
                 // Got list of source files
-                LOG.infof("Got %d source files", sourceFiles.count);
+                log.infof("Got %d source files", sourceFiles.count);
 
                 // Success
                 return Uni.createFrom().item(Response.ok(sourceFiles).build());
             })
             .onFailure().recoverWithItem(e -> {
-                LOG.errorf("Failed to parse DOI %s", doi);
+                log.errorf("Failed to parse DOI %s", doi);
                 return new ActionError(e, Tuple2.of("doi", doi)).toResponse();
             });
 

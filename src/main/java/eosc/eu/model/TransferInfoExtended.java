@@ -161,7 +161,7 @@ public class TransferInfoExtended extends TransferInfo {
     @Schema(description="Will be 'succeeded' when all files transferred successfully, and 'failed' if all files failed to transfer.")
     public enum TransferState
     {
-        unused("unused"),
+        unknown("unknown"),
         staging("staging"),
         submitted("submitted"),
         active("active"),
@@ -191,7 +191,7 @@ public class TransferInfoExtended extends TransferInfo {
             else if(status.contains("cancel"))
                 return canceled;
 
-            return unused;
+            return unknown;
         }
 
         public String toString() {

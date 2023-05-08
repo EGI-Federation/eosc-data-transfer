@@ -2,6 +2,7 @@ package eosc.eu;
 
 import eosc.eu.model.Transfer;
 import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 
 import jakarta.inject.Inject;
 import java.lang.reflect.InvocationTargetException;
@@ -58,14 +59,17 @@ public class DataTransferBase {
         var storageConfig = config.destinations().get(params.destination);
         if (null == storageConfig) {
             // Unsupported destination
-            log.errorf("No transfer service configured for destination <%s>", params.destination);
+            log.error("No transfer service configured for this destination");
             return false;
         }
 
-        var serviceConfig = config.services().get(storageConfig.serviceId());
+        var tsID = storageConfig.serviceId();
+        MDC.put("serviceId", tsID);
+
+        var serviceConfig = config.services().get(tsID);
         if (null == serviceConfig) {
             // Unsupported transfer service
-            log.errorf("No configuration found for transfer service <%s>", storageConfig.serviceId());
+            log.error("No configuration found for transfer service");
             return false;
         }
 
@@ -74,7 +78,9 @@ public class DataTransferBase {
             var classType = Class.forName(serviceConfig.className());
             params.ts = (TransferService)classType.getDeclaredConstructor().newInstance();
             if(params.ts.initService(serviceConfig)) {
-                log.infof("Selected transfer service <%s>", params.ts.getServiceName());
+                var tsName = params.ts.getServiceName();
+                MDC.put("serviceName", tsName);
+                log.infof("Handled by <%s>", tsName);
                 return true;
             }
         }
@@ -118,6 +124,8 @@ public class DataTransferBase {
             URI uri = null;
 
             try {
+                MDC.put("destinationUrl", seUrl);
+
                 uri = new URI(seUrl);
                 String protocol = uri.getScheme();
                 String authority = uri.getAuthority();
@@ -136,9 +144,11 @@ public class DataTransferBase {
 
                 if(null != uri.getQuery())
                     seUrl += ("?" + uri.getQuery());
+
+                MDC.remove("destinationUrl");
             }
             catch(URISyntaxException e) {
-                log.errorf("Invalid destination URL %s", seUrl);
+                log.error("Failed to add storage credentials to destination URL");
                 log.error(e.getMessage());
                 return null;
             }

@@ -1,5 +1,7 @@
 package eosc.eu;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -13,6 +15,7 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
 
 import java.util.Arrays;
@@ -73,7 +76,7 @@ public class DataStorage extends DataTransferBase {
     })
     public Uni<Response> listStorageTypes() {
 
-        log.infof("List supported storage types");
+        log.info("List supported storage types");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -85,6 +88,7 @@ public class DataStorage extends DataTransferBase {
                     var storageDescription = storageConfig.description().isPresent() ?
                                                     storageConfig.description().get() : "";
 
+                    MDC.put("transferService", destination);
                     var params = new ActionParameters(destination);
                     if (!getTransferService(params))
                         // Storage uses unsupported transfer service
@@ -100,6 +104,7 @@ public class DataStorage extends DataTransferBase {
                     storageTypes.add(storageInfo);
                 }
 
+                MDC.remove("transferService");
                 return Uni.createFrom().item(storageTypes.toResponse());
             })
             .onFailure().recoverWithItem(e -> {
@@ -133,7 +138,9 @@ public class DataStorage extends DataTransferBase {
                                                    description = DESTINATION_STORAGE)
                                         String destination) {
 
-        log.infof("Retrieve information about storage type %s", destination);
+        MDC.put("dest", destination);
+
+        log.info("Retrieve information about storage type...");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -164,9 +171,13 @@ public class DataStorage extends DataTransferBase {
                                                   params.ts.getServiceName(),
                                                   storageDescription);
 
-                log.infof("Destination storage %s does%s support browsing", destination,
-                          storageInfo.canBrowse.get() ? "" : " not");
+                try {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    MDC.put("destInfo", objectMapper.writeValueAsString(storageInfo));
+                }
+                catch (JsonProcessingException e) {}
 
+                log.info("Got details of destination storage");
                 return Uni.createFrom().item(storageInfo.toResponse());
             })
             .onFailure().recoverWithItem(e -> {
@@ -228,7 +239,10 @@ public class DataStorage extends DataTransferBase {
                                                       description = STORAGE_AUTH)
                                            String storageAuth) {
 
-        log.infof("List content of folder %s", folderUrl);
+        MDC.put("seUrl", folderUrl);
+        MDC.put("dest", destination);
+
+        log.info("List folder content...");
 
         final String folderUrlWithAuth = applyStorageCredentials(destination, folderUrl, storageAuth);
 
@@ -252,14 +266,12 @@ public class DataStorage extends DataTransferBase {
                 return params.ts.listFolderContent(auth, storageAuth, folderUrlWithAuth);
             })
             .chain(content -> {
-                // Got folder content
-                log.infof("Found %d element(s) in folder %s", content.count, folderUrl);
-
-                // Success
+                // Got folder content, success
+                log.info("Got folder content");
                 return Uni.createFrom().item(Response.ok(content).build());
             })
             .onFailure().recoverWithItem(e -> {
-                log.errorf("Failed to list content of folder %s", folderUrl);
+                log.error("Failed to list folder content");
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("folderUrl", folderUrl),
                              Tuple2.of("destination", destination)) ).toResponse();
@@ -316,7 +328,10 @@ public class DataStorage extends DataTransferBase {
                                      @Parameter(required = false, description = STORAGE_AUTH)
                                      String storageAuth) {
 
-        log.infof("Get details of storage element %s", seUrl);
+        MDC.put("seUrl", seUrl);
+        MDC.put("dest", destination);
+
+        log.info("Get details of storage element...");
 
         final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
 
@@ -340,14 +355,12 @@ public class DataStorage extends DataTransferBase {
                 return params.ts.getStorageElementInfo(auth, storageAuth, seUrlWithAuth);
             })
             .chain(seinfo -> {
-                // Got storage element info
-                log.infof("Got info for %s %s", seinfo.isFolder ? "folder" : "file", seUrl);
-
-                // Success
+                // Got storage element info, success
+                log.info("Got storage element details");
                 return Uni.createFrom().item(Response.ok(seinfo).build());
             })
             .onFailure().recoverWithItem(e -> {
-                log.errorf("Failed to get info about storage element %s", seUrl);
+                log.error("Failed to get storage element details");
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("seUrl", seUrl),
                              Tuple2.of("destination", destination)) ).toResponse();
@@ -450,7 +463,10 @@ public class DataStorage extends DataTransferBase {
                                       @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
 
-        log.infof("Create folder %s", seUrl);
+        MDC.put("seUrl", seUrl);
+        MDC.put("dest", destination);
+
+        log.info("Creating folder...");
 
         final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
 
@@ -474,14 +490,12 @@ public class DataStorage extends DataTransferBase {
                 return params.ts.createFolder(auth, storageAuth, seUrlWithAuth);
             })
             .chain(created -> {
-                // Folder got created
-                log.infof("Created folder %s (%s)", seUrl, created);
-
-                // Success
+                // Folder got created, success
+                log.info("Created folder");
                 return Uni.createFrom().item(Response.ok().build());
             })
             .onFailure().recoverWithItem(e -> {
-                log.errorf("Failed to create folder %s", seUrl);
+                log.error("Failed to create folder");
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("seUrl", seUrl),
                              Tuple2.of("destination", destination)) ).toResponse();
@@ -537,7 +551,10 @@ public class DataStorage extends DataTransferBase {
                                       @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
 
-        log.infof("Delete folder %s", seUrl);
+        MDC.put("seUrl", seUrl);
+        MDC.put("dest", destination);
+
+        log.info("Deleting folder...");
 
         final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
 
@@ -561,14 +578,12 @@ public class DataStorage extends DataTransferBase {
                 return params.ts.deleteFolder(auth, storageAuth, seUrlWithAuth);
             })
             .chain(deleted -> {
-                // Folder got deleted
-                log.infof("Deleted folder %s (%s)", seUrl, deleted);
-
-                // Success
+                // Folder got deleted, success
+                log.info("Deleted folder");
                 return Uni.createFrom().item(Response.ok().build());
             })
             .onFailure().recoverWithItem(e -> {
-                log.errorf("Failed to delete folder %s", seUrl);
+                log.error("Failed to delete folder");
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("seUrl", seUrl),
                              Tuple2.of("destination", destination)) ).toResponse();
@@ -624,7 +639,10 @@ public class DataStorage extends DataTransferBase {
                                     @Parameter(required = false, description = STORAGE_AUTH)
                                     String storageAuth) {
 
-        log.infof("Delete file %s", seUrl);
+        MDC.put("seUrl", seUrl);
+        MDC.put("dest", destination);
+
+        log.info("Deleting file...");
 
         final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
 
@@ -648,14 +666,12 @@ public class DataStorage extends DataTransferBase {
                 return params.ts.deleteFile(auth, storageAuth, seUrlWithAuth);
             })
             .chain(deleted -> {
-                // File got deleted
-                log.infof("Deleted file %s (%s)", seUrl, deleted);
-
-                // Success
+                // File got deleted, success
+                log.infof("Deleted file");
                 return Uni.createFrom().item(Response.ok().build());
             })
             .onFailure().recoverWithItem(e -> {
-                log.errorf("Failed to delete file %s", seUrl);
+                log.error("Failed to delete file");
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("seUrl", seUrl),
                              Tuple2.of("destination", destination)) ).toResponse();
@@ -708,8 +724,13 @@ public class DataStorage extends DataTransferBase {
                                     @Parameter(required = false, description = STORAGE_AUTH)
                                     String storageAuth) {
 
-        if(null != operation && null != operation.seUrlOld && null != operation.seUrlNew)
-            log.infof("Renaming storage element %s to %s", operation.seUrlOld, operation.seUrlNew);
+        MDC.put("dest", destination);
+
+        if(null != operation && null != operation.seUrlOld && null != operation.seUrlNew) {
+            MDC.put("seUrlOld", operation.seUrlOld);
+            MDC.put("seUrlNew", operation.seUrlNew);
+            log.info("Renaming storage element...");
+        }
         else {
             log.error("Cannot rename storage element");
             return Uni.createFrom().item(new ActionError("missingOperationParameters",
@@ -743,15 +764,12 @@ public class DataStorage extends DataTransferBase {
                 return params.ts.renameStorageElement(auth, storageAuth, seUrlOldWithAuth, seUrlNewWithAuth);
             })
             .chain(renamed -> {
-                // Storage element got renamed
-                log.infof("Renamed storage element %s to %s (%s)",
-                          operation.seUrlOld, operation.seUrlNew, renamed);
-
-                // Success
+                // Storage element got renamed, success
+                log.info("Renamed storage element");
                 return Uni.createFrom().item(Response.ok().build());
             })
             .onFailure().recoverWithItem(e -> {
-                log.errorf("Failed to rename storage element %s", operation.seUrlOld);
+                log.error("Failed to rename storage element");
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("seUrlOld", operation.seUrlOld),
                              Tuple2.of("seUrlNew", operation.seUrlNew),

@@ -1,11 +1,16 @@
 package egi.eu;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import eosc.eu.*;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -34,11 +39,6 @@ import egi.fts.model.UserInfo;
 import egi.fts.FileTransferService;
 import eosc.eu.model.*;
 import eosc.eu.TransfersConfig.TransferServiceConfig;
-import eosc.eu.TransferService;
-import eosc.eu.TransferServiceException;
-import eosc.eu.DataStorageCredentials;
-import eosc.eu.BooleanAccumulator;
-import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 
 /***
@@ -55,11 +55,13 @@ public class EgiDataTransfer implements TransferService {
     private static FileTransferService ftsConfig;
     private int timeout;
 
+    private ObjectMapper objectMapper;
+
 
     /***
      * Constructor
      */
-    public EgiDataTransfer() {}
+    public EgiDataTransfer() { this.objectMapper = new ObjectMapper(); }
 
     /***
      * Load a certificate store from a resource file.
@@ -235,6 +237,10 @@ public class EgiDataTransfer implements TransferService {
             })
             .chain(userInfo -> {
                 // Got user info
+                try {
+                    MDC.put("userInfo", this.objectMapper.writeValueAsString(userInfo));
+                }
+                catch (JsonProcessingException e) {}
                 return Uni.createFrom().item(new eosc.eu.model.UserInfo(userInfo));
             })
             .onFailure().invoke(e -> {
@@ -251,7 +257,8 @@ public class EgiDataTransfer implements TransferService {
      */
     private Uni<Boolean> registerStorage(String storageHost) {
 
-        log.infof("Registering S3 destination %s", storageHost);
+        MDC.put("storageHost", storageHost);
+        log.info("Registering S3 destination");
 
         if (null == ftsConfig)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
@@ -272,6 +279,7 @@ public class EgiDataTransfer implements TransferService {
                 })
             .chain(unused -> {
                 // Success
+                MDC.remove("storageHost");
                 return Uni.createFrom().item(true);
             })
             .onFailure().recoverWithUni(e -> {
@@ -289,7 +297,7 @@ public class EgiDataTransfer implements TransferService {
                 }
 
                 log.error(e);
-                log.errorf("Failed to register S3 destination %s", storageHost);
+                log.error("Failed to register S3 destination");
                 return Uni.createFrom().failure(e);
             });
 
@@ -308,6 +316,8 @@ public class EgiDataTransfer implements TransferService {
     private Uni<Boolean> prepareStorage(String tsAuth,
                                         String accessKey, String secretKey,
                                         String storageHost, UserInfo ui) {
+
+        MDC.put("storageHost", storageHost);
 
         // Make sure we have storage credentials
         if (null == accessKey || accessKey.isBlank() || null == secretKey || secretKey.isBlank())
@@ -333,7 +343,8 @@ public class EgiDataTransfer implements TransferService {
             })
             .chain(userInfo -> {
                 // Configure S3 destination with provided credentials
-                log.infof("Configuring S3 destination %s", storageHost);
+                MDC.put("userDN", userInfo.user_dn);
+                log.info("Configuring S3 destination");
 
                 var voName = (null == userInfo.vos || userInfo.vos.isEmpty()) ? null : userInfo.vos.get(0);
                 var s3info = new S3Info(userInfo.user_dn, voName, accessKey, secretKey);
@@ -341,11 +352,12 @@ public class EgiDataTransfer implements TransferService {
             })
             .chain(unused -> {
                 // Success
+                MDC.remove("storageHost");
                 return Uni.createFrom().item(true);
             })
             .onFailure().invoke(e -> {
                 log.error(e);
-                log.errorf("Failed to configure S3 destination %s", storageHost);
+                log.error("Failed to configure S3 destination");
             });
 
         return result;
@@ -421,7 +433,7 @@ public class EgiDataTransfer implements TransferService {
                     if(null == destinations)
                         // Some destination URL is invalid, abort
                         return Uni.createFrom().failure(new TransferServiceException("urlInvalid",
-                                                                Tuple2.of("url", transfer.getInvalidUrl())));
+                                                                 Tuple2.of("url", (String)MDC.get("invalidUrl"))));
 
                     if(!destinations.isEmpty())
                         // Configure FTS for all S3 destinations
@@ -436,6 +448,7 @@ public class EgiDataTransfer implements TransferService {
             })
             .chain(jobInfo -> {
                 // Transfer started
+                MDC.put("jobId", jobInfo.job_id);
                 return Uni.createFrom().item(new TransferInfo(jobInfo));
             })
             .onFailure().invoke(e -> {
@@ -477,10 +490,12 @@ public class EgiDataTransfer implements TransferService {
                     jobFields += ",";
 
                 String jf = this.translateTransferInfoFieldName(tf);
-                if(null == jf)
+                if(null == jf) {
                     // Found unsupported field
+                    MDC.put("fieldName", tf);
                     return Uni.createFrom().failure(new TransferServiceException("fieldNotSupported",
-                                                                       Tuple2.of("fieldName", tf)));
+                                                                                 Tuple2.of("fieldName", tf)));
+                }
 
                 jobFields += jf;
             }
@@ -500,6 +515,7 @@ public class EgiDataTransfer implements TransferService {
             })
             .chain(jobs -> {
                 // Got matching transfers
+                MDC.put("jobCount", jobs.size());
                 return Uni.createFrom().item(new TransferList(jobs));
             })
             .onFailure().invoke(e -> {
@@ -529,7 +545,11 @@ public class EgiDataTransfer implements TransferService {
                 return fts.getTransferInfoAsync(auth, jobId);
             })
             .chain(jobInfoExt -> {
-                // Got transfer info
+                // Got transfer info, success
+                try {
+                    MDC.put("jobInfo", this.objectMapper.writeValueAsString(jobInfoExt));
+                }
+                catch (JsonProcessingException e) {}
                 return Uni.createFrom().item(new TransferInfoExtended(jobInfoExt));
             })
             .onFailure().invoke(e -> {
@@ -572,8 +592,16 @@ public class EgiDataTransfer implements TransferService {
                 String rawField = (null != entity) ? entity.toString() : "null";
                 Pattern p = Pattern.compile("^\\{.+\\}$");
                 Matcher m = p.matcher(rawField);
-                if(!m.matches()) {
+                if(m.matches()) {
+                    // It's an object
+                    try {
+                        MDC.put("fieldValue", this.objectMapper.writeValueAsString(jobField));
+                    }
+                    catch (JsonProcessingException e) {}
+                }
+                else {
                     // Not an object, force return as text/plain
+                    MDC.put("fieldValue", jobField);
                     response = Response.ok(jobField).header(CONTENT_TYPE, MediaType.TEXT_PLAIN).build();
                 }
 
@@ -645,6 +673,7 @@ public class EgiDataTransfer implements TransferService {
             })
             .chain(contentList -> {
                 // Got folder listing
+                MDC.put("seCount", contentList.size());
                 return Uni.createFrom().item(new StorageContent(folderUrl, contentList));
             })
             .onFailure().invoke(e -> {
@@ -684,6 +713,10 @@ public class EgiDataTransfer implements TransferService {
             .chain(objInfo -> {
                 // Got object info
                 objInfo.objectUrl = seUrl;
+                try {
+                    MDC.put("seInfo", this.objectMapper.writeValueAsString(objInfo));
+                }
+                catch (JsonProcessingException e) {}
                 return Uni.createFrom().item(new StorageElement(objInfo));
             })
             .onFailure().invoke(e -> {

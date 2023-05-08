@@ -1,5 +1,7 @@
 package eosc.eu;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
@@ -11,6 +13,7 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
 import io.smallrye.mutiny.Uni;
@@ -96,7 +99,18 @@ public class DataTransfer extends DataTransferBase {
                                        @Parameter(required = false, description = STORAGE_AUTH)
                                        String storageAuth) {
 
-        log.info("Start new data transfer");
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            MDC.put("transfer", objectMapper.writeValueAsString(transfer));
+        }
+        catch (JsonProcessingException e) {
+            var ae = new ActionError(e, Tuple2.of("destination", destination));
+            return Uni.createFrom().item(ae.setStatus(Response.Status.BAD_REQUEST).toResponse());
+        }
+
+        MDC.put("dest", destination);
+
+        log.info("Starting new data transfer...");
 
         // If authentication info is provided for the storage, embed it in every FTP destination URL
         if(null != storageAuth && !storageAuth.isBlank() && destination.equalsIgnoreCase(Destination.ftp.toString())) {
@@ -139,10 +153,8 @@ public class DataTransfer extends DataTransferBase {
                 return params.ts.startTransfer(auth, storageAuth, transfer);
             })
             .chain(transferInfo -> {
-                // Transfer started
-                log.infof("Started new transfer %s", transferInfo.jobId);
-
-                // Success
+                // Transfer started, success
+                log.info("Started new transfer");
                 return Uni.createFrom().item(Response.accepted(transferInfo).build());
             })
             .onFailure().recoverWithItem(e -> {
@@ -234,27 +246,27 @@ public class DataTransfer extends DataTransferBase {
                                                   description = DESTINATION_STORAGE)
                                        String destination) {
 
-        final String criteriaPrefix = "\n\t\t";
-        String filters = String.format("%slimit = %s", criteriaPrefix, limit);
+        MDC.put("dest", destination);
+        MDC.put("limit", limit);
 
         if(null != fields && !fields.isEmpty())
-            filters = String.format("%s%sfields = %s", filters, criteriaPrefix, fields);
+            MDC.put("fields", fields);
         if(null != timeWindow && !timeWindow.isEmpty())
-            filters = String.format("%s%stime_window = %s", filters, criteriaPrefix, timeWindow);
+            MDC.put("filter.time_window", timeWindow);
         if(null != stateIn && !stateIn.isEmpty())
-            filters = String.format("%s%sstate_in = %s", filters, criteriaPrefix, stateIn);
+            MDC.put("filter.state_in", stateIn);
         if(null != srcStorageElement && !srcStorageElement.isEmpty())
-            filters = String.format("%s%ssource_se = %s", filters, criteriaPrefix, srcStorageElement);
+            MDC.put("filter.source_se", srcStorageElement);
         if(null != dstStorageElement && !dstStorageElement.isEmpty())
-            filters = String.format("%s%sdest_se = %s", filters, criteriaPrefix, dstStorageElement);
+            MDC.put("filter.dest_se", dstStorageElement);
         if(null != delegationId && !delegationId.isEmpty())
-            filters = String.format("%s%sdlg_id = %s", filters, criteriaPrefix, delegationId);
+            MDC.put("filter.dlg_id", delegationId);
         if(null != voName && !voName.isEmpty())
-            filters = String.format("%s%svo_name = %s", filters, criteriaPrefix, voName);
+            MDC.put("filter.vo_name", voName);
         if(null != userDN && !userDN.isEmpty())
-            filters = String.format("%s%suser_dn = %s", filters, criteriaPrefix, userDN);
+            MDC.put("filter.user_dn", userDN);
 
-        log.infof("Find data transfers matching criteria: %s", filters);
+        log.info("Finding data transfers matching criteria...");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -275,10 +287,8 @@ public class DataTransfer extends DataTransferBase {
                                                delegationId, voName, userDN);
             })
             .chain(matches -> {
-                // Found transfers
-                log.infof("Found %d matching transfers", matches.transfers.size());
-
-                // Success
+                // Found transfers, success
+                log.info("Found matching transfers");
                 return Uni.createFrom().item(Response.ok(matches).build());
             })
             .onFailure().recoverWithItem(e -> {
@@ -288,21 +298,21 @@ public class DataTransfer extends DataTransferBase {
                 details.add(Tuple2.of("destination", destination));
                 details.add(Tuple2.of("limit", String.format("%d", limit)));
                 if(null != fields && !fields.isEmpty())
-                    details.add(Tuple2.of("filter:fields", fields));
+                    details.add(Tuple2.of("fields", fields));
                 if(null != timeWindow && !timeWindow.isEmpty())
-                    details.add(Tuple2.of("filter:time_window", timeWindow));
+                    details.add(Tuple2.of("filter.time_window", timeWindow));
                 if(null != stateIn && !stateIn.isEmpty())
-                    details.add(Tuple2.of("filter:state_in", stateIn));
+                    details.add(Tuple2.of("filter.state_in", stateIn));
                 if(null != srcStorageElement && !srcStorageElement.isEmpty())
-                    details.add(Tuple2.of("filter:source_se", srcStorageElement));
+                    details.add(Tuple2.of("filter.source_se", srcStorageElement));
                 if(null != dstStorageElement && !dstStorageElement.isEmpty())
-                    details.add(Tuple2.of("filter:dest_se", dstStorageElement));
+                    details.add(Tuple2.of("filter.dest_se", dstStorageElement));
                 if(null != delegationId && !delegationId.isEmpty())
-                    details.add(Tuple2.of("filter:dlg_id", delegationId));
+                    details.add(Tuple2.of("filter.dlg_id", delegationId));
                 if(null != voName && !voName.isEmpty())
-                    details.add(Tuple2.of("filter:vo_name", voName));
+                    details.add(Tuple2.of("filter.vo_name", voName));
                 if(null != userDN && !userDN.isEmpty())
-                    details.add(Tuple2.of("filter:user_dn", userDN));
+                    details.add(Tuple2.of("filter.user_dn", userDN));
 
                 return new ActionError(e, details).toResponse();
             });
@@ -350,7 +360,10 @@ public class DataTransfer extends DataTransferBase {
                                                     description = DESTINATION_STORAGE)
                                          String destination) {
 
-        log.infof("Retrieve details of transfer %s", jobId);
+        MDC.put("jobId", jobId);
+        MDC.put("dest", destination);
+
+        log.info("Retrieving details of transfer...");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -369,14 +382,13 @@ public class DataTransfer extends DataTransferBase {
                 return params.ts.getTransferInfo(auth, jobId);
             })
             .chain(transferInfo -> {
-                // Got transfer details
-                log.infof("Transfer %s is %s", transferInfo.jobId, transferInfo.jobState);
-
-                // Success
+                // Got transfer details, success
+                MDC.put("jobState", transferInfo.jobState);
+                log.infof("Transfer is %s", transferInfo.jobState);
                 return Uni.createFrom().item(Response.ok(transferInfo).build());
             })
             .onFailure().recoverWithItem(e -> {
-                log.errorf("Failed to get details of transfer %s", jobId);
+                log.error("Failed to get transfer details");
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("jobId", jobId),
                              Tuple2.of("destination", destination)) ).toResponse();
@@ -426,7 +438,11 @@ public class DataTransfer extends DataTransferBase {
                                                          description = DESTINATION_STORAGE)
                                               String destination) {
 
-        log.infof("Retrieve field '%s' from details of transfer %s", fieldName, jobId);
+        MDC.put("jobId", jobId);
+        MDC.put("fieldName", fieldName);
+        MDC.put("dest", destination);
+
+        log.info("Retrieving field from transfer details...");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -445,16 +461,12 @@ public class DataTransfer extends DataTransferBase {
                 return params.ts.getTransferInfoField(auth, jobId, fieldName);
             })
             .chain(fieldValue -> {
-                // Found transfer and field
-                var entity = fieldValue.getEntity();
-                log.infof("Field %s of transfer %s is %s", fieldName, jobId,
-                         (null != entity) ? entity.toString() : "null");
-
-                // Success
+                // Found transfer and field, success
+                log.info("Got field of transfer");
                 return Uni.createFrom().item(Response.ok(fieldValue).build());
             })
             .onFailure().recoverWithItem(e -> {
-                log.errorf("Failed to get field %s of transfer %s", fieldName, jobId);
+                log.error("Failed to get field of transfer");
                 return new ActionError(e, Arrays.asList(
                              Tuple2.of("jobId", jobId),
                              Tuple2.of("fieldName", fieldName),
@@ -506,7 +518,10 @@ public class DataTransfer extends DataTransferBase {
                                                    description = DESTINATION_STORAGE)
                                         String destination) {
 
-        log.infof("Cancel transfer %s", jobId);
+        MDC.put("jobId", jobId);
+        MDC.put("dest", destination);
+
+        log.info("Canceling transfer...");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -525,14 +540,13 @@ public class DataTransfer extends DataTransferBase {
                 return params.ts.cancelTransfer(auth, jobId);
             })
             .chain(transferInfo -> {
-                // Canceled transfer
-                log.infof("Transfer %s is %s", transferInfo.jobId, transferInfo.jobState);
-
-                // Success
+                // Canceled transfer, success
+                MDC.put("jobState", transferInfo.jobState);
+                log.infof("Transfer is %s", transferInfo.jobState);
                 return Uni.createFrom().item(Response.ok(transferInfo).build());
             })
             .onFailure().recoverWithItem(e -> {
-                log.errorf("Failed to cancel transfer %s", jobId);
+                log.error("Failed to cancel transfer");
                 return new ActionError(e, Arrays.asList(
                         Tuple2.of("jobId", jobId),
                         Tuple2.of("destination", destination)) ).toResponse();

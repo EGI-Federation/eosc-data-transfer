@@ -75,12 +75,12 @@ public class DigitalObjectIdentifier {
      */
     private Uni<Boolean> getParser(String auth, ActionParameters params, String doi) {
 
+        log.debug("Selecting DOI parser...");
+
         if(null == doi || doi.isBlank()) {
             log.error("No DOI specified");
             return Uni.createFrom().item(false);
         }
-
-        log.debug("Selecting DOI parser");
 
         // Now try each parser until we find one that can parse the specified DOI
         ParserHelper helper = new ParserHelper(this.client);
@@ -206,9 +206,9 @@ public class DigitalObjectIdentifier {
                                   @RestQuery int depth) {
 
         MDC.put("doi", doi);
-        MDC.put("depth", Integer.toString(depth));
+        MDC.put("depth", depth);
 
-        log.info("Parse DOI");
+        log.info("Parsing DOI...");
 
         var params = new ActionParameters();
         Uni<Response> result = Uni.createFrom().nullItem()
@@ -228,11 +228,9 @@ public class DigitalObjectIdentifier {
                 return params.parser.parseDOI(auth, doi, depth);
             })
             .chain(sourceFiles -> {
-                // Got list of source files
+                // Got list of source files, success
                 MDC.put("fileCount", sourceFiles.count);
-                log.infof("Got %d source files", sourceFiles.count);
-
-                // Success
+                log.info("Got source files");
                 return Uni.createFrom().item(Response.ok(sourceFiles).build());
             })
             .onFailure().recoverWithItem(e -> {

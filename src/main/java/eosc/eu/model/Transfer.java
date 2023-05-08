@@ -3,6 +3,7 @@ package eosc.eu.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,8 +20,6 @@ public class Transfer {
 
     private static final Logger LOG = Logger.getLogger(Transfer.class);
 
-    private String badUrl;
-
     @Schema(description="The files to be transferred")
     public List<TransferPayload> files;
 
@@ -32,8 +31,6 @@ public class Transfer {
      * Constructor
      */
     public Transfer() { this.files = new ArrayList<>(); }
-
-    public String getInvalidUrl() { return this.badUrl; }
 
     /***
      * Get all destination systems (from all payloads) in this transfer.
@@ -62,9 +59,9 @@ public class Transfer {
                         hosts.add(host);
                 }
                 catch (URISyntaxException e) {
+                    MDC.put("invalidUrl", destUrl);
                     LOG.error(e);
-                    LOG.errorf("Invalid destination URL %s", destUrl);
-                    this.badUrl = destUrl;
+                    LOG.error("Invalid destination URL");
                     return null;
                 }
             }

@@ -11,7 +11,9 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
+import org.jboss.resteasy.reactive.RestQuery;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,7 +26,7 @@ import jakarta.ws.rs.core.Response;
 
 import eosc.eu.model.*;
 import eosc.eu.model.Transfer.Destination;
-import org.jboss.resteasy.reactive.RestQuery;
+
 
 
 /***
@@ -90,7 +92,9 @@ public class DataTransferUser extends DataTransferBase {
                                                 description = "The destination storage")
                                      String destination) {
 
-        log.info("Get current user info");
+        MDC.put("dest", destination);
+
+        log.info("Getting current user info...");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -109,10 +113,8 @@ public class DataTransferUser extends DataTransferBase {
                 return params.ts.getUserInfo(auth);
             })
             .chain(userinfo -> {
-                // Got user info
-                log.infof("Got user info for user_dn:%s", userinfo.user_dn);
-
-                // Success
+                // Got user info, success
+                log.info("Got user info");
                 return Uni.createFrom().item(Response.ok(userinfo).build());
             })
             .onFailure().recoverWithItem(e -> {

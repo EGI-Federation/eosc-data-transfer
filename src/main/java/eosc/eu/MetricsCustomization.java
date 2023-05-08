@@ -67,7 +67,6 @@ public class MetricsCustomization {
                     }
 
                     return builder
-                            //.percentilesHistogram(true)
                             .build()
                             .merge(config);
                 }

@@ -140,7 +140,7 @@ public class DataStorage extends DataTransferBase {
 
         MDC.put("dest", destination);
 
-        log.info("Retrieve information about storage type...");
+        log.info("Retrieve information about storage type");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -242,7 +242,7 @@ public class DataStorage extends DataTransferBase {
         MDC.put("seUrl", folderUrl);
         MDC.put("dest", destination);
 
-        log.info("List folder content...");
+        log.info("List folder content");
 
         final String folderUrlWithAuth = applyStorageCredentials(destination, folderUrl, storageAuth);
 
@@ -331,7 +331,7 @@ public class DataStorage extends DataTransferBase {
         MDC.put("seUrl", seUrl);
         MDC.put("dest", destination);
 
-        log.info("Get details of storage element...");
+        log.info("Get details of storage element");
 
         final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
 
@@ -466,7 +466,7 @@ public class DataStorage extends DataTransferBase {
         MDC.put("seUrl", seUrl);
         MDC.put("dest", destination);
 
-        log.info("Creating folder...");
+        log.info("Creating folder");
 
         final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
 
@@ -554,7 +554,7 @@ public class DataStorage extends DataTransferBase {
         MDC.put("seUrl", seUrl);
         MDC.put("dest", destination);
 
-        log.info("Deleting folder...");
+        log.info("Deleting folder");
 
         final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
 
@@ -642,7 +642,7 @@ public class DataStorage extends DataTransferBase {
         MDC.put("seUrl", seUrl);
         MDC.put("dest", destination);
 
-        log.info("Deleting file...");
+        log.info("Deleting file");
 
         final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
 
@@ -729,7 +729,7 @@ public class DataStorage extends DataTransferBase {
         if(null != operation && null != operation.seUrlOld && null != operation.seUrlNew) {
             MDC.put("seUrlOld", operation.seUrlOld);
             MDC.put("seUrlNew", operation.seUrlNew);
-            log.info("Renaming storage element...");
+            log.info("Renaming storage element");
         }
         else {
             log.error("Cannot rename storage element");

@@ -94,7 +94,7 @@ public class DataTransferUser extends DataTransferBase {
 
         MDC.put("dest", destination);
 
-        log.info("Getting current user info...");
+        log.info("Getting current user info");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 

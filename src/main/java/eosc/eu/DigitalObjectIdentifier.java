@@ -75,7 +75,7 @@ public class DigitalObjectIdentifier {
      */
     private Uni<Boolean> getParser(String auth, ActionParameters params, String doi) {
 
-        log.debug("Selecting DOI parser...");
+        log.debug("Selecting DOI parser");
 
         if(null == doi || doi.isBlank()) {
             log.error("No DOI specified");
@@ -208,7 +208,7 @@ public class DigitalObjectIdentifier {
         MDC.put("doi", doi);
         MDC.put("depth", depth);
 
-        log.info("Parsing DOI...");
+        log.info("Parsing DOI");
 
         var params = new ActionParameters();
         Uni<Response> result = Uni.createFrom().nullItem()

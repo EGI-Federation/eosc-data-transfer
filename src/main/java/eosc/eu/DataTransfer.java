@@ -110,7 +110,7 @@ public class DataTransfer extends DataTransferBase {
 
         MDC.put("dest", destination);
 
-        log.info("Starting new data transfer...");
+        log.info("Starting new data transfer");
 
         // If authentication info is provided for the storage, embed it in every FTP destination URL
         if(null != storageAuth && !storageAuth.isBlank() && destination.equalsIgnoreCase(Destination.ftp.toString())) {
@@ -266,7 +266,7 @@ public class DataTransfer extends DataTransferBase {
         if(null != userDN && !userDN.isEmpty())
             MDC.put("filter.user_dn", userDN);
 
-        log.info("Finding data transfers matching criteria...");
+        log.info("Finding data transfers matching criteria");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -363,7 +363,7 @@ public class DataTransfer extends DataTransferBase {
         MDC.put("jobId", jobId);
         MDC.put("dest", destination);
 
-        log.info("Retrieving details of transfer...");
+        log.info("Retrieving details of transfer");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -442,7 +442,7 @@ public class DataTransfer extends DataTransferBase {
         MDC.put("fieldName", fieldName);
         MDC.put("dest", destination);
 
-        log.info("Retrieving field from transfer details...");
+        log.info("Retrieving field from transfer details");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
@@ -521,7 +521,7 @@ public class DataTransfer extends DataTransferBase {
         MDC.put("jobId", jobId);
         MDC.put("dest", destination);
 
-        log.info("Canceling transfer...");
+        log.info("Canceling transfer");
 
         Uni<Response> result = Uni.createFrom().nullItem()
 

@@ -84,6 +84,7 @@ public class StorageElement extends StorageElementBase {
     public StorageElement(ZenodoFile zf) {
         super("StorageElement", zf.filename);
         this.size = zf.filesize;
+        this.checksum = zf.checksum;
         this.mediaType = zf.getMediaType();
         this.accessUrl = zf.links.get("download");
         if(null != this.accessUrl && !this.accessUrl.isEmpty()) {
@@ -116,6 +117,7 @@ public class StorageElement extends StorageElementBase {
     public StorageElement(B2ShareFile b2sf) {
         super("StorageElement", b2sf.name);
         this.size = b2sf.size;
+        this.checksum = b2sf.checksum;
         this.mediaType = b2sf.getMediaType();
         this.accessUrl = b2sf.links.get("self");
 

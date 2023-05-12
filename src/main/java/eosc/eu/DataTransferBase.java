@@ -44,7 +44,7 @@ public class DataTransferBase {
      */
     protected boolean getTransferService(ActionParameters params) {
 
-        log.debug("Selecting transfer service...");
+        log.debug("Selecting transfer service");
 
         if (null != params.ts)
             return true;
@@ -54,7 +54,7 @@ public class DataTransferBase {
             return false;
         }
 
-        log.infof("Destination is <%s>", params.destination);
+        log.infof("Destination is %s", params.destination);
 
         var storageConfig = config.destinations().get(params.destination);
         if (null == storageConfig) {
@@ -80,7 +80,7 @@ public class DataTransferBase {
             if(params.ts.initService(serviceConfig)) {
                 var tsName = params.ts.getServiceName();
                 MDC.put("serviceName", tsName);
-                log.infof("Handled by <%s>", tsName);
+                log.infof("Handled by %s", tsName);
                 return true;
             }
         }

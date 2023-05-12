@@ -28,7 +28,13 @@ eosc:
         service: fts
         auth: keys
         protocol: s3
-        description: Amazon S3 compatible object storage
+        description: S3 compatible object storage
+      storm:
+        service: fts
+        auth: token
+        protocol: https
+        description: Storm
+        browse: true
     service:
       fts:
         name: EGI Data Transfer
@@ -92,7 +98,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.50
+    info-version: 1.1.51
   jackson:
     fail-on-unknown-properties: false
   http:

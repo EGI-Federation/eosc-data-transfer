@@ -52,7 +52,7 @@ a different authentication and/or authorization (than the one the transfer servi
 Thus, an additional set of credentials can be supplied to the endpoints in these groups
 via the HTTP header `Authorization-Storage`.
 
-> For example, for transfers to [EGI dCache](https://www.dcache.org), the configured transfer service
+> For example, for transfers to [dCache](https://www.dcache.org), the configured transfer service
 > that handles the transfers is [EGI Data Transfer](https://www.egi.eu/service/data-transfer/).
 > These both can use the same EGI Check-in access token, thus no additional credentials are needed
 > besides the access token for the transfer service, passed via the `Authorization` HTTP header.
@@ -168,7 +168,8 @@ a specific transfer service.
 Initially, the [EGI Data Transfer](https://docs.egi.eu/users/data/management/data-transfer/)
 is integrated into the EOSC Data Transfer API, supporting the following destination storages:
 
-- [EGI dCache](https://www.dcache.org)
+- [dCache](https://www.dcache.org)
+- [StoRM](https://italiangrid.github.io/storm)
 - [S3-compatible](https://en.wikipedia.org/wiki/Amazon_S3) object storages
 - [FTP servers](https://en.wikipedia.org/wiki/File_Transfer_Protocol)
 

@@ -33,7 +33,7 @@ eosc:
         service: fts
         auth: token
         protocol: https
-        description: Storm
+        description: StoRM
         browse: true
     service:
       fts:

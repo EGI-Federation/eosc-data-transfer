@@ -99,6 +99,7 @@ public class StorageElement extends StorageElementBase {
      * @param ef ESRF file
      * @param baseUrl The base URL for the access URL, as the ESRF file
      *                only contains the path to the file
+     * @param sessionId The ESRF session
      */
     public StorageElement(EsrfDataFile ef, String baseUrl, String sessionId) {
         super("StorageElement", ef.Datafile.name);

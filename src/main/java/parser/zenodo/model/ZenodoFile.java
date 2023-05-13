@@ -2,7 +2,6 @@ package parser.zenodo.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -26,6 +25,11 @@ public class ZenodoFile {
 
     public ZenodoFile() {}
 
+    /***
+     * Get the media type of this file.
+     * When media type is not available, try to guess it from the file extension.
+     * @return Media type
+     */
     public String getMediaType() {
         if(null == this.type || this.type.isEmpty()) {
             Pattern p = Pattern.compile(".*\\.([a-z0-9]+)$", Pattern.CASE_INSENSITIVE);

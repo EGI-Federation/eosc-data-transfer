@@ -82,11 +82,13 @@ public class StorageElement extends StorageElementBase {
      * @param zf Zenodo file
      */
     public StorageElement(ZenodoFile zf) {
-        super("StorageElement", zf.filename);
-        this.size = zf.filesize;
+        super("StorageElement", zf.key);
+        this.size = zf.size;
         this.checksum = zf.checksum;
         this.mediaType = zf.getMediaType();
         this.accessUrl = zf.links.get("download");
+        if(null == this.accessUrl)
+            this.accessUrl = zf.links.get("self");
         if(null != this.accessUrl && !this.accessUrl.isEmpty()) {
             this.downloadUrl = this.accessUrl + "?download=1";
         }

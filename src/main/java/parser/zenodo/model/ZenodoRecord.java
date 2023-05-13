@@ -14,11 +14,10 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ZenodoRecord {
 
-    public String title;
     public String id;
     public String doi;
     public Date created;
-    public Date modified;
+    public Date updated;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public ZenodoMetadata metadata;
@@ -31,9 +30,10 @@ public class ZenodoRecord {
     }
 
     public class ZenodoMetadata {
+        public String title;
+        public String description;
         public String version;
         public String access_right;
         public String language;
-        public String license;
     }
 }

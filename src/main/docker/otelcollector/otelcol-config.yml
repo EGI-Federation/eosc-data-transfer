@@ -27,6 +27,32 @@ exporters:
 
 processors:
   batch:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 1000
+    policies:
+#      - name: latency-policy
+#        type: latency
+#        latency:
+#          threshold_ms: 500
+#      - name: error-policy
+#        type: status_code
+#        status_code:
+#          status_codes: [ ERROR, UNSET ]
+      - name: filter-uri-policy
+        type: string_attribute
+        string_attribute:
+          key: uri
+          values: [ \/health, \/metrics, \/openapi, \/q/.+ ]
+          enabled_regex_matching: true
+          invert_match: true
+      - name: filter-target-policy
+        type: string_attribute
+        string_attribute:
+          key: http.target
+          values: [ \/health, \/metrics, \/openapi, \/q/.+ ]
+          enabled_regex_matching: true
+          invert_match: true
   attributes:
     # Adding a Loki label based on OTLP attribute "log.file.name" happens in two steps:
     actions:
@@ -46,14 +72,14 @@ service:
   extensions: [health_check]
   pipelines:
     traces:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [otlp]
+      receivers: [ otlp ]
+      processors: [ tail_sampling, batch ]
+      exporters: [ otlp ]
     metrics:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [prometheus]
+      receivers: [ otlp ]
+      processors: [ batch ]
+      exporters: [ prometheus ]
     logs:
-      receivers: [filelog]
-      processors: [attributes]
-      exporters: [loki]
+      receivers: [ filelog ]
+      processors: [ attributes, batch ]
+      exporters: [ loki ]

@@ -806,7 +806,7 @@
             "uid": "my-metrics"
           },
           "editorMode": "code",
-          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!~\"/metrics\"}[1m]))",
+          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\"}[1m]))",
           "legendFormat": "Requests",
           "range": true,
           "refId": "A"
@@ -940,7 +940,7 @@
             "uid": "my-metrics"
           },
           "editorMode": "code",
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\"}[2m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\"}[2m]))",
           "hide": false,
           "legendFormat": "Rate-1m",
           "range": true,
@@ -1046,7 +1046,7 @@
             "uid": "my-metrics"
           },
           "editorMode": "code",
-          "expr": "avg(http_server_requests_seconds{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\"})",
+          "expr": "avg(http_server_requests_seconds{job=\"$service\", instance=\"$instance\"})",
           "hide": false,
           "legendFormat": "Average",
           "range": true,
@@ -1059,7 +1059,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "max(http_server_requests_seconds{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\", quantile=\"0.95\"})",
+          "expr": "max(http_server_requests_seconds{job=\"$service\", instance=\"$instance\", quantile=\"0.95\"})",
           "hide": false,
           "legendFormat": "95th percentile",
           "queryType": "range",
@@ -1072,7 +1072,7 @@
             "uid": "my-metrics"
           },
           "editorMode": "code",
-          "expr": "max(http_server_requests_seconds_max{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\"})",
+          "expr": "max(http_server_requests_seconds_max{job=\"$service\", instance=\"$instance\"})",
           "hide": false,
           "legendFormat": "Maximum",
           "range": true,
@@ -1237,7 +1237,7 @@
             "uid": "my-metrics"
           },
           "editorMode": "code",
-          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\", outcome!=\"SUCCESS\"}[1m]))*100/sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!=\"/metrics\"}[1m]))",
+          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", outcome!=\"SUCCESS\"}[1m]))*100/sum(increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\"}[1m]))",
           "legendFormat": "Percent of requests failing",
           "range": true,
           "refId": "A"
@@ -1344,7 +1344,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by(status) (increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\", uri!~\"/metrics\"}[1m]))",
+          "expr": "sum by(status) (increase(http_server_requests_seconds_count{job=\"$service\", instance=\"$instance\"}[1m]))",
           "legendFormat": "HTTP Status {{status}}",
           "queryType": "range",
           "range": true,

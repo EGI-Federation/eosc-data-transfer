@@ -111,6 +111,9 @@ public class StorageElement extends StorageElementBase {
 
         if(null != ef.Datafile.modTime)
             this.modifiedAt = ef.Datafile.modTime;
+
+        if(null != ef.Datafile.dataset && null != ef.Datafile.dataset.name)
+            this.collection = ef.Datafile.dataset.name;
     }
 
     /**

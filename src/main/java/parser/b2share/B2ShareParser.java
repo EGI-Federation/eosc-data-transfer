@@ -200,6 +200,9 @@ public class B2ShareParser implements ParserService {
                 return Uni.createFrom().failure(new TransferServiceException("noFilesLink"));
             })
             .chain(bucket -> {
+                // Got bucket content
+                log.info("Got B2Share bucket");
+
                 // Build list of source files
                 StorageContent srcFiles = new StorageContent(bucket.contents.size());
                 for(var file : bucket.contents) {

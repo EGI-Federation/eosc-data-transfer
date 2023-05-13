@@ -38,5 +38,6 @@ public class EsrfDataFile {
         public Date modTime;
         public long fileSize;
         public String location;
+        public EsrfDataSet dataset;
     }
 }

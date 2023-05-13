@@ -1,7 +1,7 @@
 package parser.esrf;
 
-import eosc.eu.PortConfig;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import eosc.eu.PortConfig;
 import eosc.eu.ParsersConfig.ParserConfig;
 import eosc.eu.ParserService;
 import eosc.eu.TransferServiceException;
@@ -200,34 +201,42 @@ public class EsrfParser implements ParserService {
 
                 sessionId.set(session.sessionId);
 
-                // Get the dataset
+                // Get the datasets
                 return parser.getDataSetsAsync(sessionId.get(), this.authority, this.recordId);
             })
-            .chain(datasets -> {
+            .onItem().transformToMulti(datasets -> {
                 // Got dataset(s)
-                log.infof("Found %d datasets at DOI %s", datasets.size(), doi);
+                MDC.put("datasetCount", datasets.size());
+                log.info("Found datasets");
 
-                // Handle the first dataset, ignore the rest
-                var dataset = datasets.get(0);
-                log.infof("First dataset has ID %s", dataset.id);
-
-                return parser.getDataFilesAsync(sessionId.get(), dataset.id);
+                return Multi.createFrom().iterable(datasets);
             })
-            .chain(files -> {
-                // Got the files in the dataset
-                var session = sessionId.get();
-                StorageContent srcFiles = new StorageContent(files.size());
-                for(var file : files) {
-                    srcFiles.elements.add(new StorageElement(file, baseUrl, session));
-                }
+            .onItem().transformToUniAndConcatenate(dataset -> {
+                // Got a dataset
+                MDC.put("datasetId", dataset.id);
+                MDC.put("datasetName", dataset.name);
+                log.infof("Got dataset");
 
-                srcFiles.count = srcFiles.elements.size();
-
-                // Success
-                return Uni.createFrom().item(srcFiles);
+                // Fetch the files in the dataset
+                return parser.getDataFilesAsync(sessionId.get(), dataset.id);
             })
             .onFailure().invoke(e -> {
                 log.error("Failed to parse ESRF DOI");
+            })
+            .collect()
+            .in(StorageContent::new, (sc, files) -> {
+                // Got the files from a dataset
+                MDC.put("fileCount", files.size());
+                log.info("Got dataset files");
+
+                var session = sessionId.get();
+                for(var file : files) {
+                    sc.elements.add(new StorageElement(file, baseUrl, session));
+                }
+            })
+            .chain(sc -> {
+                sc.count = sc.elements.size();
+                return Uni.createFrom().item(sc);
             });
 
         return result;

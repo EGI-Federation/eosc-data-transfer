@@ -263,7 +263,7 @@ the API endpoints. See [here](#authentication-and-authorization) for details.
 
 #### 4. Add the new destinations in the enum of possible destination
 
-In the enum `DataTransferBase.Destination` add new values for each of the storage types
+In the enum `Transfer.Destination` add new values for each of the storage types
 you added in the previous step. Use the same values as the names of the keys.
 
 This way each entry under the node `eosc/transfer/destination` in the configuration

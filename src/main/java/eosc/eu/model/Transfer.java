@@ -78,6 +78,7 @@ public class Transfer {
     public enum Destination
     {
         dcache("dcache"),
+        storm("storm"),
         s3("s3"),
         ftp("ftp");
 

@@ -43,16 +43,16 @@ public class ParserHelper {
 
     /***
      * Convert canonical DOI to regular URL (with HTTPS schema)
-     * @param uri URI with "doi" schema (doi://...)
-     * @return URL to doi.org or the unchanged URI if it is not using the "doi" schema
+     * @param uri URN with "doi" schema (doi:...)
+     * @return URL to doi.org or the unchanged URN if it is not using the "doi" schema
      */
     private String doiToUrl(String uri) {
-        return uri.replace("doi://", "https://doi.org/");
+        return uri.replaceAll("^doi\\:", "https://doi.org/");
     }
 
     /***
      * Check if URI is being redirected
-     * @param uri URI to request, can start with doi://
+     * @param uri URI to request, can start with doi:
      * @return the URL where the passed in URI is redirected, null if not redirected
      */
     public Uni<String> checkRedirect(String uri) {

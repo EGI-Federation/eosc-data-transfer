@@ -87,12 +87,10 @@ public class StorageElement extends StorageElementBase {
         this.checksum = zf.checksum;
         this.mediaType = zf.getMediaType();
         this.accessUrl = zf.links.get("download");
-        if (null == this.accessUrl)
+        if(null == this.accessUrl)
             this.accessUrl = zf.links.get("self");
-        if (null != this.accessUrl && !this.accessUrl.isEmpty()) {
+        if(null != this.accessUrl && !this.accessUrl.isEmpty()) {
             this.downloadUrl = this.accessUrl + "?download=1";
-        } else {
-            this.downloadUrl = null; // Added this line to ensure downloadUrl is null when accessUrl is null or empty
         }
     }
 
@@ -108,19 +106,17 @@ public class StorageElement extends StorageElementBase {
         this.size = ef.Datafile.fileSize;
         this.accessUrl = ef.accessUrl(baseUrl, sessionId);
     
-        if (null != ef.Datafile.createTime)
+        if(null != ef.Datafile.createTime)
             this.createdAt = ef.Datafile.createTime;
     
-        if (null != ef.Datafile.modTime)
+        if(null != ef.Datafile.modTime)
             this.modifiedAt = ef.Datafile.modTime;
     
-        if (null != ef.Datafile.dataset && null != ef.Datafile.dataset.name)
+        if(null != ef.Datafile.dataset && null != ef.Datafile.dataset.name)
             this.collection = ef.Datafile.dataset.name;
     
-        if (null != this.accessUrl && !this.accessUrl.isEmpty()) {
+        if(null != this.accessUrl && !this.accessUrl.isEmpty()) {
             this.downloadUrl = this.accessUrl + "?download=1";
-        } else {
-            this.downloadUrl = null; // Added this line to ensure downloadUrl is null when accessUrl is null or empty
         }
     }
 
@@ -134,18 +130,12 @@ public class StorageElement extends StorageElementBase {
         this.checksum = b2sf.checksum;
         this.mediaType = b2sf.getMediaType();
         this.accessUrl = b2sf.links.get("self");
-    
-        if (null != b2sf.created)
+
+        if(null != b2sf.created)
             this.createdAt = b2sf.created;
-    
-        if (null != b2sf.modified)
+
+        if(null != b2sf.modified)
             this.modifiedAt = b2sf.modified;
-    
-        if (null != this.accessUrl && !this.accessUrl.isEmpty()) {
-            this.downloadUrl = this.accessUrl + "?download=1";
-        } else {
-            this.downloadUrl = null; // Added this line to ensure downloadUrl is null when accessUrl is null or empty
-        }
     }
 
     /**

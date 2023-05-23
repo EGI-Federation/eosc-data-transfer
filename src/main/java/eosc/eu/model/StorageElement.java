@@ -105,15 +105,14 @@ public class StorageElement extends StorageElementBase {
         super("StorageElement", ef.Datafile.name);
         this.size = ef.Datafile.fileSize;
         this.accessUrl = ef.accessUrl(baseUrl, sessionId);
-
         if(null != ef.Datafile.createTime)
             this.createdAt = ef.Datafile.createTime;
-
         if(null != ef.Datafile.modTime)
             this.modifiedAt = ef.Datafile.modTime;
-
         if(null != ef.Datafile.dataset && null != ef.Datafile.dataset.name)
             this.collection = ef.Datafile.dataset.name;
+        if(null != this.accessUrl && !this.accessUrl.isEmpty())
+            this.downloadUrl = this.accessUrl + "&download=1";
     }
 
     /**

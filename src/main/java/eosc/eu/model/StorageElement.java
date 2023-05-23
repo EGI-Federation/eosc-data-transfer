@@ -116,7 +116,7 @@ public class StorageElement extends StorageElementBase {
             this.collection = ef.Datafile.dataset.name;
     
         if(null != this.accessUrl && !this.accessUrl.isEmpty()) {
-            this.downloadUrl = this.accessUrl + "?download=1";
+            this.downloadUrl = this.accessUrl + "&download=1";
         }
     }
 

@@ -5,7 +5,8 @@ MAINTAINER Levente Farkas (levente.farkas@egi.eu)
 # Build-time environment variables specified by docker-compose.yml / .env
 ARG SERVICE_EMAIL
 ARG SERVICE_DOMAIN
-ARG SERVICE_URL
+ARG SERVICE_1
+ARG SERVICE_2
 ARG TELEMETRY_URL
 ARG GRAFANA_URL
 ARG CORS_ORIGINS
@@ -27,7 +28,7 @@ RUN apt-get -q -y update && \
 COPY ssl/ /etc/ssl-options
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY cert-nginx.conf /etc/nginx/conf.d/default.conf.template
-RUN envsubst '${DOMAIN}${SERVICE_URL}${GRAFANA_URL}${CORS_ORIGINS}${CORS_METHODS}${CORS_HEADERS}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && \
+RUN envsubst '${DOMAIN}${SERVICE_1}${SERVICE_2}${GRAFANA_URL}${CORS_ORIGINS}${CORS_METHODS}${CORS_HEADERS}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && \
     rm -f /etc/nginx/conf.d/default.conf.template && \
     rm -f /etc/nginx/sites-enabled/default && \
     mkdir -p /var/cache/nginx/proxycache && \

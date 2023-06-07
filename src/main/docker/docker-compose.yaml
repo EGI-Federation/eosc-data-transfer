@@ -23,14 +23,16 @@ services:
       args:
         - SERVICE_DOMAIN=${SERVICE_DOMAIN}
         - SERVICE_EMAIL=${SERVICE_EMAIL}
-        - SERVICE_URL=http://api:8081
+        - SERVICE_1=api-1:8081
+        - SERVICE_2=api-2:8081
         - GRAFANA_URL=http://grafana:3000
         - TELEMETRY_URL=${OTEL_COLLECTOR_ADDR}
         - CORS_ORIGINS=${CORS_ORIGINS:-.*}
         - CORS_HEADERS=${CORS_HEADERS:-Origin,Content-Type,Accept}
         - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
     links:
-      - api
+      - api-1
+      - api-2
       - grafana
     volumes:
       - certificates:/etc/letsencrypt
@@ -46,15 +48,15 @@ services:
       - "${TELEMETRY_PORT}:8080"
 
   # Data transfer service
-  api:
-    container_name: data-transfer-api
+  api-1:
+    container_name: data-transfer-api-1
     image: eosc/data-transfer-api:latest
     build:
       context: data-transfer/
     environment:
       - EOSC_TRANSFER_SERVICE_FTS_KEY_STORE_PASSWORD=${FTS_KEY_STORE_PASSWORD}
       - EOSC_TRANSFER_SERVICE_FTS_TRUST_STORE_PASSWORD=${FTS_TRUST_STORE_PASSWORD}
-      - QUARKUS_LOG_FILE_PATH=/deployments/logs/data-transfer.json
+      - QUARKUS_LOG_FILE_PATH=/deployments/logs/data-transfer-1.json
       - QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
       - QUARKUS_OPENTELEMETRY_TRACER_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.name=data-transfer
       - QUARKUS_HTTP_CORS_ORIGINS=/${CORS_ORIGINS:-.*}/
@@ -65,6 +67,28 @@ services:
     restart: unless-stopped
     ports:
       - "8081:8081"
+    depends_on:
+      - otelcol
+
+  api-2:
+    container_name: data-transfer-api-2
+    image: eosc/data-transfer-api:latest
+    build:
+      context: data-transfer/
+    environment:
+      - EOSC_TRANSFER_SERVICE_FTS_KEY_STORE_PASSWORD=${FTS_KEY_STORE_PASSWORD}
+      - EOSC_TRANSFER_SERVICE_FTS_TRUST_STORE_PASSWORD=${FTS_TRUST_STORE_PASSWORD}
+      - QUARKUS_LOG_FILE_PATH=/deployments/logs/data-transfer-2.json
+      - QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
+      - QUARKUS_OPENTELEMETRY_TRACER_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.name=data-transfer
+      - QUARKUS_HTTP_CORS_ORIGINS=/${CORS_ORIGINS:-.*}/
+      - QUARKUS_HTTP_CORS_HEADERS=${CORS_HEADERS:-Origin,Content-Type,Accept}
+      - QUARKUS_HTTP_CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
+    volumes:
+      - logs:/deployments/logs:rw
+    restart: unless-stopped
+    ports:
+      - "8082:8081"
     depends_on:
       - otelcol
 

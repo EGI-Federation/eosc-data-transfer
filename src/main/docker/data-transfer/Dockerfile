@@ -29,9 +29,9 @@ RUN mkdir /deployments/logs && \
     chmod a+rw /deployments/logs
 
 # If you want to include the debug port into your docker image
-# you will have to expose the debug port (default 5005) like this :  EXPOSE 8080 5005
+# you will have to expose the debug port (default 5005) like this :  EXPOSE 8081 5005
 
-EXPOSE 8080
+EXPOSE 8081
 USER 185
 
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"

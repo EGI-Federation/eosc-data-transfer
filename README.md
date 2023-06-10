@@ -117,8 +117,8 @@ public interface ParserService {
 When the API `GET /parser` is called to parse a DOI, all configured parsers will be tried,
 by calling the method `canParseDOI()`, until one is identified that can parse the DOI. If no
 parser can handle the DOI, the API fails. In case your implementation of the method
-`canParseDOI()` cannot determine if your parser can handle a DOI just from the URL,
-you can use the passed in `ParserHelper` to check if the URL redirects to the data
+`canParseDOI()` cannot determine if your parser can handle a DOI just from the URN,
+you can use the passed in `ParserHelper` to check if the URN redirects to the data
 repository you support.
 
 After a parser is identified, the methods `init()` and `parseDOI()` are called in order.

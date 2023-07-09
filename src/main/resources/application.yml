@@ -103,6 +103,8 @@ quarkus:
     fail-on-unknown-properties: false
   http:
     port: 8081
+    auth:
+      basic: false
     cors:
       ~: true
     proxy:

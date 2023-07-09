@@ -35,10 +35,10 @@ import eosc.eu.model.Transfer.Destination;
  */
 @Path("/")
 @SecuritySchemes(value = {
-    @SecurityScheme(securitySchemeName = "none"),
-    @SecurityScheme(securitySchemeName = "bearer",
-            type = SecuritySchemeType.HTTP,
-            scheme = "Bearer")} )
+        @SecurityScheme(securitySchemeName = "OIDC",
+                type = SecuritySchemeType.HTTP,
+                scheme = "bearer",
+                bearerFormat = "jwt")} )
 @Produces(MediaType.APPLICATION_JSON)
 public class DataTransferUser extends DataTransferBase {
 
@@ -64,7 +64,7 @@ public class DataTransferUser extends DataTransferBase {
      */
     @GET
     @Path("/user/info")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "getUserInfo",  summary = "Retrieve information about authenticated user")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
@@ -73,7 +73,7 @@ public class DataTransferUser extends DataTransferBase {
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",

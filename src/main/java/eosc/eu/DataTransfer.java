@@ -39,10 +39,10 @@ import eosc.eu.model.Transfer.Destination;
  */
 @Path("/")
 @SecuritySchemes(value = {
-    @SecurityScheme(securitySchemeName = "none"),
-    @SecurityScheme(securitySchemeName = "bearer",
-            type = SecuritySchemeType.HTTP,
-            scheme = "Bearer")} )
+        @SecurityScheme(securitySchemeName = "OIDC",
+                type = SecuritySchemeType.HTTP,
+                scheme = "bearer",
+                bearerFormat = "jwt")} )
 @Produces(MediaType.APPLICATION_JSON)
 public class DataTransfer extends DataTransferBase {
 
@@ -70,7 +70,7 @@ public class DataTransfer extends DataTransferBase {
      */
     @POST
     @Path("/transfers")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "startTransfer",  summary = "Initiate new transfer of multiple sets of files")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
@@ -80,7 +80,7 @@ public class DataTransfer extends DataTransferBase {
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
@@ -182,7 +182,7 @@ public class DataTransfer extends DataTransferBase {
      */
     @GET
     @Path("/transfers")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "findTransfers",  summary = "Find transfers matching search criteria",
                description = "To prevent heavy queries, only non-terminal (active) jobs are returned.\n" +
                              "If the _state_in_ filter is used, make sure to also provide either _limit_ " +
@@ -194,7 +194,7 @@ public class DataTransfer extends DataTransferBase {
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
@@ -329,7 +329,7 @@ public class DataTransfer extends DataTransferBase {
      */
     @GET
     @Path("/transfer/{jobId}")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "getTransferInfo",  summary = "Retrieve information about a transfer")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK",
@@ -341,7 +341,7 @@ public class DataTransfer extends DataTransferBase {
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
@@ -407,7 +407,7 @@ public class DataTransfer extends DataTransferBase {
      */
     @GET
     @Path("/transfer/{jobId}/{fieldName}")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "getTransferInfoField",
                summary = "Retrieve specific field from information about a transfer")
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
@@ -418,7 +418,7 @@ public class DataTransfer extends DataTransferBase {
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
@@ -485,7 +485,7 @@ public class DataTransfer extends DataTransferBase {
      */
     @DELETE
     @Path("/transfer/{jobId}")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "cancelTransfer",  summary = "Cancel a transfer",
                description = "Returns the canceled transfer with its current status " +
                              "(canceled or any other final status).")
@@ -499,7 +499,7 @@ public class DataTransfer extends DataTransferBase {
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",

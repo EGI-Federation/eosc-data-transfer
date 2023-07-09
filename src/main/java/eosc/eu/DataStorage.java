@@ -37,10 +37,10 @@ import org.jboss.resteasy.reactive.RestQuery;
  */
 @Path("/")
 @SecuritySchemes(value = {
-    @SecurityScheme(securitySchemeName = "none"),
-    @SecurityScheme(securitySchemeName = "bearer",
-            type = SecuritySchemeType.HTTP,
-            scheme = "Bearer")} )
+        @SecurityScheme(securitySchemeName = "OIDC",
+                type = SecuritySchemeType.HTTP,
+                scheme = "bearer",
+                bearerFormat = "jwt")} )
 @Produces(MediaType.APPLICATION_JSON)
 public class DataStorage extends DataTransferBase {
 
@@ -63,7 +63,6 @@ public class DataStorage extends DataTransferBase {
      */
     @GET
     @Path("/storage/types")
-    //@SecurityRequirement(name = "none")
     @Operation(operationId = "listSupportedStorages",  summary = "List all supported storage types")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
@@ -122,7 +121,6 @@ public class DataStorage extends DataTransferBase {
      */
     @GET
     @Path("/storage/info")
-    //@SecurityRequirement(name = "none")
     @Operation(operationId = "getStorageInfo",  summary = "Retrieve information about destination storage")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
@@ -198,7 +196,7 @@ public class DataStorage extends DataTransferBase {
      */
     @GET
     @Path("/storage/folder/list")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "listFolderContent",  summary = "List the content of a folder from a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
@@ -208,7 +206,7 @@ public class DataStorage extends DataTransferBase {
                          description = "Invalid parameters/configuration or the storage element is not a folder",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
@@ -290,7 +288,7 @@ public class DataStorage extends DataTransferBase {
      */
     @GET
     @Path("/storage/file")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "getFileInfo",  summary = "Retrieve information about a file in a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
@@ -299,12 +297,12 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                    schema = @Schema(implementation = ActionError.class))),
+                            schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                    schema = @Schema(implementation = ActionError.class))),
+                            schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Storage element not found",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
@@ -379,7 +377,7 @@ public class DataStorage extends DataTransferBase {
      */
     @GET
     @Path("/storage/folder")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "getFolderInfo",  summary = "Retrieve information about a folder in a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
@@ -388,7 +386,7 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
@@ -430,14 +428,14 @@ public class DataStorage extends DataTransferBase {
      */
     @POST
     @Path("/storage/folder")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "createFolder",  summary = "Create new folder in a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success"),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
@@ -514,7 +512,7 @@ public class DataStorage extends DataTransferBase {
      */
     @DELETE
     @Path("/storage/folder")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "deleteFolder",  summary = "Delete existing folder from a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success"),
@@ -522,7 +520,7 @@ public class DataStorage extends DataTransferBase {
                     description="Invalid parameters/configuration or storage element is not a folder",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
@@ -602,7 +600,7 @@ public class DataStorage extends DataTransferBase {
      */
     @DELETE
     @Path("/storage/file")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "deleteFile",  summary = "Delete existing file from a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success"),
@@ -610,7 +608,7 @@ public class DataStorage extends DataTransferBase {
                     description="Invalid parameters/configuration or storage element is not a file",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
@@ -690,7 +688,7 @@ public class DataStorage extends DataTransferBase {
      */
     @PUT
     @Path("/storage/file")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "renameFile",  summary = "Rename existing file in a storage system")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
@@ -698,7 +696,7 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",
@@ -790,7 +788,7 @@ public class DataStorage extends DataTransferBase {
      */
     @PUT
     @Path("/storage/folder")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "renameFolder",  summary = "Rename existing folder in a storage system")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
@@ -798,7 +796,7 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
-            @APIResponse(responseCode = "401", description="Not authorized",
+            @APIResponse(responseCode = "401", description="Authorization required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "403", description="Permission denied",

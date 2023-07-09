@@ -1,5 +1,6 @@
 package eosc.eu;
 
+import io.quarkus.security.Authenticated;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -35,10 +36,10 @@ import parser.ParserHelper;
 
 @Path("/")
 @SecuritySchemes(value = {
-    @SecurityScheme(securitySchemeName = "none"),
-    @SecurityScheme(securitySchemeName = "bearer",
+    @SecurityScheme(securitySchemeName = "OIDC",
             type = SecuritySchemeType.HTTP,
-            scheme = "Bearer")} )
+            scheme = "bearer",
+            bearerFormat = "jwt")} )
 @Produces(MediaType.APPLICATION_JSON)
 public class DigitalObjectIdentifier {
 
@@ -184,7 +185,7 @@ public class DigitalObjectIdentifier {
      */
     @GET
     @Path("/parser")
-    @SecurityRequirement(name = "bearer")
+    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "parse",  summary = "Extract source files from DOI")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",

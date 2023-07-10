@@ -1,15 +1,12 @@
 package eosc.eu;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
-import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
-import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
@@ -33,12 +30,7 @@ import eosc.eu.model.Transfer.Destination;
  * Class for user queries.
  * Dynamically selects the appropriate data transfer service, depending on the desired destination.
  */
-@Path("/")
-@SecuritySchemes(value = {
-        @SecurityScheme(securitySchemeName = "OIDC",
-                type = SecuritySchemeType.HTTP,
-                scheme = "bearer",
-                bearerFormat = "jwt")} )
+@Path("/user")
 @Produces(MediaType.APPLICATION_JSON)
 public class DataTransferUser extends DataTransferBase {
 
@@ -63,7 +55,7 @@ public class DataTransferUser extends DataTransferBase {
      * @return API Response, wraps an ActionSuccess(UserInfo) or an ActionError entity
      */
     @GET
-    @Path("/user/info")
+    @Path("/info")
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "getUserInfo",  summary = "Retrieve information about authenticated user")
     @APIResponses(value = {

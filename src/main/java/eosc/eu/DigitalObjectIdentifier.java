@@ -1,16 +1,12 @@
 package eosc.eu;
 
-import io.quarkus.security.Authenticated;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
-import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
-import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.tuples.Tuple2;
@@ -35,11 +31,6 @@ import parser.ParserHelper;
 
 
 @Path("/")
-@SecuritySchemes(value = {
-    @SecurityScheme(securitySchemeName = "OIDC",
-            type = SecuritySchemeType.HTTP,
-            scheme = "bearer",
-            bearerFormat = "jwt")} )
 @Produces(MediaType.APPLICATION_JSON)
 public class DigitalObjectIdentifier {
 

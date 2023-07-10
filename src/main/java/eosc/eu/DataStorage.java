@@ -35,12 +35,7 @@ import org.jboss.resteasy.reactive.RestQuery;
  * Class for operations and queries about files and folders.
  * Dynamically selects the appropriate data transfer service, depending on the desired destination.
  */
-@Path("/")
-@SecuritySchemes(value = {
-        @SecurityScheme(securitySchemeName = "OIDC",
-                type = SecuritySchemeType.HTTP,
-                scheme = "bearer",
-                bearerFormat = "jwt")} )
+@Path("/storage")
 @Produces(MediaType.APPLICATION_JSON)
 public class DataStorage extends DataTransferBase {
 
@@ -62,7 +57,7 @@ public class DataStorage extends DataTransferBase {
      * @return API Response, wraps an ActionSuccess(boolean) or an ActionError entity
      */
     @GET
-    @Path("/storage/types")
+    @Path("/types")
     @Operation(operationId = "listSupportedStorages",  summary = "List all supported storage types")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
@@ -120,7 +115,7 @@ public class DataStorage extends DataTransferBase {
      * @return API Response, wraps an ActionSuccess(boolean) or an ActionError entity
      */
     @GET
-    @Path("/storage/info")
+    @Path("/info")
     @Operation(operationId = "getStorageInfo",  summary = "Retrieve information about destination storage")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
@@ -195,7 +190,7 @@ public class DataStorage extends DataTransferBase {
      * @return API Response, wraps an ActionSuccess(StorageContent) or an ActionError entity
      */
     @GET
-    @Path("/storage/folder/list")
+    @Path("/folder/list")
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "listFolderContent",  summary = "List the content of a folder from a storage system")
     @APIResponses(value = {
@@ -287,7 +282,7 @@ public class DataStorage extends DataTransferBase {
      * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
      */
     @GET
-    @Path("/storage/file")
+    @Path("/file")
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "getFileInfo",  summary = "Retrieve information about a file in a storage system")
     @APIResponses(value = {
@@ -376,7 +371,7 @@ public class DataStorage extends DataTransferBase {
      * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
      */
     @GET
-    @Path("/storage/folder")
+    @Path("/folder")
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "getFolderInfo",  summary = "Retrieve information about a folder in a storage system")
     @APIResponses(value = {
@@ -427,7 +422,7 @@ public class DataStorage extends DataTransferBase {
      * @return API Response, wraps an ActionError entity in case of error
      */
     @POST
-    @Path("/storage/folder")
+    @Path("/folder")
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "createFolder",  summary = "Create new folder in a storage system")
     @APIResponses(value = {
@@ -511,7 +506,7 @@ public class DataStorage extends DataTransferBase {
      * @return API Response, wraps an ActionError entity in case of error
      */
     @DELETE
-    @Path("/storage/folder")
+    @Path("/folder")
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "deleteFolder",  summary = "Delete existing folder from a storage system")
     @APIResponses(value = {
@@ -599,7 +594,7 @@ public class DataStorage extends DataTransferBase {
      * @return API Response, wraps an ActionError entity in case of error
      */
     @DELETE
-    @Path("/storage/file")
+    @Path("/file")
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "deleteFile",  summary = "Delete existing file from a storage system")
     @APIResponses(value = {
@@ -687,7 +682,7 @@ public class DataStorage extends DataTransferBase {
      * @return API Response, wraps an ActionError entity in case of error
      */
     @PUT
-    @Path("/storage/file")
+    @Path("/file")
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "renameFile",  summary = "Rename existing file in a storage system")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -787,7 +782,7 @@ public class DataStorage extends DataTransferBase {
      * @return API Response, wraps an ActionError entity in case of error
      */
     @PUT
-    @Path("/storage/folder")
+    @Path("/folder")
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "renameFolder",  summary = "Rename existing folder in a storage system")
     @Consumes(MediaType.APPLICATION_JSON)

@@ -4,14 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
-import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
-import org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
@@ -38,11 +35,6 @@ import eosc.eu.model.Transfer.Destination;
  * Dynamically selects the appropriate data transfer service, depending on the desired destination.
  */
 @Path("/")
-@SecuritySchemes(value = {
-        @SecurityScheme(securitySchemeName = "OIDC",
-                type = SecuritySchemeType.HTTP,
-                scheme = "bearer",
-                bearerFormat = "jwt")} )
 @Produces(MediaType.APPLICATION_JSON)
 public class DataTransfer extends DataTransferBase {
 

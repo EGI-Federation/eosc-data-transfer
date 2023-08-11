@@ -91,14 +91,14 @@ quarkus:
         ignore-patterns: /metrics
   swagger-ui:
     always-include: true
-    path: swagger-ui
+    path: /swagger-ui
     theme: flattop
     urls:
       default: /openapi
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.58
+    info-version: 1.1.60
     security-scheme-name: OIDC
     security-scheme-description: OpenID Connect access token issued by EGI Check-In
     security-scheme: jwt

@@ -431,8 +431,12 @@ public class EgiDataTransfer implements TransferService {
                     // Get a list of all S3 destination storage hostnames
                     var destinations = transfer.allDestinationStorages(Transfer.Destination.s3.toString());
                     var destinationsHttps = transfer.allDestinationStorages(Transfer.Destination.s3s.toString());
-                    if(null != destinations && null != destinationsHttps)
-                        destinations.addAll(destinationsHttps);
+                    if(null != destinations) {
+                        if(null != destinationsHttps)
+                            destinations.addAll(destinationsHttps);
+                    }
+                    else if(null != destinationsHttps)
+                        destinations = destinationsHttps;
 
                     if(null == destinations)
                         // Some destination URL is invalid, abort

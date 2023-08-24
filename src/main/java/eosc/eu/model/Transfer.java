@@ -46,7 +46,7 @@ public class Transfer {
                 try {
                     URI uri = new URI(destUrl);
                     String proto = uri.getScheme();
-                    if(proto.equalsIgnoreCase(Destination.s3.toString()))
+                    if(proto.equalsIgnoreCase(Destination.s3.toString()) || proto.equalsIgnoreCase(Destination.s3s.toString()))
                         this.params.setS3Destinations(true);
 
                     if(null != protocol && !proto.equalsIgnoreCase(protocol))
@@ -80,6 +80,7 @@ public class Transfer {
         dcache("dcache"),
         storm("storm"),
         s3("s3"),
+        s3s("s3s"),
         ftp("ftp");
 
         // TODO: Keep in sync with supported destinations in configuration file

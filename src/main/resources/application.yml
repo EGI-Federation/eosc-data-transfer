@@ -29,6 +29,11 @@ eosc:
         auth: keys
         protocol: s3
         description: S3 compatible object storage
+      s3s:
+        service: fts
+        auth: keys
+        protocol: s3s
+        description: S3 compatible object storage over HTTPS
       storm:
         service: fts
         auth: token
@@ -98,7 +103,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.60
+    info-version: 1.1.61
     security-scheme-name: OIDC
     security-scheme-description: OpenID Connect access token issued by EGI Check-In
     security-scheme: jwt

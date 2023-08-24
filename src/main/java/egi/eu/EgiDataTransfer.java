@@ -430,6 +430,10 @@ public class EgiDataTransfer implements TransferService {
                 if(null != storageAuth && !storageAuth.isBlank()) {
                     // Get a list of all S3 destination storage hostnames
                     var destinations = transfer.allDestinationStorages(Transfer.Destination.s3.toString());
+                    var destinationsHttps = transfer.allDestinationStorages(Transfer.Destination.s3s.toString());
+                    if(null != destinations && null != destinationsHttps)
+                        destinations.addAll(destinationsHttps);
+
                     if(null == destinations)
                         // Some destination URL is invalid, abort
                         return Uni.createFrom().failure(new TransferServiceException("urlInvalid",

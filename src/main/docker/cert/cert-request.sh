@@ -4,7 +4,7 @@ if [ ! -f /var/www/html ]; then
     mkdir -p /var/www/html
 fi
 
-if [ -n "$DOMAIN" ] && [ "$DOMAIN" != "localhost" ]; then
+if [ -n "$DOMAIN" ] && [ "$DOMAIN" != "localhost" ] && [ "$DOMAIN" != "test.local" ]; then
 	certbot certonly \
 			--config-dir ${LETSENCRYPT_DIR:-/etc/letsencrypt} \
 			--dry-run \

@@ -117,6 +117,8 @@ quarkus:
       basic: false
     cors:
       ~: true
+      headers: Authorization,Accept,Content-Type
+      methods: HEAD,GET,POST,PUT,DELETE,OPTIONS
     proxy:
       proxy-address-forwarding: true
       allow-x-forwarded: true

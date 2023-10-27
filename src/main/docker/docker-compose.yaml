@@ -3,7 +3,6 @@ version: '3.3'
 
 networks:
   default:
-    name: eosc
     driver: bridge
 
 volumes:
@@ -38,7 +37,6 @@ services:
       - certificates:/etc/letsencrypt
     healthcheck:
       test: ['CMD', '/opt/status.sh']
-      start_period: 30s
       interval: 1m
       timeout: 5s
     restart: unless-stopped

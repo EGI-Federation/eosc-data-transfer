@@ -57,7 +57,8 @@ public class ParserHelper {
      */
     public Uni<String> checkRedirect(String uri) {
 
-        var result = client.headAbs(doiToUrl(uri))
+        final var url = doiToUrl(uri);
+        var result = client.headAbs(url)
             .send()
             .chain(resp -> {
                 var redirects = resp.followedRedirects();
@@ -85,7 +86,8 @@ public class ParserHelper {
      */
     public Uni<Tuple2<String, MultiMap>> fetchHeaders(String uri) {
 
-        var result = client.headAbs(doiToUrl(uri))
+        final var url = doiToUrl(uri);
+        var result = client.headAbs(url)
             .send()
             .chain(resp -> {
                 var urlTarget = uri;
@@ -114,7 +116,8 @@ public class ParserHelper {
      */
     public Uni<StorageContent> fetchLinkset(String uri) {
 
-        var result = client.getAbs(doiToUrl(uri))
+        final var url = doiToUrl(uri);
+        var result = client.getAbs(url)
             .send()
             .onItem().transform(resp -> resp.bodyAsJsonObject())
             .chain(json -> {

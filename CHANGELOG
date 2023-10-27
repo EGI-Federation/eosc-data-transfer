@@ -5,8 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-- Add OpenTelemetry support
+## [1.1.65]
+- Workaround Zenodo redirecting to invalid relative URL
+
+## [1.1.63]
+- Added support for S3S
+- Moved Swagger-UI to the root, path is now /swagger-ui
+
+## [1.1.58]
+- Fix authentication schemes in Swagger-UI
+
+## [1.1.53]
+- API now accepts DOIs in correct canonical format
+- Missing downloadUrl field for files in ESRF data records
+
+## [1.1.52]
+- Zenodo parser does not return checksum algorithm
+- ESRF parser only returns first dataset in record
+
+## [1.1.51]
+- Add support for transfers to grid storage StoRM
+- Implement trace sampling
+
+## [1.1.50]
+- Implement structured logging
+- Upgrade to Quarkus 3
+
+## [1.1.46]
+- Parsers can now return file checksums in the form algorithm:checksum
+- Parsers can mark returned files as not available, it's up to clients to decide whether or not to attempt to
+  transfer these
+- Parsers can group returned files into collections (file sets), and/or can return the original path of a file
+  in the data record, allowing reconstruction of the folder hierarchy at the destination
+- Documented Java17 dependency and fixed some typos
+
+## [1.1.44]
+- Endpoint /parser should accept canonical DOI format
+- Added valid example DOI for endpoint /parser
+- Fix accessUrl of parsed ESRF files
+- Create/modified date times of parsed ESRF files incorrect
+
+## [1.1.41]
+- Implemented ESRF parsing
+
+## [1.1.40]
+- Handle (and hide) timeouts and 500 errors when registering new S3 hosts with FTS
 
 ## [1.0.18]
 - Added truststore for EGI Data Transfer

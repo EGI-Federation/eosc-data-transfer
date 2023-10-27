@@ -132,13 +132,13 @@ public class ZenodoParser implements ParserService {
                 }
 
                 // Validate URL
-                Pattern p = Pattern.compile("^https?://([\\w\\.]*zenodo.org)/(record|api/records)/(\\d+)",
+                Pattern p = Pattern.compile("^(?:https?://[\\w\\.]*zenodo.org)?/(records?|api/records)/(\\d+)",
                                             Pattern.CASE_INSENSITIVE);
                 Matcher m = p.matcher(redirectedToUrl);
                 boolean isSupported = m.matches();
 
                 if(isSupported) {
-                    this.recordId = m.group(3);
+                    this.recordId = m.group(2);
                     MDC.put("recordId", this.recordId);
                     MDC.put("doiType", this.id);
                 }

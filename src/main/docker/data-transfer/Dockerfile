@@ -16,7 +16,7 @@ RUN mvn package --define skipTests
 #
 # 2.--- Build container  --------------------------------------------------
 #
-FROM registry.access.redhat.com/ubi8/openjdk-17:1.11
+FROM registry.access.redhat.com/ubi8/openjdk-17:1.17
 
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
 

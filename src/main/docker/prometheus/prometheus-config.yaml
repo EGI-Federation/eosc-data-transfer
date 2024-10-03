@@ -14,5 +14,4 @@ scrape_configs:
 - job_name: data-transfer
   static_configs:
   - targets:
-    - 'api-1:8081'
-    - 'api-2:8081'
+    - 'api:8081'

@@ -10,7 +10,7 @@ RUN git clone --single-branch https://github.com/EGI-Federation/eosc-data-transf
     chmod a+x mvnw.sh
 
 # Build app
-RUN mvn package --define skipTests
+RUN mvn package
 
 
 #

@@ -27,14 +27,15 @@ jobs:
         cache: maven
         
     - name: Build with Maven
-    - run: mvn -B package --file pom.xml
-    - run: mkdir staging && 
-           cp target/quarkus-app/*.jar staging/ && \
-           cp target/quarkus-app/lib/ staging/lib/ && \
-           cp target/quarkus-app/app/ staging/app/ && \
-           cp target/quarkus-app/quarkus/ staging/quarkus/
-    - run: mkdir staging/logs && \
-           chmod a+rw staging/logs
+      run: mvn -B package --file pom.xml
+  
+    - run: mkdir staging
+    - run: mkdir staging/logs
+    - run: cp target/quarkus-app/*.jar staging/
+    - run: cp target/quarkus-app/lib/ staging/lib/
+    - run: cp target/quarkus-app/app/ staging/app/
+    - run: cp target/quarkus-app/quarkus/ staging/quarkus/
+    - run: mkdir staging/logs
     - uses: actions/upload-artifact@v4
       with:
         name: Package

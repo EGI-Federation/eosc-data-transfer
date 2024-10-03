@@ -23,7 +23,8 @@ The API covers three sets of functionalities:
 - [Managing storage elements](#managing-storage-elements)
 
 This project uses [Quarkus](https://quarkus.io), the Supersonic Subatomic Java Framework.
-It requires [Java 17](https://openjdk.org/projects/jdk/17/).
+It requires [Java 17](https://openjdk.org/projects/jdk/17/) and
+Quarkus [tooling](https://quarkus.io/guides/cli-tooling).
 
 
 ## Authentication and authorization

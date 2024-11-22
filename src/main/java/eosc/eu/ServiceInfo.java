@@ -62,19 +62,17 @@ public class ServiceInfo {
 
     /**
      * Parse Digital Object Identifier at specified URL and return list of files.
-     * @param auth  Optional access token for accessing the data repository.
      * @return API Response, wraps an ActionSuccess or an ActionError entity
      */
     @GET
     @Path("/version")
-    @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "version",  summary = "Return service version information")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
                     content = @Content(mediaType = MediaType.TEXT_PLAIN,
                     schema = @Schema(implementation = String.class))),
     })
-    public Uni<Response> getVersion(@RestHeader(HttpHeaders.AUTHORIZATION) String auth) {
+    public Uni<Response> version() {
 
         log.info("Querying version");
 

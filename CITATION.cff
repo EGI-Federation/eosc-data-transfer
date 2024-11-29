@@ -8,5 +8,5 @@ title: "EOSC Data Transfer API"
 version: 1.1.69
 identifiers:
   - type: doi
-    value: https://doi.org/10.5281/zenodo.7925514
+    value: 10.5281/zenodo.7925514
 date-released: 2024-11-29

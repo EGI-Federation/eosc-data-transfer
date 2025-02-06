@@ -20,9 +20,6 @@ public class TransferPayload {
     @Schema(description="Multiple destinations where to transfer the file")
     public List<String> destinations;
 
-    @Schema(description="Transfer priority for this file, from 1 to 5, 1 being the lowest priority")
-    public int priority = 0;
-
     @Schema(description="User defined checksum in the form 'algorithm:value'")
     public String checksum;
 

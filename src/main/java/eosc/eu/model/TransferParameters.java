@@ -21,16 +21,6 @@ public class TransferParameters {
     @Schema(description="Transfer priority from 1 to 5, 1 being the lowest priority")
     public int priority;
 
-    @Schema(description="Disable all checks, just copy the file")
-    public boolean strictCopy = false;
-
-    @Schema(description="Force IPv4 if the underlying protocol supports it")
-    public boolean ipv4 = false;
-
-    @Schema(description="Force IPv6 if the underlying protocol supports it")
-    public boolean ipv6 = false;
-
-
     /**
      * Constructor
      */

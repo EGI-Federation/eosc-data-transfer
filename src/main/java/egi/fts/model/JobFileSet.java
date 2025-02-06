@@ -22,12 +22,8 @@ public class JobFileSet {
     // Multiple destination where to transfer the same file
     public List<String> destinations;
 
-    @Schema(title="Overrides transfer priority for this set of files, from 1 to 5, 1 being the lowest priority")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public int priority = 0;
-
     @Schema(title="User defined checksum in the form 'algorithm:value'")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String checksum;
 
 
@@ -47,5 +43,8 @@ public class JobFileSet {
         this.destinations = new ArrayList<>(payload.destinations.size());
         this.sources.addAll(payload.sources);
         this.destinations.addAll(payload.destinations);
+
+        if(null != payload.checksum)
+            this.checksum = payload.checksum;
     }
 }

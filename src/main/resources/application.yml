@@ -79,10 +79,14 @@ quarkus:
       json:
         ~: true
   otel:
+    logs:
+      enabled: false
     exporter:
       otlp:
         traces:
           endpoint: http://localhost:4317
+      logs:
+          endpoint: http://localhost:3100
   micrometer:
     enabled: true
     export:
@@ -102,7 +106,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.69
+    info-version: 1.1.70
     security-scheme-name: OIDC
     security-scheme-description: OpenID Connect access token issued by EGI Check-In
     security-scheme: jwt

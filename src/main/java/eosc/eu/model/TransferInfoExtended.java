@@ -69,15 +69,6 @@ public class TransferInfoExtended extends TransferInfo {
     public Optional<Integer> maxTimeInQueue;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Optional<Integer> copyPinLifetime;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Optional<Integer> bringOnline;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Optional<Integer> targetQOS;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description="True if transfer was canceled")
     public Optional<Boolean> cancel;
 
@@ -93,9 +84,6 @@ public class TransferInfoExtended extends TransferInfo {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Schema(description="Date and time when transfer ended", example = "2022-10-15T20:14:22")
     public Date finishedAt;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String status; // "200 OK"
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String reason;
@@ -133,20 +121,17 @@ public class TransferInfoExtended extends TransferInfo {
         this.destination_space_token = jie.space_token;
 
         this.verifyChecksum = jie.verify_checksum;
-        this.overwrite = jie.overwrite_flag;
+
+        this.overwrite = jie.job_finished.isPresent() ? Optional.of(jie.overwrite_flag.get().equals("Y")) : Optional.empty();
         this.priority = jie.priority;
         this.retry = jie.retry;
         this.retryDelay = jie.retry_delay;
         this.maxTimeInQueue = jie.max_time_in_queue;
-        this.copyPinLifetime = jie.copy_pin_lifetime;
-        this.bringOnline = jie.bring_online;
-        this.targetQOS = jie.target_qos;
         this.cancel = jie.cancel_job;
 
         this.submittedAt = jie.submit_time;
         this.submittedTo = jie.submit_host;
-        this.finishedAt = jie.job_finished;
-        this.status = jie.http_status;
+        this.finishedAt = jie.job_finished.isPresent() ? jie.job_finished.get() : null;
         this.reason = jie.reason;
 
         this.vo_name = jie.vo_name;

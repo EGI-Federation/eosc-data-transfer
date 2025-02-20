@@ -81,12 +81,12 @@ quarkus:
   otel:
     logs:
       enabled: false
-    exporter:
-      otlp:
-        traces:
-          endpoint: http://localhost:4317
-      logs:
-          endpoint: http://localhost:3100
+#    exporter:
+#      otlp:
+#        traces:
+#          endpoint: http://localhost:4317
+#      logs:
+#          endpoint: http://localhost:3100
   micrometer:
     enabled: true
     export:

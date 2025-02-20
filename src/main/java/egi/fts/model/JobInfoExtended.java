@@ -37,13 +37,10 @@ public class JobInfoExtended extends JobInfo {
     public String space_token;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Optional<Boolean> dst_file_report;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String verify_checksum; // "b" or "n"
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Optional<Boolean> overwrite_flag;
+    public Optional<String> overwrite_flag;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Optional<Integer> priority;
@@ -58,28 +55,16 @@ public class JobInfoExtended extends JobInfo {
     public Optional<Integer> max_time_in_queue;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Optional<Integer> copy_pin_lifetime;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Optional<Integer> bring_online;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Optional<Integer> target_qos;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Optional<Boolean> cancel_job;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public Date job_finished;
+    public Optional<Date> job_finished;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public Date submit_time;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String submit_host;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String http_status; // "200 OK"
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String reason;
@@ -103,9 +88,7 @@ public class JobInfoExtended extends JobInfo {
         retry = Optional.empty();
         retry_delay = Optional.empty();
         max_time_in_queue = Optional.empty();
-        copy_pin_lifetime = Optional.empty();
-        bring_online = Optional.empty();
-        target_qos = Optional.empty();
         cancel_job = Optional.empty();
+        job_finished = Optional.empty();
     }
 }

@@ -4,16 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.ws.rs.core.Response;
-import java.util.Optional;
 
 
 /**
- * Details of a destination storage type
+ * Details of a transfer destination
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class StorageInfo {
+public class DestinationInfo {
 
-    public String kind = "StorageInfo";
+    public String kind = "DestinationInfo";
     public String destination;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -25,17 +24,17 @@ public class StorageInfo {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String protocol;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Optional<Boolean> canBrowse;
-
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String transferWith;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String browseWith;
 
 
     /**
      * Constructor
      */
-    public StorageInfo(String destination, String authType, String protocol, String description) {
+    public DestinationInfo(String destination, String authType, String protocol, String description) {
         this.destination = destination;
         this.authType = authType;
         this.protocol = protocol;
@@ -45,12 +44,13 @@ public class StorageInfo {
     /**
      * Extended constructor
      */
-    public StorageInfo(String destination, String authType, String protocol, boolean canBrowse, String transferWith, String description) {
+    public DestinationInfo(String destination, String authType, String protocol,
+                           String transferWith, String browseWith, String description) {
         this.destination = destination;
         this.authType = authType;
         this.protocol = protocol;
-        this.canBrowse = Optional.of(canBrowse);
         this.transferWith = transferWith;
+        this.browseWith = browseWith;
         this.description = description;
     }
 

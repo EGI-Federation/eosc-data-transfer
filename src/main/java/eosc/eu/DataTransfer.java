@@ -1,7 +1,5 @@
 package eosc.eu;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -13,10 +11,13 @@ import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.micrometer.core.instrument.MeterRegistry;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
@@ -39,9 +40,6 @@ import eosc.eu.model.Transfer.Destination;
 public class DataTransfer extends DataTransferBase {
 
     private static final Logger log = Logger.getLogger(DataTransfer.class);
-
-    @Inject
-    TransfersConfig config;
 
     @Inject
     MeterRegistry registry;

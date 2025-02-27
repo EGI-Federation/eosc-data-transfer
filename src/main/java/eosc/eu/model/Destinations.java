@@ -5,21 +5,21 @@ import java.util.ArrayList;
 
 
 /**
- * Collection of all supported destination storage types
+ * Collection of all supported destinations
  */
-public class StorageTypes extends ArrayList<StorageInfo> {
+public class Destinations extends ArrayList<DestinationInfo> {
 
     /***
      * Constructor
      */
-    public StorageTypes() {
+    public Destinations() {
         super();
     }
 
     /***
      * Construct with specified capacity
      */
-    public StorageTypes(int initialCapacity) {
+    public Destinations(int initialCapacity) {
         super(initialCapacity);
     }
 

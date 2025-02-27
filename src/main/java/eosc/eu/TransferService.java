@@ -4,7 +4,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.ws.rs.core.Response;
 
 import eosc.eu.model.*;
-import eosc.eu.TransfersConfig.TransferServiceConfig;
+import eosc.eu.TransfersStoragesConfig.TransferServiceConfig;
 
 
 /***
@@ -92,58 +92,4 @@ public interface TransferService {
      */
     Uni<TransferInfoExtended> cancelTransfer(String tsAuth, String jobId);
 
-    /**
-     * List all files and sub-folders in a folder.
-     * @param tsAuth The access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param folderUrl The link to the folder to list content of.
-     * @return List of the folder content.
-     */
-    Uni<StorageContent> listFolderContent(String tsAuth, String storageAuth, String folderUrl);
-
-    /**
-     * Get the details of a file or folder.
-     * @param tsAuth The access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param seUrl The link to the file or folder to det details of.
-     * @return Details about the storage element.
-     */
-    Uni<StorageElement> getStorageElementInfo(String tsAuth, String storageAuth, String seUrl);
-
-    /**
-     * Create new folder.
-     * @param tsAuth The access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param folderUrl The link to the folder to create.
-     * @return Confirmation message.
-     */
-    Uni<String> createFolder(String tsAuth, String storageAuth, String folderUrl);
-
-    /**
-     * Delete existing folder.
-     * @param tsAuth The access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param folderUrl The link to the folder to delete.
-     * @return Confirmation message.
-     */
-    Uni<String> deleteFolder(String tsAuth, String storageAuth, String folderUrl);
-
-    /**
-     * Delete existing file.
-     * @param tsAuth The access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param fileUrl The link to the file to delete.
-     * @return Confirmation message.
-     */
-    Uni<String> deleteFile(String tsAuth, String storageAuth, String fileUrl);
-
-    /**
-     * Rename a folder or file.
-     * @param tsAuth The access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param seOld The link to the storage element to rename.
-     * @param seNew The link to the new name/location of the storage element.
-     * @return Confirmation message.
-     */
-    Uni<String> renameStorageElement(String tsAuth, String storageAuth, String seOld, String seNew);
 }

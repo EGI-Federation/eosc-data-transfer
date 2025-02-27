@@ -38,7 +38,7 @@ import egi.fts.model.*;
 import egi.fts.model.UserInfo;
 import egi.fts.FileTransferService;
 import eosc.eu.model.*;
-import eosc.eu.TransfersConfig.TransferServiceConfig;
+import eosc.eu.TransfersStoragesConfig.TransferServiceConfig;
 
 
 /***

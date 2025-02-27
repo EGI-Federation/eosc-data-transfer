@@ -12,32 +12,36 @@ import java.util.Optional;
  * The configuration of the supported storage types and the transfer services that will handle them
  */
 @ConfigMapping(prefix = "eosc.transfer")
-public interface TransfersConfig {
+public interface TransfersStoragesConfig {
 
-    // Selects a service based on the destination
+    // Selects a service (and optionally a storage system) based on the destination
     @WithName("destination")
-    Map<String, DataStorageConfig> destinations();
+    Map<String, DestinationConfig> destinations();
 
     // Contains the details of each specific transfer service
     @WithName("service")
     Map<String, TransferServiceConfig> services();
 
+    // Contains the details of each supported storage system type
+    @WithName("storage")
+    Map<String, StorageSystemConfig> storages();
+
 
     /***
      * The configuration of a storage system
      */
-    interface DataStorageConfig {
+    interface DestinationConfig {
 
         @WithName("service")
         String serviceId(); // Transfer service that handles transfers to storages of this type
+
+        @WithName("storage")
+        Optional<String> storageId(); // Storage system that can handle manipulating storage elements
 
         @WithName("auth")
         String authType();
 
         String protocol();
-
-        @WithDefault("false")
-        boolean browse();
 
         Optional<String> description();
     }
@@ -66,5 +70,15 @@ public interface TransfersConfig {
 
         @WithName("key-store-password")
         Optional<String> keyStorePassword();
+    }
+
+    /***
+     * The configuration of a storage system type where storage element manipulation is supported
+     */
+    interface StorageSystemConfig {
+        String name();
+
+        @WithName("class")
+        String className();
     }
 }

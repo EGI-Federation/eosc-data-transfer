@@ -16,6 +16,7 @@ public class ActionParameters {
 
     public ParserService parser;
     public TransferService ts;
+    public StorageService ss;
     public String destination;  // Destination key
     public Response response;
 
@@ -41,6 +42,7 @@ public class ActionParameters {
     public ActionParameters(ActionParameters ap) {
         this.parser = ap.parser;
         this.ts = ap.ts;
+        this.ss = ap.ss;
         this.destination = ap.destination;
         this.response = ap.response;
     }

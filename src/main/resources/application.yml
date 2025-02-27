@@ -23,9 +23,9 @@ eosc:
         auth: token
         protocol: https
         description: dCache
-        browse: true
       s3:
         service: fts
+        #storage: s3
         auth: keys
         protocol: s3
         description: S3 compatible object storage
@@ -39,7 +39,6 @@ eosc:
         auth: token
         protocol: https
         description: StoRM
-        browse: true
     service:
       fts:
         name: EGI Data Transfer
@@ -54,6 +53,10 @@ eosc:
         # Check-in token.
         key-store-file: fts-keystore.jks
         key-store-password: password
+    storage:
+#      s3:
+#        name: S3 compatible object storage system
+#        class: egi.eu.S3Storage
   qos:
     quantiles: [0.95]
     slos: [500] # SLOs expressed in milliseconds
@@ -106,7 +109,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.70
+    info-version: 1.1.71
     security-scheme-name: OIDC
     security-scheme-description: OpenID Connect access token issued by EGI Check-In
     security-scheme: jwt

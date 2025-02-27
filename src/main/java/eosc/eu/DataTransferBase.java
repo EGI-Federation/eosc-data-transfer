@@ -1,10 +1,10 @@
 package eosc.eu;
 
 import eosc.eu.model.Transfer;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 
-import jakarta.inject.Inject;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -18,14 +18,14 @@ public class DataTransferBase {
 
     public static final String DEFAULT_DESTINATION = "dcache";
     public static final String HEADER_STORAGE_AUTH = "Authorization-Storage";
-    public static final String DESTINATION_STORAGE = "The destination storage";
+    public static final String DESTINATION_STORAGE = "The destination of a transfer";
     public static final String STORAGE_AUTH = "Optional credentials for the destination storage, " +
                                               "Base-64 encoded 'user:password' or 'access-key:secret-key'";
 
-    @Inject
-    protected TransfersConfig config;
+    private final Logger log;
 
-    private Logger log;
+    @Inject
+    protected TransfersStoragesConfig config;
 
 
     /***
@@ -35,6 +35,7 @@ public class DataTransferBase {
     public DataTransferBase(Logger log) {
         this.log = log;
     }
+
 
     /**
      * Prepare REST client for the appropriate data transfer service, based on the destination
@@ -49,21 +50,21 @@ public class DataTransferBase {
         if (null != params.ts)
             return true;
 
-        if(null == params.destination || params.destination.isEmpty()) {
+        if (null == params.destination || params.destination.isEmpty()) {
             log.error("No destination specified");
             return false;
         }
 
         log.infof("Destination is %s", params.destination);
 
-        var storageConfig = config.destinations().get(params.destination);
-        if (null == storageConfig) {
+        var destinationConfig = config.destinations().get(params.destination);
+        if (null == destinationConfig) {
             // Unsupported destination
-            log.error("No transfer service configured for this destination");
+            log.error("No configuration for this destination");
             return false;
         }
 
-        var tsID = storageConfig.serviceId();
+        var tsID = destinationConfig.serviceId();
         MDC.put("serviceId", tsID);
 
         var serviceConfig = config.services().get(tsID);
@@ -80,7 +81,83 @@ public class DataTransferBase {
             if(params.ts.initService(serviceConfig)) {
                 var tsName = params.ts.getServiceName();
                 MDC.put("serviceName", tsName);
-                log.infof("Handled by %s", tsName);
+                log.infof("Transfers handled by %s", tsName);
+                return true;
+            }
+        }
+        catch (ClassNotFoundException e) {
+            log.error(e.getMessage());
+        }
+        catch (NoSuchMethodException e) {
+            log.error(e.getMessage());
+        }
+        catch (InstantiationException e) {
+            log.error(e.getMessage());
+        }
+        catch (InvocationTargetException e) {
+            log.error(e.getMessage());
+        }
+        catch (IllegalAccessException e) {
+            log.error(e.getMessage());
+        }
+        catch (IllegalArgumentException e) {
+            log.error(e.getMessage());
+        }
+
+        return false;
+    }
+
+    /**
+     * Prepare REST client for the appropriate data storage system, based on the destination
+     * configured in "eosc.transfer.destination".
+     * @param params dictates which storage system we pick, mapping is in the configuration file
+     * @return true on success, updates fields "destination" and "ss"
+     */
+    protected boolean getStorageSystem(ActionParameters params) {
+
+        log.debug("Selecting storage system");
+
+        if (null != params.ss)
+            return true;
+
+        if (null == params.destination || params.destination.isEmpty()) {
+            log.error("No destination specified");
+            return false;
+        }
+
+        log.infof("Destination is %s", params.destination);
+
+        var destinationConfig = config.destinations().get(params.destination);
+        if (null == destinationConfig) {
+            // Unsupported destination
+            log.error("No configuration for this destination");
+            return false;
+        }
+
+        var ssID = destinationConfig.storageId().isEmpty() ? null : destinationConfig.storageId().get();
+        if (null == ssID || ssID.isBlank()) {
+            // Manipulation of storage elements not supported in this destination
+            log.error("Storage element manipulation not supported in this destination");
+            return false;
+        }
+
+        MDC.put("storageId", ssID);
+
+        var storageConfig = config.storages().get(ssID);
+        if (null == storageConfig) {
+            // Unsupported storage system
+            log.error("No configuration found for storage system");
+            return false;
+        }
+
+        // Get the class of the storage system we should use
+        try {
+            var classType = Class.forName(storageConfig.className());
+            params.ss = (StorageService)classType.getDeclaredConstructor().newInstance();
+            if(params.ss.initService(storageConfig)) {
+                var ssName = params.ts.getServiceName();
+                MDC.put("storageName", ssName);
+                log.infof("Storage elements handled by %s", ssName);
                 return true;
             }
         }

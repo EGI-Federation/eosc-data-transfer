@@ -6,7 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.72]
-- Added automated Docker image building and pushing
+- Added automated Docker image building
+- Refactor to separate transfer and storage system interfaces
+- Fix GET /transfer endpoint handling in FTS wrapper
+
+## [1.1.70]
+- Fix POST /transfers endpoint handling in FTS wrapper
+- Remove params from /version endpoint
+- Improve SQAaS score
+- Upgrade to latest Quarkus version
 
 ## [1.1.66]
 - Upgrade to latest Quarkus version

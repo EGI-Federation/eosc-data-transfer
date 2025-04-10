@@ -6,10 +6,11 @@
 ![GitHub issues](https://img.shields.io/github/issues/EGI-Federation/eosc-data-transfer?label=Issues)
 ![GitHub issue custom search in repo](https://img.shields.io/github/issues-search/EGI-Federation/eosc-data-transfer?label=Bugs&color=red&query=is%3Aopen%20label%3Abug)
 
-[EOSC Future](https://eoscfuture.eu) is an EU-funded Horizon 2020 project that is implementing
-the [European Open Science Cloud](https://eosc-portal.eu) (EOSC). EOSC will give European
+[EOSC Future](https://eoscfuture.eu) is a Horizon Europe 2020 project, funded by the European Commission, 
+that implemented the [European Open Science Cloud](https://eosc-portal.eu) (EOSC) to give European
 researchers access to a wide web of [FAIR data](https://en.wikipedia.org/wiki/FAIR_data)
-and related services.
+and science-related services. The [EOSC Beyond](https://www.eosc-beyond.eu) project
+continues this development to deliver the next generation of EOSC.
 
 This project builds a generic data transfer service that can be used in EOSC to transfer
 large amounts of data to cloud storage, by just indicating the source and destination.

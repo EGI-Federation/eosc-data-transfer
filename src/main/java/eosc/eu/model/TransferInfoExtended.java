@@ -100,6 +100,7 @@ public class TransferInfoExtended extends TransferInfo {
 
     /**
      * Construct from extended FTS job info
+     * @param jie The concrete job to construct from
      */
     public TransferInfoExtended(JobInfoExtended jie) {
 
@@ -122,7 +123,9 @@ public class TransferInfoExtended extends TransferInfo {
 
         this.verifyChecksum = jie.verify_checksum;
 
-        this.overwrite = jie.job_finished.isPresent() ? Optional.of(jie.overwrite_flag.get().equals("Y")) : Optional.empty();
+        this.overwrite = jie.job_finished.isPresent() ?
+                                Optional.of(jie.overwrite_flag.get().equals("Y")) :
+                                Optional.empty();
         this.priority = jie.priority;
         this.retry = jie.retry;
         this.retryDelay = jie.retry_delay;
@@ -143,7 +146,8 @@ public class TransferInfoExtended extends TransferInfo {
     /***
      * The status of a transfer
      */
-    @Schema(description="Will be 'succeeded' when all files transferred successfully, and 'failed' if all files failed to transfer.")
+    @Schema(description="Will be 'succeeded' when all files transferred successfully, "+
+                        "and 'failed' if all files failed to transfer.")
     public enum TransferState
     {
         unknown("unknown"),
@@ -155,30 +159,43 @@ public class TransferInfoExtended extends TransferInfo {
         failed("failed"),
         canceled("canceled");
 
-        private String status;
+        private final String status;
 
+        /***
+         * Construct from a string
+         * @param status the desired status
+         */
         TransferState(String status) { this.status = status; }
 
-        public static TransferState fromString(String status_) {
-            final String status = status_.toLowerCase();
-            if(status.contains("staging"))
+        /***
+         * Build from a string
+         * @param status the desired status
+         * @return TransferState with specified status
+         */
+        public static TransferState fromString(String status) {
+            final String statusLo = status.toLowerCase();
+            if(statusLo.contains("staging"))
                 return staging;
-            else if(status.contains("submitted"))
+            else if(statusLo.contains("submitted"))
                 return submitted;
-            else if(status.contains("ready") || status.contains("active") || status.contains("progress"))
+            else if(statusLo.contains("ready") || statusLo.contains("active") || statusLo.contains("progress"))
                 return active;
-            else if(status.contains("dirty"))
+            else if(statusLo.contains("dirty"))
                 return partial;
-            else if(status.contains("succe") || status.contains("finish"))
+            else if(statusLo.contains("succe") || statusLo.contains("finish"))
                 return succeeded;
-            else if(status.contains("fail"))
+            else if(statusLo.contains("fail"))
                 return failed;
-            else if(status.contains("cancel"))
+            else if(statusLo.contains("cancel"))
                 return canceled;
 
             return unknown;
         }
 
+        /***
+         * Convert to string
+         * @return status string
+         */
         public String toString() {
             return this.status;
         }

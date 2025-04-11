@@ -2,7 +2,6 @@ package egi.fts.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.google.type.DateTime;
 
 import java.util.Date;
 import java.util.Map;

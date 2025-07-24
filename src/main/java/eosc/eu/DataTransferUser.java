@@ -37,7 +37,7 @@ public class DataTransferUser extends DataTransferBase {
     private static final Logger log = Logger.getLogger(DataTransferUser.class);
 
     @Inject
-    TransfersStoragesConfig config;
+    TransferConfig config;
 
     @Inject
     MeterRegistry registry;

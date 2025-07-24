@@ -4,7 +4,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.ws.rs.core.Response;
 
 import eosc.eu.model.*;
-import eosc.eu.TransfersStoragesConfig.TransferServiceConfig;
+import eosc.eu.TransferConfig.TransferServiceConfig;
 
 
 /***

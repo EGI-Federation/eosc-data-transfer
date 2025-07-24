@@ -25,7 +25,7 @@ public class DataTransferBase {
     private final Logger log;
 
     @Inject
-    protected TransfersStoragesConfig config;
+    protected TransferConfig config;
 
 
     /***
@@ -109,11 +109,15 @@ public class DataTransferBase {
 
     /**
      * Prepare REST client for the appropriate data storage system, based on the destination
-     * configured in "eosc.transfer.destination".
-     * @param params dictates which storage system we pick, mapping is in the configuration file
+     * configured under "eosc.transfer.destination".
+     * @param params dictates which destination we pick, which in turn says what storage system
+     *               is at that destination - mapping is in the configuration file
+     * @param storageElementUrl is the fully qualified URL to a storage element (file or folder), which
+     *                          is used to create a REST client for this particular storage system, or
+     *                          null to not attempt creation of a REST client
      * @return true on success, updates fields "destination" and "ss"
      */
-    protected boolean getStorageSystem(ActionParameters params) {
+    protected boolean getStorageSystem(ActionParameters params, String storageElementUrl) {
 
         log.debug("Selecting storage system");
 
@@ -150,16 +154,19 @@ public class DataTransferBase {
             return false;
         }
 
-        // Get the class of the storage system we should use
         try {
+            // Get the class of the storage system we should use and instantiate it
             var classType = Class.forName(storageConfig.className());
-            params.ss = (StorageService)classType.getDeclaredConstructor().newInstance();
-            if(params.ss.initService(storageConfig)) {
-                var ssName = params.ts.getServiceName();
+            params.ss = (StorageService) classType.getDeclaredConstructor().newInstance();
+
+            // If we got a URL to a storage element, also create a REST client pointed to that particular storage system
+            if(null != storageElementUrl && params.ss.initService(storageConfig, storageElementUrl)) {
+                var ssName = params.ss.getServiceName();
                 MDC.put("storageName", ssName);
                 log.infof("Storage elements handled by %s", ssName);
-                return true;
             }
+
+            return true;
         }
         catch (ClassNotFoundException e) {
             log.error(e.getMessage());

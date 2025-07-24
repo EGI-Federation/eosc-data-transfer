@@ -12,13 +12,13 @@ import java.util.Optional;
  * The configuration of the supported storage types and the transfer services that will handle them
  */
 @ConfigMapping(prefix = "eosc.transfer")
-public interface TransfersStoragesConfig {
+public interface TransferConfig {
 
     // Selects a service (and optionally a storage system) based on the destination
     @WithName("destination")
     Map<String, DestinationConfig> destinations();
 
-    // Contains the details of each specific transfer service
+    // Contains the details of each supported transfer engine
     @WithName("service")
     Map<String, TransferServiceConfig> services();
 
@@ -73,10 +73,13 @@ public interface TransfersStoragesConfig {
     }
 
     /***
-     * The configuration of a storage system type where storage element manipulation is supported
+     * The configuration of a storage system type for which storage element manipulation is supported
      */
     interface StorageSystemConfig {
         String name();
+
+        @WithDefault("5000")
+        int timeout(); // milliseconds
 
         @WithName("class")
         String className();

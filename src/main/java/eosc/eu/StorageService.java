@@ -3,7 +3,7 @@ package eosc.eu;
 import io.smallrye.mutiny.Uni;
 
 import eosc.eu.model.*;
-import eosc.eu.TransfersStoragesConfig.StorageSystemConfig;
+import eosc.eu.TransferConfig.StorageSystemConfig;
 
 
 /***
@@ -14,9 +14,10 @@ public interface StorageService {
     /***
      * Initialize the service, avoids the need to inject configuration.
      * @param config Service configuration loaded from the config file
+     * @param storageElementUrl the URL to a folder or file on the target storage system
      * @return true on success.
      */
-    boolean initService(StorageSystemConfig config);
+    boolean initService(StorageSystemConfig config, String storageElementUrl);
 
     /***
      * Get the human-readable name of the service.
@@ -25,11 +26,10 @@ public interface StorageService {
     String getServiceName();
 
     /***
-     * Translates name of a generic information field to the name specific to the transfer service.
-     * @param genericFieldName is the name of a TransferInfoExtended field.
-     * @return Name of the field specific to this transfer service, null if requested field not supported.
+     * Get the base URL of the service.
+     * @return Base URL.
      */
-    String translateTransferInfoFieldName(String genericFieldName);
+    public String getServiceBaseUrl();
 
     /**
      * Retrieve information about current user.

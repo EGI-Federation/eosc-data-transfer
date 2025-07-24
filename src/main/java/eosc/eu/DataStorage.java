@@ -39,7 +39,7 @@ public class DataStorage extends DataTransferBase {
     private static final Logger log = Logger.getLogger(DataStorage.class);
 
     @Inject
-    TransfersStoragesConfig config;
+    TransferConfig config;
 
 
     /***
@@ -85,7 +85,8 @@ public class DataStorage extends DataTransferBase {
                         // Destination handled by unsupported transfer service
                         return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
 
-                    getStorageSystem(params);
+                    // Check if a storage system is configured, but do not create REST client for it
+                    getStorageSystem(params, null);
 
                     var destinationInfo = new DestinationInfo(destination,
                             destinationConfig.authType(),
@@ -144,8 +145,8 @@ public class DataStorage extends DataTransferBase {
                     return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
                 }
 
-                // Check if a storage system is configured, and if so create REST client for it
-                getStorageSystem(params);
+                // Check if a storage system is configured, but do not create REST client for it
+                getStorageSystem(params, null);
 
                 return Uni.createFrom().item(params);
             })
@@ -249,7 +250,7 @@ public class DataStorage extends DataTransferBase {
 
                 // Pick storage system and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params)) {
+                if (!getStorageSystem(params, folderUrl)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
@@ -343,7 +344,7 @@ public class DataStorage extends DataTransferBase {
 
                 // Pick storage system and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params)) {
+                if (!getStorageSystem(params, seUrl)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
@@ -483,7 +484,7 @@ public class DataStorage extends DataTransferBase {
 
                 // Pick storage system and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params)) {
+                if (!getStorageSystem(params, seUrl)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
@@ -576,7 +577,7 @@ public class DataStorage extends DataTransferBase {
 
                 // Pick storage system and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params)) {
+                if (!getStorageSystem(params, seUrl)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
@@ -669,7 +670,7 @@ public class DataStorage extends DataTransferBase {
 
                 // Pick storage system and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params)) {
+                if (!getStorageSystem(params, seUrl)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
@@ -772,7 +773,7 @@ public class DataStorage extends DataTransferBase {
 
                 // Pick storage system and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params)) {
+                if (!getStorageSystem(params, operation.seUrlOld)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }

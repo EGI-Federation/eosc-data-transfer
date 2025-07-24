@@ -2,7 +2,6 @@ package egi.eu;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eosc.eu.*;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.tuples.Tuple2;
@@ -34,11 +33,16 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import static jakarta.ws.rs.core.HttpHeaders.*;
 
-import egi.fts.model.*;
-import egi.fts.model.UserInfo;
-import egi.fts.FileTransferService;
+import eosc.eu.BooleanAccumulator;
+import eosc.eu.TransferService;
+import eosc.eu.TransferServiceException;
+import eosc.eu.DataStorageCredentials;
+import eosc.eu.TransferConfig.TransferServiceConfig;
 import eosc.eu.model.*;
-import eosc.eu.TransfersStoragesConfig.TransferServiceConfig;
+
+import egi.fts.FileTransferService;
+import egi.fts.model.UserInfo;
+import egi.fts.model.*;
 
 
 /***
@@ -51,8 +55,8 @@ public class EgiDataTransfer implements TransferService {
     private static Map<String, String> infoFieldsRenamed;
 
     private String name;
-    private static FileTransferService fts;
-    private static FileTransferService ftsConfig;
+    private static FileTransferService fts;        // REST client (used for transfers)
+    private static FileTransferService ftsConfig; // REST client (used to register S3 sites with FTS, auth with cert)
     private int timeout;
 
     private ObjectMapper objectMapper;
@@ -152,11 +156,11 @@ public class EgiDataTransfer implements TransferService {
 
             return true;
         }
+        catch(RestClientDefinitionException rcde) {
+            log.error(rcde.getMessage());
+        }
         catch(IllegalStateException ise) {
             log.error(ise.getMessage());
-        }
-        catch (RestClientDefinitionException rcde) {
-            log.error(rcde.getMessage());
         }
 
         return false;
@@ -652,242 +656,4 @@ public class EgiDataTransfer implements TransferService {
         return result;
     }
 
-    /**
-     * List all files and sub-folders in a folder.
-     * @param auth The access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param folderUrl The link to the folder to list content of.
-     * @return List of folder content.
-     */
-    public Uni<StorageContent> listFolderContent(String auth, String storageAuth, String folderUrl) {
-        if(null == fts)
-            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
-
-        Uni<StorageContent> result = Uni.createFrom().nullItem()
-
-            .ifNoItem()
-                .after(Duration.ofMillis(this.timeout))
-                .failWith(new TransferServiceException("listFolderContentTimeout"))
-            .chain(unused -> {
-                // When necessary, configure S3 destination
-                if(null != storageAuth && !storageAuth.isBlank())
-                    return prepareStorages(auth, storageAuth, List.of(folderUrl));
-
-                return Uni.createFrom().item(true);
-            })
-            .chain(s3ConfigResult -> {
-                // List folder content
-                return fts.listFolderContentAsync(auth, folderUrl);
-            })
-            .chain(contentList -> {
-                // Got folder listing
-                MDC.put("seCount", contentList.size());
-                return Uni.createFrom().item(new StorageContent(folderUrl, contentList));
-            })
-            .onFailure().invoke(e -> {
-                log.error(e);
-            });
-
-        return result;
-    }
-
-    /**
-     * Get the details of a file or folder.
-     * @param auth The access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param seUrl The link to the file or folder to det details of.
-     * @return Details about the storage element.
-     */
-    public Uni<StorageElement> getStorageElementInfo(String auth, String storageAuth, String seUrl) {
-        if(null == fts)
-            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
-
-        Uni<StorageElement> result = Uni.createFrom().nullItem()
-
-            .ifNoItem()
-                .after(Duration.ofMillis(this.timeout))
-                .failWith(new TransferServiceException("getStorageElementInfoTimeout"))
-            .chain(unused -> {
-                // When necessary, configure S3 destination
-                if(null != storageAuth && !storageAuth.isBlank())
-                    return prepareStorages(auth, storageAuth, List.of(seUrl));
-
-                return Uni.createFrom().item(true);
-            })
-            .chain(s3ConfigResult -> {
-                // Get object info
-                return fts.getObjectInfoAsync(auth, seUrl);
-            })
-            .chain(objInfo -> {
-                // Got object info
-                objInfo.objectUrl = seUrl;
-                try {
-                    MDC.put("seInfo", this.objectMapper.writeValueAsString(objInfo));
-                }
-                catch (JsonProcessingException e) {}
-                return Uni.createFrom().item(new StorageElement(objInfo));
-            })
-            .onFailure().invoke(e -> {
-                log.error(e);
-            });
-
-        return result;
-    }
-
-    /**
-     * Create new folder.
-     * @param auth The access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param folderUrl The link to the folder to create.
-     * @return Confirmation message.
-     */
-    public Uni<String> createFolder(String auth, String storageAuth, String folderUrl) {
-        if(null == fts)
-            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
-
-        Uni<String> result = Uni.createFrom().nullItem()
-
-            .ifNoItem()
-                .after(Duration.ofMillis(this.timeout))
-                .failWith(new TransferServiceException("createFolderTimeout"))
-            .chain(unused -> {
-                // When necessary, configure S3 destination
-                if(null != storageAuth && !storageAuth.isBlank())
-                    return prepareStorages(auth, storageAuth, List.of(folderUrl));
-
-                return Uni.createFrom().item(true);
-            })
-            .chain(s3ConfigResult -> {
-                // Create folder
-                var operation = new ObjectOperation(folderUrl);
-                return fts.createFolderAsync(auth, operation);
-            })
-            .chain(code -> {
-                // Got success code
-                return Uni.createFrom().item(code);
-            })
-            .onFailure().invoke(e -> {
-                log.error(e);
-            });
-
-        return result;
-    }
-
-    /**
-     * Delete existing folder.
-     * @param auth The access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param folderUrl The link to the folder to delete.
-     * @return Confirmation message.
-     */
-    public Uni<String> deleteFolder(String auth, String storageAuth, String folderUrl) {
-        if(null == fts)
-            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
-
-        Uni<String> result = Uni.createFrom().nullItem()
-
-            .ifNoItem()
-                .after(Duration.ofMillis(this.timeout))
-                .failWith(new TransferServiceException("deleteFolderTimeout"))
-            .chain(unused -> {
-                // When necessary, configure S3 destination
-                if(null != storageAuth && !storageAuth.isBlank())
-                    return prepareStorages(auth, storageAuth, List.of(folderUrl));
-
-                return Uni.createFrom().item(true);
-            })
-            .chain(s3ConfigResult -> {
-                // Delete folder
-                var operation = new ObjectOperation(folderUrl);
-                return fts.deleteFolderAsync(auth, operation);
-            })
-            .chain(code -> {
-                // Got success code
-                return Uni.createFrom().item(code);
-            })
-            .onFailure().invoke(e -> {
-                log.error(e);
-            });
-
-        return result;
-    }
-
-    /**
-     * Delete existing file.
-     * @param auth The access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param fileUrl The link to the file to delete.
-     * @return Confirmation message.
-     */
-    public Uni<String> deleteFile(String auth, String storageAuth, String fileUrl) {
-        if(null == fts)
-            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
-
-        Uni<String> result = Uni.createFrom().nullItem()
-
-            .ifNoItem()
-                .after(Duration.ofMillis(this.timeout))
-                .failWith(new TransferServiceException("deleteFileTimeout"))
-            .chain(unused -> {
-                // When necessary, configure S3 destination
-                if(null != storageAuth && !storageAuth.isBlank())
-                    return prepareStorages(auth, storageAuth, List.of(fileUrl));
-
-                return Uni.createFrom().item(true);
-            })
-            .chain(s3ConfigResult -> {
-                // Delete file
-                var operation = new ObjectOperation(fileUrl);
-                return fts.deleteFileAsync(auth, operation);
-            })
-            .chain(code -> {
-                // Got success code
-                return Uni.createFrom().item(code);
-            })
-            .onFailure().invoke(e -> {
-                log.error(e);
-            });
-
-        return result;
-    }
-
-    /**
-     * Rename a folder or file.
-     * @param auth The access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param seOld The link to the storage element to rename.
-     * @param seNew The link to the new name/location of the storage element.
-     * @return Confirmation message.
-     */
-    public Uni<String> renameStorageElement(String auth, String storageAuth, String seOld, String seNew) {
-        if(null == fts)
-            throw new TransferServiceException("configInvalid");
-
-        Uni<String> result = Uni.createFrom().nullItem()
-
-            .ifNoItem()
-                .after(Duration.ofMillis(this.timeout))
-                .failWith(new TransferServiceException("renameStorageElementTimeout"))
-            .chain(unused -> {
-                // When necessary, configure S3 destination
-                if(null != storageAuth && !storageAuth.isBlank())
-                    return prepareStorages(auth, storageAuth, List.of(seOld));
-
-                return Uni.createFrom().item(true);
-            })
-            .chain(s3ConfigResult -> {
-                // Rename storage element
-                var operation = new ObjectOperation(seOld, seNew);
-                return fts.renameObjectAsync(auth, operation);
-            })
-            .chain(code -> {
-                // Got success code
-                return Uni.createFrom().item(code);
-            })
-            .onFailure().invoke(e -> {
-                log.error(e);
-            });
-
-        return result;
-    }
 }

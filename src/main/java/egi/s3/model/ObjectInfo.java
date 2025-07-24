@@ -1,4 +1,4 @@
-package egi.fts.model;
+package egi.s3.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

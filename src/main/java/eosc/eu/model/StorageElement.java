@@ -10,7 +10,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import parser.zenodo.model.ZenodoFile;
 import parser.b2share.model.B2ShareFile;
 import parser.esrf.model.EsrfDataFile;
-import egi.fts.model.ObjectInfo;
+import egi.s3.model.ObjectInfo;
 
 
 /**

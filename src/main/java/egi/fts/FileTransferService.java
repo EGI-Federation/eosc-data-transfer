@@ -54,34 +54,6 @@ public interface FileTransferService {
     @Path("/jobs/{jobId}")
     Uni<JobInfoExtended> cancelTransferAsync(@RestHeader("Authorization") String auth, String jobId);
 
-    @GET
-    @Path("/dm/list")
-    Uni<Map<String, ObjectInfo>> listFolderContentAsync(@RestHeader("Authorization") String auth, @RestQuery("surl") String folderUrl);
-
-    @GET
-    @Path("/dm/stat")
-    Uni<ObjectInfo> getObjectInfoAsync(@RestHeader("Authorization") String auth, @RestQuery("surl") String objectUrl);
-
-    @POST
-    @Path("/dm/mkdir")
-    @Consumes(MediaType.APPLICATION_JSON)
-    Uni<String> createFolderAsync(@RestHeader("Authorization") String auth, ObjectOperation folder);
-
-    @POST
-    @Path("/dm/rmdir")
-    @Consumes(MediaType.APPLICATION_JSON)
-    Uni<String> deleteFolderAsync(@RestHeader("Authorization") String auth, ObjectOperation folder);
-
-    @POST
-    @Path("/dm/rename")
-    @Consumes(MediaType.APPLICATION_JSON)
-    Uni<String> renameObjectAsync(@RestHeader("Authorization") String auth, ObjectOperation objects);
-
-    @POST
-    @Path("/dm/unlink")
-    @Consumes(MediaType.APPLICATION_JSON)
-    Uni<String> deleteFileAsync(@RestHeader("Authorization") String auth, ObjectOperation file);
-
     // NOTE: The methods below should return S3Info, but auto deserialization fails for return type Uni<S3Info>
     // However, manually deserializing the returned JSON string using ObjectMapper works fine!
 

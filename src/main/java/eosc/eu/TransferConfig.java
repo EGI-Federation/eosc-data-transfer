@@ -38,11 +38,6 @@ public interface TransferConfig {
         @WithName("storage")
         Optional<String> storageId(); // Storage system that can handle manipulating storage elements
 
-        @WithName("auth")
-        String authType();
-
-        String protocol();
-
         Optional<String> description();
     }
 
@@ -77,11 +72,15 @@ public interface TransferConfig {
      */
     interface StorageSystemConfig {
         String name();
+        String protocol();
 
         @WithDefault("5000")
         int timeout(); // milliseconds
 
         @WithName("class")
         String className();
+
+        @WithName("auth")
+        String authType();
     }
 }

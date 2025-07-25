@@ -19,29 +19,21 @@ eosc:
   transfer:
     destination:
       dcache:
+        description: dCache
         service: fts
         #storage: webdav
-        auth: token
-        protocol: https
-        description: dCache
       s3:
+        description: S3 compatible object storage
         service: fts
         storage: minio
-        auth: keys
-        protocol: s3
-        description: S3 compatible object storage
       s3s:
+        description: S3 compatible object storage over HTTPS
         service: fts
         #storage: s3
-        auth: keys
-        protocol: s3s
-        description: S3 compatible object storage over HTTPS
       storm:
+        description: StoRM
         service: fts
         #storage: webdav
-        auth: token
-        protocol: https
-        description: StoRM
     service:
       fts:
         name: EGI Data Transfer
@@ -60,7 +52,14 @@ eosc:
       minio:
         name: Min.io object storage
         class: egi.eu.S3Storage
+        auth: keys
+        protocol: s3
         timeout: 3000
+      webdav:
+        name: WebDAV storage
+        class: egi.eu.S3Storage
+        auth: token
+        protocol: https
   qos:
     quantiles: [0.95]
     slos: [500] # SLOs expressed in milliseconds

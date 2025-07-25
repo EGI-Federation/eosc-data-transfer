@@ -34,19 +34,20 @@ public class Transfer {
 
     /***
      * Get all destination systems (from all payloads) in this transfer.
-     * @param protocol Only return hostnames from URLs that match this protocol, pass null or empty to match all.
+     * @param protocol Only return hostnames from URIs that match this protocol, pass null/empty to match all.
      * @return List of destination hostnames, null on error
      */
     public List<String> allDestinationStorages(String protocol) {
         var hosts = new HashSet<String>();
 
         for(var payload : this.files) {
-            for(var destUrl : payload.destinations) {
-                // Parse the destination URL and get the hostname
+            for(var destUri : payload.destinations) {
+                // Parse the destination URI and get the hostname
                 try {
-                    URI uri = new URI(destUrl);
+                    URI uri = new URI(destUri);
                     String proto = uri.getScheme();
-                    if(proto.equalsIgnoreCase(Destination.s3.toString()) || proto.equalsIgnoreCase(Destination.s3s.toString()))
+                    if(proto.equalsIgnoreCase(Destination.s3.toString()) ||
+                       proto.equalsIgnoreCase(Destination.s3s.toString()))
                         this.params.setS3Destinations(true);
 
                     if(null != protocol && !proto.equalsIgnoreCase(protocol))
@@ -59,9 +60,9 @@ public class Transfer {
                         hosts.add(host);
                 }
                 catch (URISyntaxException e) {
-                    MDC.put("invalidUrl", destUrl);
+                    MDC.put("invalidUri", destUri);
                     LOG.error(e);
-                    LOG.error("Invalid destination URL");
+                    LOG.error("Invalid destination URI");
                     return null;
                 }
             }
@@ -85,10 +86,26 @@ public class Transfer {
 
         // TODO: Keep in sync with supported destinations in configuration file
 
-        private String destination;
+        private final String destination;
 
         Destination(String destination) { this.destination = destination; }
 
-        public String getDestination() { return this.destination; }
+        public String destination() { return this.destination; }
+    }
+
+    /***
+     * The supported authorization models
+     * Used as list of values for "auth" field of storages in configuration file
+     */
+    public enum AuthorizeWith
+    {
+        token("token"),
+        keys("keys");
+
+        private final String auth;
+
+        AuthorizeWith(String auth) { this.auth = auth; }
+
+        public String auth() { return this.auth; }
     }
 }

@@ -1,6 +1,5 @@
 package eosc.eu;
 
-import eosc.eu.model.Transfer;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
@@ -8,6 +7,8 @@ import org.jboss.logging.MDC;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
+
+import eosc.eu.model.Transfer;
 
 
 /***
@@ -54,8 +55,6 @@ public class DataTransferBase {
             log.error("No destination specified");
             return false;
         }
-
-        log.infof("Destination is %s", params.destination);
 
         var destinationConfig = config.destinations().get(params.destination);
         if (null == destinationConfig) {
@@ -115,9 +114,12 @@ public class DataTransferBase {
      * @param storageElementUrl is the fully qualified URL to a storage element (file or folder), which
      *                          is used to create a REST client for this particular storage system, or
      *                          null to not attempt creation of a REST client
+     * @param auth Credentials for the storage system (if it uses access tokens)
+     * @param storageAuth Alternative credentials for the storage system, Base-64 encoded "key:value"
      * @return true on success, updates fields "destination" and "ss"
      */
-    protected boolean getStorageSystem(ActionParameters params, String storageElementUrl) {
+    protected boolean getStorageSystem(ActionParameters params, String storageElementUrl,
+                                       String auth, String storageAuth) {
 
         log.debug("Selecting storage system");
 
@@ -128,8 +130,6 @@ public class DataTransferBase {
             log.error("No destination specified");
             return false;
         }
-
-        log.infof("Destination is %s", params.destination);
 
         var destinationConfig = config.destinations().get(params.destination);
         if (null == destinationConfig) {
@@ -160,10 +160,17 @@ public class DataTransferBase {
             params.ss = (StorageService) classType.getDeclaredConstructor().newInstance();
 
             // If we got a URL to a storage element, also create a REST client pointed to that particular storage system
-            if(null != storageElementUrl && params.ss.initService(storageConfig, storageElementUrl)) {
-                var ssName = params.ss.getServiceName();
-                MDC.put("storageName", ssName);
-                log.infof("Storage elements handled by %s", ssName);
+            if (null != storageElementUrl) {
+                var authType = storageConfig.authType();
+                var authorization = (null != authType &&
+                                     authType.equalsIgnoreCase(Transfer.AuthorizeWith.keys.toString())) ?
+                                     storageAuth :auth;
+
+                if (params.ss.initService(storageConfig, storageElementUrl, authorization)) {
+                    var ssName = params.ss.getServiceName();
+                    MDC.put("storageName", ssName);
+                    log.infof("Storage elements handled by %s", ssName);
+                }
             }
 
             return true;
@@ -193,24 +200,24 @@ public class DataTransferBase {
     /**
      * Embed credentials in storage element URL
      * @param destination is the type of destination storage.
-     * @param seUrl is the URL to the storage element.
+     * @param seUri is the URI to the storage element.
      * @param storageAuth contains the Base64-encoded 'username:password'
      * @return Updated URL with embedded credentials, null on error
      */
-    protected String applyStorageCredentials(String destination, String seUrl, String storageAuth) {
+    protected String applyStorageCredentials(String destination, String seUri, String storageAuth) {
 
         if(null == storageAuth || storageAuth.isBlank())
             // When no credentials, will try anonymous access
-            return seUrl;
+            return seUri;
 
         if(destination.equalsIgnoreCase(Transfer.Destination.ftp.toString())) {
-            // Add credentials to FTP URL
+            // Add credentials to FTP URLs
             URI uri = null;
 
             try {
-                MDC.put("destinationUrl", seUrl);
+                MDC.put("destinationUri", seUri);
 
-                uri = new URI(seUrl);
+                uri = new URI(seUri);
                 String protocol = uri.getScheme();
                 String authority = uri.getAuthority();
                 String host = uri.getHost();
@@ -221,15 +228,12 @@ public class DataTransferBase {
                 String credentials = userInfo.isValid() ?
                         String.format("%s:%s@", userInfo.getUsername(), userInfo.getPassword()) : "";
 
-                seUrl = String.format("%s://%s%s%s/%s",
-                        protocol, credentials, host,
-                        port > 0 ? (":" + port) : "",
-                        path);
+                seUri = String.format("%s://%s%s/%s", protocol, credentials, authority, path);
 
                 if(null != uri.getQuery())
-                    seUrl += ("?" + uri.getQuery());
+                    seUri += ("?" + uri.getQuery());
 
-                MDC.remove("destinationUrl");
+                MDC.remove("destinationUri");
             }
             catch(URISyntaxException e) {
                 log.error("Failed to add storage credentials to destination URL");
@@ -238,7 +242,7 @@ public class DataTransferBase {
             }
         }
 
-        return seUrl;
+        return seUri;
     }
 
 }

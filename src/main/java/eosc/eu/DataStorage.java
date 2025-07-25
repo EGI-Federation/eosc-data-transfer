@@ -14,6 +14,7 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
+import org.jboss.resteasy.reactive.RestQuery;
 
 import java.util.Arrays;
 import jakarta.inject.Inject;
@@ -25,7 +26,6 @@ import jakarta.ws.rs.core.Response.Status;
 
 import eosc.eu.model.*;
 import eosc.eu.model.Transfer.Destination;
-import org.jboss.resteasy.reactive.RestQuery;
 
 
 /***
@@ -77,7 +77,7 @@ public class DataStorage extends DataTransferBase {
                 for(var destination : this.config.destinations().keySet()) {
                     var destinationConfig = this.config.destinations().get(destination);
                     var description = destinationConfig.description().isPresent() ?
-                                                    destinationConfig.description().get() : "";
+                                      destinationConfig.description().get() : "";
 
                     MDC.put("destination", destination);
                     var params = new ActionParameters(destination);
@@ -85,12 +85,15 @@ public class DataStorage extends DataTransferBase {
                         // Destination handled by unsupported transfer service
                         return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
 
-                    // Check if a storage system is configured, but do not create REST client for it
-                    getStorageSystem(params, null);
+                    var ssID = destinationConfig.storageId().isEmpty() ? null : destinationConfig.storageId().get();
+                    var storageConfig = null != ssID ? config.storages().get(ssID) : null;
+
+                    // Check if a storage system is configured, create dummy REST client for it
+                    getStorageSystem(params, "https://a.b.org/folder/file", "abc", "YTpi");
 
                     var destinationInfo = new DestinationInfo(destination,
-                            destinationConfig.authType(),
-                            destinationConfig.protocol(),
+                            null != storageConfig ? storageConfig.authType() : null,
+                            null != storageConfig ? storageConfig.protocol() : null,
                             params.ts.getServiceName(),
                             null != params.ss ? params.ss.getServiceName() : null,
                             description);
@@ -146,7 +149,7 @@ public class DataStorage extends DataTransferBase {
                 }
 
                 // Check if a storage system is configured, but do not create REST client for it
-                getStorageSystem(params, null);
+                getStorageSystem(params, "https://a.b.org/folder/file", "abc", "YTpi");
 
                 return Uni.createFrom().item(params);
             })
@@ -157,12 +160,15 @@ public class DataStorage extends DataTransferBase {
                     // Unsupported destination
                     return Uni.createFrom().failure(new TransferServiceException("invalidDestination"));
 
+                var ssID = destinationConfig.storageId().isEmpty() ? null : destinationConfig.storageId().get();
+                var storageConfig = null != ssID ? config.storages().get(ssID) : null;
+
                 // Check if browsing storage is supported
                 var description = destinationConfig.description().isPresent() ?
                                   destinationConfig.description().get() : "";
                 var destinationInfo = new DestinationInfo(destination,
-                                                  destinationConfig.authType(),
-                                                  destinationConfig.protocol(),
+                                                  null != storageConfig ? storageConfig.authType() : null,
+                                                  null != storageConfig ? storageConfig.protocol() : null,
                                                   params.ts.getServiceName(),
                                                   null != params.ss ? params.ss.getServiceName() : null,
                                                   description);
@@ -250,7 +256,7 @@ public class DataStorage extends DataTransferBase {
 
                 // Pick storage system and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, folderUrl)) {
+                if (!getStorageSystem(params, folderUrl, auth, storageAuth)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
@@ -344,7 +350,7 @@ public class DataStorage extends DataTransferBase {
 
                 // Pick storage system and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, seUrl)) {
+                if (!getStorageSystem(params, seUrl, auth, storageAuth)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
@@ -484,7 +490,7 @@ public class DataStorage extends DataTransferBase {
 
                 // Pick storage system and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, seUrl)) {
+                if (!getStorageSystem(params, seUrl, auth, storageAuth)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
@@ -577,7 +583,7 @@ public class DataStorage extends DataTransferBase {
 
                 // Pick storage system and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, seUrl)) {
+                if (!getStorageSystem(params, seUrl, auth, storageAuth)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
@@ -670,7 +676,7 @@ public class DataStorage extends DataTransferBase {
 
                 // Pick storage system and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, seUrl)) {
+                if (!getStorageSystem(params, seUrl, auth, storageAuth)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
@@ -773,7 +779,7 @@ public class DataStorage extends DataTransferBase {
 
                 // Pick storage system and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, operation.seUrlOld)) {
+                if (!getStorageSystem(params, operation.seUrlOld, auth, storageAuth)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }

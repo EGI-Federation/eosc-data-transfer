@@ -2,19 +2,15 @@ package egi.eu;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eosc.eu.DataStorageCredentials;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.tuples.Tuple2;
-import org.eclipse.microprofile.rest.client.RestClientBuilder;
-import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
-import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -22,36 +18,29 @@ import java.security.Security;
 import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 import jakarta.annotation.PostConstruct;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
-import static jakarta.ws.rs.core.HttpHeaders.*;
+
+import io.minio.MinioAsyncClient;
 
 import eosc.eu.StorageService;
-import eosc.eu.StorageServiceException;
+import eosc.eu.TransferServiceException;
 import eosc.eu.TransferConfig.StorageSystemConfig;
 import eosc.eu.model.*;
 
-import egi.s3.S3StorageService;
 import egi.s3.model.*;
 
 
 /***
  * Class for manipulating storage elements in S3 storage systems
  */
-public class S3Storage implements StorageService {
+public class MinioStorage implements StorageService {
 
-    private static final Logger log = Logger.getLogger(S3Storage.class);
+    private static final Logger log = Logger.getLogger(MinioStorage.class);
 
     private String name;
     private String baseUrl;
-    private S3StorageService s3;
+    private MinioAsyncClient minio;
     private int timeout;
 
     private ObjectMapper objectMapper;
@@ -60,87 +49,48 @@ public class S3Storage implements StorageService {
     /***
      * Constructor
      */
-    public S3Storage() { this.objectMapper = new ObjectMapper(); }
+    public MinioStorage() { this.objectMapper = new ObjectMapper(); }
 
     /***
-     * Load a certificate store from a resource file.
-     * @param filePath File path relative to the "src/main/resource" folder
-     * @param password The password for the certificate store
-     * @return Loaded key store, empty optional on error
-     */
-    private Optional<KeyStore> loadKeyStore(String filePath, String password) {
-
-        Optional<KeyStore> oks = Optional.empty();
-        try {
-            var providers = Security.getProviders();
-
-            var classLoader = getClass().getClassLoader();
-            var ksf = classLoader.getResourceAsStream(filePath);
-            var ks = KeyStore.getInstance(KeyStore.getDefaultType());
-            ks.load(ksf, password.toCharArray());
-            oks = Optional.of(ks);
-        }
-        catch (FileNotFoundException e) {
-            log.error(e);
-        }
-        catch (KeyStoreException e) {
-            log.error(e);
-        }
-        catch (CertificateException e) {
-            log.error(e);
-        }
-        catch (IOException e) {
-            log.error(e);
-        }
-        catch (NoSuchAlgorithmException e) {
-            log.error(e);
-        }
-
-        return oks;
-    }
-
-    /***
-     * Initialize the REST client for the S3 storage system
+     * Initialize the client for the S3 storage system
      * @param serviceConfig Configuration loaded from the config file
      * @param storageElementUrl the URL to a folder or file on the target storage system
+     * @param storageAuth Credentials for the storage system, Base-64 encoded "accesskey:secretkey"
      * @return true on success
      */
     @PostConstruct
-    public boolean initService(StorageSystemConfig serviceConfig, String storageElementUrl) {
+    public boolean initService(StorageSystemConfig serviceConfig, String storageElementUrl, String storageAuth) {
 
-        if(null != s3)
+        if(null != minio)
             return true;
 
         this.name = serviceConfig.name();
         this.timeout = serviceConfig.timeout();
 
         MDC.put("storageElement", storageElementUrl);
-        log.debug("Obtaining REST client(s) for S3 storage");
+        log.debug("Obtaining client for S3 compatible object storage");
 
         // Get the base URL for the S3 storage system
-        URL urlStorageSystem;
         try {
-            urlStorageSystem = new URL(storageElementUrl);
-            this.baseUrl = urlStorageSystem.getProtocol() + "://" + urlStorageSystem.getAuthority();
-            urlStorageSystem = new URL(this.baseUrl);
-        } catch (MalformedURLException e) {
+            URI uriStorageSystem = new URI(storageElementUrl);
+            this.baseUrl = uriStorageSystem.getScheme() + "://" + uriStorageSystem.getAuthority();
+        } catch(URISyntaxException e) {
             log.error(e.getMessage());
             return false;
         }
 
         try {
-            // Create the REST client for the storage system
-            var rcb = RestClientBuilder.newBuilder().baseUrl(urlStorageSystem);
-
-            s3 = rcb.build(S3StorageService.class);
+            // Create the Minio client for the storage system
+            var userInfo = new DataStorageCredentials(storageAuth);
+            minio = MinioAsyncClient.builder()
+                        .endpoint(this.baseUrl)
+                        .credentials(userInfo.getAccessKey(), userInfo.getSecretKey())
+                        .build();
 
             return true;
         }
-        catch(IllegalStateException ise) {
-            log.error(ise.getMessage());
-        }
-        catch (RestClientDefinitionException rcde) {
-            log.error(rcde.getMessage());
+        catch(IllegalArgumentException iae) {
+            log.error(iae.getMessage());
         }
 
         return false;
@@ -164,10 +114,10 @@ public class S3Storage implements StorageService {
      * @return User information.
      */
     public Uni<eosc.eu.model.UserInfo> getUserInfo(String auth) {
-        if(null == s3)
-            return Uni.createFrom().failure(new StorageServiceException("configInvalid"));
+        if(null == minio)
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
-        return Uni.createFrom().failure(new StorageServiceException("configInvalid"));
+        return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
     }
 
     /**
@@ -178,14 +128,14 @@ public class S3Storage implements StorageService {
      * @return List of folder content.
      */
     public Uni<StorageContent> listFolderContent(String auth, String storageAuth, String folderUrl) {
-        if(null == s3)
-            return Uni.createFrom().failure(new StorageServiceException("configInvalid"));
+        if(null == minio)
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<StorageContent> result = Uni.createFrom().nullItem()
 
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
-                .failWith(new StorageServiceException("listFolderContentTimeout"))
+                .failWith(new TransferServiceException("listFolderContentTimeout"))
 //            .chain(unused -> {
 //                // When necessary, configure S3 destination
 //                if(null != storageAuth && !storageAuth.isBlank())
@@ -195,12 +145,13 @@ public class S3Storage implements StorageService {
 //            })
             .chain(s3ConfigResult -> {
                 // List folder content
-                return s3.listFolderContentAsync(auth, folderUrl);
+                //return minio.listFolderContentAsync(auth, folderUrl);
+                return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
             })
             .chain(contentList -> {
                 // Got folder listing
-                MDC.put("seCount", contentList.size());
-                return Uni.createFrom().item(new StorageContent(folderUrl, contentList));
+                //MDC.put("seCount", contentList.size());
+                return Uni.createFrom().item(new StorageContent(folderUrl, null));
             })
             .onFailure().invoke(e -> {
                 log.error(e);
@@ -217,14 +168,14 @@ public class S3Storage implements StorageService {
      * @return Details about the storage element.
      */
     public Uni<StorageElement> getStorageElementInfo(String auth, String storageAuth, String seUrl) {
-        if(null == s3)
-            return Uni.createFrom().failure(new StorageServiceException("configInvalid"));
+        if(null == minio)
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<StorageElement> result = Uni.createFrom().nullItem()
 
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
-                .failWith(new StorageServiceException("getStorageElementInfoTimeout"))
+                .failWith(new TransferServiceException("getStorageElementInfoTimeout"))
 //            .chain(unused -> {
 //                // When necessary, configure S3 destination
 //                if(null != storageAuth && !storageAuth.isBlank())
@@ -234,16 +185,17 @@ public class S3Storage implements StorageService {
 //            })
             .chain(s3ConfigResult -> {
                 // Get object info
-                return s3.getObjectInfoAsync(auth, seUrl);
+                //return minio.getObjectInfoAsync(auth, seUrl);
+                return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
             })
             .chain(objInfo -> {
                 // Got object info
-                objInfo.objectUrl = seUrl;
+                //objInfo.objectUrl = seUrl;
                 try {
                     MDC.put("seInfo", this.objectMapper.writeValueAsString(objInfo));
                 }
                 catch (JsonProcessingException e) {}
-                return Uni.createFrom().item(new StorageElement(objInfo));
+                return Uni.createFrom().item(new StorageElement());
             })
             .onFailure().invoke(e -> {
                 log.error(e);
@@ -260,14 +212,14 @@ public class S3Storage implements StorageService {
      * @return Confirmation message.
      */
     public Uni<String> createFolder(String auth, String storageAuth, String folderUrl) {
-        if(null == s3)
-            return Uni.createFrom().failure(new StorageServiceException("configInvalid"));
+        if(null == minio)
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<String> result = Uni.createFrom().nullItem()
 
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
-                .failWith(new StorageServiceException("createFolderTimeout"))
+                .failWith(new TransferServiceException("createFolderTimeout"))
 //            .chain(unused -> {
 //                // When necessary, configure S3 destination
 //                if(null != storageAuth && !storageAuth.isBlank())
@@ -278,7 +230,8 @@ public class S3Storage implements StorageService {
             .chain(s3ConfigResult -> {
                 // Create folder
                 var operation = new ObjectOperation(folderUrl);
-                return s3.createFolderAsync(auth, operation);
+                //return minio.createFolderAsync(auth, operation);
+                return Uni.createFrom().item("fsh");
             })
             .chain(code -> {
                 // Got success code
@@ -299,14 +252,14 @@ public class S3Storage implements StorageService {
      * @return Confirmation message.
      */
     public Uni<String> deleteFolder(String auth, String storageAuth, String folderUrl) {
-        if(null == s3)
-            return Uni.createFrom().failure(new StorageServiceException("configInvalid"));
+        if(null == minio)
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<String> result = Uni.createFrom().nullItem()
 
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
-                .failWith(new StorageServiceException("deleteFolderTimeout"))
+                .failWith(new TransferServiceException("deleteFolderTimeout"))
 //            .chain(unused -> {
 //                // When necessary, configure S3 destination
 //                if(null != storageAuth && !storageAuth.isBlank())
@@ -317,7 +270,8 @@ public class S3Storage implements StorageService {
             .chain(s3ConfigResult -> {
                 // Delete folder
                 var operation = new ObjectOperation(folderUrl);
-                return s3.deleteFolderAsync(auth, operation);
+                //return minio.deleteFolderAsync(auth, operation);
+                return Uni.createFrom().item("fsh");
             })
             .chain(code -> {
                 // Got success code
@@ -338,14 +292,14 @@ public class S3Storage implements StorageService {
      * @return Confirmation message.
      */
     public Uni<String> deleteFile(String auth, String storageAuth, String fileUrl) {
-        if(null == s3)
-            return Uni.createFrom().failure(new StorageServiceException("configInvalid"));
+        if(null == minio)
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<String> result = Uni.createFrom().nullItem()
 
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
-                .failWith(new StorageServiceException("deleteFileTimeout"))
+                .failWith(new TransferServiceException("deleteFileTimeout"))
 //            .chain(unused -> {
 //                // When necessary, configure S3 destination
 //                if(null != storageAuth && !storageAuth.isBlank())
@@ -356,7 +310,8 @@ public class S3Storage implements StorageService {
             .chain(s3ConfigResult -> {
                 // Delete file
                 var operation = new ObjectOperation(fileUrl);
-                return s3.deleteFileAsync(auth, operation);
+                //return minio.deleteFileAsync(auth, operation);
+                return Uni.createFrom().item("fsh");
             })
             .chain(code -> {
                 // Got success code
@@ -378,14 +333,14 @@ public class S3Storage implements StorageService {
      * @return Confirmation message.
      */
     public Uni<String> renameStorageElement(String auth, String storageAuth, String seOld, String seNew) {
-        if(null == s3)
-            throw new StorageServiceException("configInvalid");
+        if(null == minio)
+            throw new TransferServiceException("configInvalid");
 
         Uni<String> result = Uni.createFrom().nullItem()
 
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
-                .failWith(new StorageServiceException("renameStorageElementTimeout"))
+                .failWith(new TransferServiceException("renameStorageElementTimeout"))
 //            .chain(unused -> {
 //                // When necessary, configure S3 destination
 //                if(null != storageAuth && !storageAuth.isBlank())
@@ -396,7 +351,8 @@ public class S3Storage implements StorageService {
             .chain(s3ConfigResult -> {
                 // Rename storage element
                 var operation = new ObjectOperation(seOld, seNew);
-                return s3.renameObjectAsync(auth, operation);
+                //return minio.renameObjectAsync(auth, operation);
+                return Uni.createFrom().item("fsh");
             })
             .chain(code -> {
                 // Got success code

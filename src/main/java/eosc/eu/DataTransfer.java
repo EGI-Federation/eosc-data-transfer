@@ -102,24 +102,24 @@ public class DataTransfer extends DataTransferBase {
 
         log.info("Starting new data transfer");
 
-        // If authentication info is provided for the storage, embed it in every FTP destination URL
+        // If authentication info is provided for the storage, embed it in every FTP destination URI
         if(null != storageAuth && !storageAuth.isBlank() && destination.equalsIgnoreCase(Destination.ftp.toString())) {
             // If the destination is FTP, embed storage credentials in all
-            // destination URLs (will not check each URL if the protocol is "ftp")
+            // destination URIs (will not check each URI if the protocol is "ftp")
             for(var payload : transfer.files) {
                 List<String> fixedDestinations = new ArrayList<>();
-                for(var seUrl : payload.destinations) {
-                    var seUrlFixed = applyStorageCredentials(destination, seUrl, storageAuth);
-                    if(null == seUrlFixed) {
-                        // Could not add credentials to invalid URL
+                for(var seUri : payload.destinations) {
+                    var seUriFixed = applyStorageCredentials(destination, seUri, storageAuth);
+                    if(null == seUriFixed) {
+                        // Could not add credentials to invalid URI
                         log.error("Failed to start new transfer");
-                        return Uni.createFrom().item(new ActionError("urlInvalid", Arrays.asList(
-                                                                         Tuple2.of("url", seUrl),
+                        return Uni.createFrom().item(new ActionError("uriInvalid", Arrays.asList(
+                                                                         Tuple2.of("uri", seUri),
                                                                          Tuple2.of("destination", destination) ))
                                                                 .toResponse());
                     }
 
-                    fixedDestinations.add(seUrlFixed);
+                    fixedDestinations.add(seUriFixed);
                 }
 
                 payload.destinations = fixedDestinations;

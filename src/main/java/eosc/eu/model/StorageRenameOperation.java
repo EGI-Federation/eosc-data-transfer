@@ -10,11 +10,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StorageRenameOperation {
 
-    @Schema(description="The URL to the old storage element")
-    public String seUrlOld;
+    @Schema(description="The URI to the old storage element")
+    public String seUriOld;
 
-    @Schema(description="The URL to the new storage element")
-    public String seUrlNew;
+    @Schema(description="The URI to the new storage element")
+    public String seUriNew;
 
 
     /**
@@ -25,8 +25,8 @@ public class StorageRenameOperation {
     /**
      * Construct from old and new storage element URLs
      */
-    public StorageRenameOperation(String urlOld, String urlNew) {
-        this.seUrlOld = urlOld;
-        this.seUrlNew = urlNew;
+    public StorageRenameOperation(String uriOld, String uriNew) {
+        this.seUriOld = uriOld;
+        this.seUriNew = uriNew;
     }
 }

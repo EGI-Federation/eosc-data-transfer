@@ -59,7 +59,7 @@ public class EgiDataTransfer implements TransferService {
     private static FileTransferService ftsConfig; // REST client (used to register S3 sites with FTS, auth with cert)
     private int timeout;
 
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
 
     /***
@@ -244,7 +244,9 @@ public class EgiDataTransfer implements TransferService {
                 try {
                     MDC.put("userInfo", this.objectMapper.writeValueAsString(userInfo));
                 }
-                catch (JsonProcessingException e) {}
+                catch (JsonProcessingException e) {
+                    return Uni.createFrom().failure(new TransferServiceException(e, "serialize"));
+                }
                 return Uni.createFrom().item(new eosc.eu.model.UserInfo(userInfo));
             })
             .onFailure().invoke(e -> {
@@ -444,8 +446,8 @@ public class EgiDataTransfer implements TransferService {
 
                     if(null == destinations)
                         // Some destination URL is invalid, abort
-                        return Uni.createFrom().failure(new TransferServiceException("urlInvalid",
-                                                                 Tuple2.of("url", (String)MDC.get("invalidUrl"))));
+                        return Uni.createFrom().failure(new TransferServiceException("uriInvalid",
+                                                                 Tuple2.of("uri", (String)MDC.get("invalidUri"))));
 
                     if(!destinations.isEmpty())
                         // Configure FTS for all S3 destinations
@@ -561,7 +563,9 @@ public class EgiDataTransfer implements TransferService {
                 try {
                     MDC.put("jobInfo", this.objectMapper.writeValueAsString(jobInfoExt));
                 }
-                catch (JsonProcessingException e) {}
+                catch(JsonProcessingException e) {
+                    return Uni.createFrom().failure(new TransferServiceException(e, "serialize"));
+                }
                 return Uni.createFrom().item(new TransferInfoExtended(jobInfoExt));
             })
             .onFailure().invoke(e -> {
@@ -609,7 +613,9 @@ public class EgiDataTransfer implements TransferService {
                     try {
                         MDC.put("fieldValue", this.objectMapper.writeValueAsString(jobField));
                     }
-                    catch (JsonProcessingException e) {}
+                    catch (JsonProcessingException e) {
+                        return Uni.createFrom().failure(new TransferServiceException(e, "serialize"));
+                    }
                 }
                 else {
                     // Not an object, force return as text/plain

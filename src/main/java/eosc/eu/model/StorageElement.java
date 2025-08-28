@@ -134,17 +134,20 @@ public class StorageElement extends StorageElementBase {
     }
 
     /**
-     * Construct from FTS object
-     * @param obj Information about an object returned by FTS
+     * Construct from Minio object
+     * @param obj Information about an object returned by Minio
      */
     public StorageElement(ObjectInfo obj) {
         super("StorageElement");
         this.size = obj.size;
-        this.accessUrl = obj.objectUrl;
+        this.accessUrl = obj.seUri;
         this.createdAt = obj.createdAt();
         this.accessedAt = obj.accessedAt();
         this.modifiedAt = obj.modifiedAt();
         this.isFolder = obj.isFolder();
         this.name = obj.getName();
+
+        if(null != obj.bucket && !obj.bucket.isBlank())
+            this.path = obj.bucket;
     }
 }

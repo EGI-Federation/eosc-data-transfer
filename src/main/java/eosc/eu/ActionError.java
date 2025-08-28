@@ -167,7 +167,7 @@ public class ActionError {
             this.description = Optional.empty();
 
         var type = t.getClass();
-        if (type.equals(ZenodoException.class) ||
+        if(type.equals(ZenodoException.class) ||
             type.equals(B2ShareException.class) ||
             type.equals(EsrfException.class) ||
             type.equals(FileTransferServiceException.class) ||
@@ -213,13 +213,17 @@ public class ActionError {
             }
         }
 
-        if (type.equals(TransferServiceException.class)) {
+        if(type.equals(TransferServiceException.class)) {
             TransferServiceException tse = (TransferServiceException)t;
             this.id = tse.getId();
             if(this.id.equals("fieldNotSupported") ||
                this.id.equals("doiNotSupported") ||
                this.id.equals("doiInvalid") ||
-               this.id.equals("urlInvalid") ||
+               this.id.equals("uriInvalid") ||
+               this.id.equals("uriMismatch") ||
+               this.id.equals("seInvalid") ||
+               this.id.equals("notFile") ||
+               this.id.equals("notFolder") ||
                this.id.equals("noFilesLink"))
                 // Return BAD_REQUEST instead of INTERNAL_ERROR
                 this.status = Status.BAD_REQUEST;
@@ -279,7 +283,7 @@ public class ActionError {
                             this.id = "fieldNotFound";
                         else if(keys.contains("jobId"))
                             this.id = "transferNotFound";
-                        else if(keys.contains("seUrl"))
+                        else if(keys.contains("seUri"))
                             this.id = "storageElementNotFound";
                     } break;
             }

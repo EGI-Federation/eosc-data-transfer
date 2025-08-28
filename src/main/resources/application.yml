@@ -51,13 +51,13 @@ eosc:
     storage:
       minio:
         name: Min.io object storage
-        class: egi.eu.S3Storage
+        class: egi.eu.MinioStorage
         auth: keys
         protocol: s3
         timeout: 3000
       webdav:
         name: WebDAV storage
-        class: egi.eu.S3Storage
+        class: egi.eu.MinioStorage
         auth: token
         protocol: https
   qos:

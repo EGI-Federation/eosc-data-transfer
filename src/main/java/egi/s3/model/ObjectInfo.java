@@ -1,14 +1,12 @@
 package egi.s3.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.minio.StatObjectResponse;
+import io.minio.messages.RetentionMode;
 import org.jboss.logging.Logger;
 
+import java.time.ZonedDateTime;
 import java.util.Date;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 
 /**
@@ -19,20 +17,17 @@ public class ObjectInfo {
 
     private static final Logger LOG = Logger.getLogger(ObjectInfo.class);
 
-    static int S_IFDIR = 0x4000; // Directory
-    static int S_IFREG = 0x8000; // Regular file
-
-    @JsonIgnore
-    private URI uri;
-
-    public String name;
-    public String objectUrl; // Aka storage URL (surl)
-    public long ctime;
-    public long atime;
-    public long mtime;
+    public String seUri; // Aka storage URI (seUri)
+    public String etag;
+    public String object;
+    public String bucket;
+    public ZonedDateTime ctime;
+    public ZonedDateTime atime;
+    public ZonedDateTime mtime;
     public long size;
-    public int mode;
-    public int nlink;
+    public String mediaType;
+    public boolean deleteMarker;
+    public RetentionMode retentionMode;
 
 
     /**
@@ -40,77 +35,55 @@ public class ObjectInfo {
      */
     public ObjectInfo() {}
 
+    /**
+     * Construct from Minio's StatObjectResponse
+     */
+    public ObjectInfo(String seUri, StatObjectResponse so) {
+        this.seUri = seUri;
+        this.etag = so.etag();
+        this.object = so.object();
+        this.bucket = so.bucket();
+        this.mtime = so.lastModified();
+        this.size = so.size();
+        this.mediaType = so.headers().get("Content-Type");
+        this.deleteMarker = so.deleteMarker();
+        this.retentionMode = so.retentionMode();
+    }
+
     /***
      * Extract filename from URL
      * @return The name of the object
      */
     public String getName() {
-        if(null != this.name && !this.name.isEmpty() && !objectUrl.isBlank())
-            return this.name;
-
-        if(null == this.objectUrl || this.objectUrl.isEmpty() || this.objectUrl.isBlank())
-            return null;
-
-        if(null == this.uri) {
-            try {
-                this.uri = new URI(this.objectUrl);
-            } catch (URISyntaxException e) {
-                LOG.errorf("Invalid storage element URL %s", this.uri);
-                LOG.error(e.getMessage());
-                return null;
-            }
-        }
-
-        // String trailing separator
-        String path = this.uri.getPath();
-        if(null != this.uri.getQuery())
-            path += ("?" + this.uri.getQuery());
-
-        Pattern p = Pattern.compile("^(.+)/$");
-        Matcher m = p.matcher(path);
-        if(m.matches())
-            path = m.group(1);
-
-        // Get last path segment
-        p = Pattern.compile("^(.*)/(.+)$");
-        m = p.matcher(path);
-        if(m.matches()) {
-            this.name = m.group(2);
-            return this.name;
-        }
+        if(null != this.object && !this.object.isEmpty())
+            return this.object;
 
         return null;
     }
 
     /***
-     * Check file type from Linux file mode
+     * Check file type, if we have an object name then it's an object
      * @return true if a folder (directory)
      */
     public boolean isFolder() {
-        return (mode & S_IFDIR) > 0;
+        return null == object || object.isBlank();
     }
 
     /***
-     * Convert creation Linux file time to Java Date
+     * Convert zoned creation time to Java Date
      * @return Date and time of creation
      */
-    public Date createdAt() {
-        return new Date((long)ctime*1000);
-    }
+    public Date createdAt() { return null != ctime ? Date.from(ctime.toInstant()) : null; }
 
     /***
-     * Convert last accessed Linux file time to Java Date
+     * Convert zoned last accessed time to Java Date
      * @return Date and time of last access
      */
-    public Date accessedAt() {
-        return new Date((long)atime*1000);
-    }
+    public Date accessedAt() { return null != atime ? Date.from(atime.toInstant()) : null; }
 
     /***
-     * Convert last change Linux file time to Java Date
+     * Convert zoned last change time to Java Date
      * @return Date and time of last change
      */
-    public Date modifiedAt() {
-        return new Date((long)mtime*1000);
-    }
+    public Date modifiedAt() { return null != mtime ? Date.from(mtime.toInstant()) : null; }
 }

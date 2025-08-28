@@ -3,7 +3,12 @@ package egi.eu;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eosc.eu.DataStorageCredentials;
+import io.minio.GetObjectArgs;
+import io.minio.StatObjectArgs;
+import io.minio.StatObjectResponse;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Tuple2;
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 
@@ -11,13 +16,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.Security;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import jakarta.annotation.PostConstruct;
 
@@ -164,11 +167,11 @@ public class MinioStorage implements StorageService {
      * Get the details of a file or folder.
      * @param auth The access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param seUrl The link to the file or folder to det details of.
+     * @param seUri The link to the file or folder to det details of.
      * @return Details about the storage element.
      */
-    public Uni<StorageElement> getStorageElementInfo(String auth, String storageAuth, String seUrl) {
-        if(null == minio)
+    public Uni<StorageElement> getStorageElementInfo(String auth, String storageAuth, String seUri) {
+        if(null == minio || null == this.baseUrl)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<StorageElement> result = Uni.createFrom().nullItem()
@@ -176,26 +179,54 @@ public class MinioStorage implements StorageService {
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("getStorageElementInfoTimeout"))
-//            .chain(unused -> {
-//                // When necessary, configure S3 destination
-//                if(null != storageAuth && !storageAuth.isBlank())
-//                    return prepareStorages(auth, storageAuth, List.of(seUrl));
-//
-//                return Uni.createFrom().item(true);
-//            })
-            .chain(s3ConfigResult -> {
-                // Get object info
-                //return minio.getObjectInfoAsync(auth, seUrl);
-                return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
-            })
-            .chain(objInfo -> {
-                // Got object info
-                //objInfo.objectUrl = seUrl;
+            .chain(unused -> {
+                // Split the storage element URI into a bucket and an object name
+                String bucketName = null;
+                String objectName = null;
                 try {
-                    MDC.put("seInfo", this.objectMapper.writeValueAsString(objInfo));
+                    URI uri = new URI(seUri);
+                    if(!this.baseUrl.equals(uri.getScheme() + "://" + uri.getAuthority())) {
+                        return Uni.createFrom().failure(new TransferServiceException("uriMismatch"));
+                    }
+
+                    var elements = uri.getPath().split("/");
+                    if(elements.length >= 1 && elements[0].isBlank())
+                        elements = Arrays.copyOfRange(elements, 1, elements.length);
+
+                    if(elements.length < 1)
+                        // No bucket or object in URI
+                        return Uni.createFrom().failure(new TransferServiceException("seInvalid"));
+
+                    bucketName = elements[0];
+                    elements = Arrays.copyOfRange(elements, 1, elements.length);
+
+                    objectName = StringUtils.join(elements, '/');
+
+                } catch(URISyntaxException e) {
+                    return Uni.createFrom().failure(new TransferServiceException(e, "uriInvalid"));
                 }
-                catch (JsonProcessingException e) {}
-                return Uni.createFrom().item(new StorageElement());
+
+                // Build Minio param
+                return Uni.createFrom().item(StatObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(objectName)
+                        .build());
+            })
+            .chain(statArgs -> {
+                // Ready to get storage element stats
+                CompletableFuture<StatObjectResponse> stats = null;
+                try {
+                    stats = minio.statObject(statArgs);
+                }
+                catch(Exception e) {
+                    return Uni.createFrom().failure(new TransferServiceException(e, "statObject"));
+                }
+                return Uni.createFrom().completionStage(stats);
+            })
+            .chain(stats -> {
+                // Got storage element stats
+                var objInfo = new ObjectInfo(seUri, stats);
+                return Uni.createFrom().item(new StorageElement(objInfo));
             })
             .onFailure().invoke(e -> {
                 log.error(e);

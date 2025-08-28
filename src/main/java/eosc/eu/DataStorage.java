@@ -193,7 +193,7 @@ public class DataStorage extends DataTransferBase {
     /**
      * List the content of a folder.
      * @param auth The access token needed to call the service.
-     * @param folderUrl The link to the folder to list content of.
+     * @param folderUri The link to the folder to list content of.
      * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionSuccess(StorageContent) or an ActionError entity
@@ -227,11 +227,11 @@ public class DataStorage extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> listFolderContent(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                           @RestQuery("folderUrl")
+                                           @RestQuery("folderUri")
                                            @Parameter(required = true,
                                                       description =
-                                                          "URL to the storage element (folder) to list content of")
-                                           String folderUrl,
+                                                          "URI to the storage element (folder) to list content of")
+                                           String folderUri,
                                            @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                            @Parameter(schema = @Schema(implementation = Destination.class),
                                                       description = DESTINATION_STORAGE)
@@ -241,23 +241,23 @@ public class DataStorage extends DataTransferBase {
                                                       description = STORAGE_AUTH)
                                            String storageAuth) {
 
-        MDC.put("seUrl", folderUrl);
+        MDC.put("seUri", folderUri);
         MDC.put("dest", destination);
 
         log.info("List folder content");
 
-        final String folderUrlWithAuth = applyStorageCredentials(destination, folderUrl, storageAuth);
+        final String folderUriWithAuth = applyStorageCredentials(destination, folderUri, storageAuth);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
-                if(null == folderUrlWithAuth)
-                    return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
+                if(null == folderUriWithAuth)
+                    return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
-                // Pick storage system and create REST client for it
+                // Pick storage system and create a client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, folderUrl, auth, storageAuth)) {
-                    // Could not get REST client
+                if (!getStorageSystem(params, folderUri, auth, storageAuth)) {
+                    // Could not get storage system client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
 
@@ -270,7 +270,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // List folder content
-                return params.ss.listFolderContent(auth, storageAuth, folderUrlWithAuth);
+                return params.ss.listFolderContent(auth, storageAuth, folderUriWithAuth);
             })
             .chain(content -> {
                 // Got folder content, success
@@ -280,7 +280,7 @@ public class DataStorage extends DataTransferBase {
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to list folder content");
                 return new ActionError(e, Arrays.asList(
-                             Tuple2.of("folderUrl", folderUrl),
+                             Tuple2.of("folderUri", folderUri),
                              Tuple2.of("destination", destination)) ).toResponse();
             });
 
@@ -290,7 +290,7 @@ public class DataStorage extends DataTransferBase {
     /**
      * Get the details of a file.
      * @param auth The access token needed to call the service.
-     * @param seUrl The link to the file to get details of.
+     * @param seUri The link to the file to get details of.
      * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
@@ -323,10 +323,10 @@ public class DataStorage extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getFileInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                     @RestQuery("seUrl")
+                                     @RestQuery("seUri")
                                      @Parameter(required = true,
-                                                description = "URL to the storage element (file) to get stats for")
-                                     String seUrl,
+                                                description = "URI to the storage element (file) to get stats for")
+                                     String seUri,
                                      @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                      @Parameter(schema = @Schema(implementation = Destination.class),
                                                 description = DESTINATION_STORAGE)
@@ -335,23 +335,23 @@ public class DataStorage extends DataTransferBase {
                                      @Parameter(required = false, description = STORAGE_AUTH)
                                      String storageAuth) {
 
-        MDC.put("seUrl", seUrl);
+        MDC.put("seUri", seUri);
         MDC.put("dest", destination);
 
         log.info("Get details of storage element");
 
-        final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
+        final String seUriWithAuth = applyStorageCredentials(destination, seUri, storageAuth);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
-                if(null == seUrlWithAuth)
-                    return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
+                if(null == seUriWithAuth)
+                    return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
-                // Pick storage system and create REST client for it
+                // Pick storage system and create a client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, seUrl, auth, storageAuth)) {
-                    // Could not get REST client
+                if (!getStorageSystem(params, seUri, auth, storageAuth)) {
+                    // Could not get storage system client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
 
@@ -364,7 +364,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Get storage element info
-                return params.ss.getStorageElementInfo(auth, storageAuth, seUrlWithAuth);
+                return params.ss.getStorageElementInfo(auth, storageAuth, seUriWithAuth);
             })
             .chain(seinfo -> {
                 // Got storage element info, success
@@ -374,7 +374,7 @@ public class DataStorage extends DataTransferBase {
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to get storage element details");
                 return new ActionError(e, Arrays.asList(
-                             Tuple2.of("seUrl", seUrl),
+                             Tuple2.of("seUri", seUri),
                              Tuple2.of("destination", destination)) ).toResponse();
             });
 
@@ -384,7 +384,7 @@ public class DataStorage extends DataTransferBase {
     /**
      * Get the details of a folder.
      * @param auth The access token needed to call the service.
-     * @param seUrl The link to the folder to get details of.
+     * @param seUri The link to the folder to get details of.
      * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
@@ -417,10 +417,10 @@ public class DataStorage extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getFolderInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                       @RestQuery("seUrl")
+                                       @RestQuery("seUri")
                                        @Parameter(required = true,
-                                                  description = "URL to the storage element (folder) to get stats for")
-                                       String seUrl,
+                                                  description = "URI to the storage element (folder) to get stats for")
+                                       String seUri,
                                        @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                        @Parameter(schema = @Schema(implementation = Destination.class),
                                                   description = DESTINATION_STORAGE)
@@ -429,13 +429,13 @@ public class DataStorage extends DataTransferBase {
                                        @Parameter(required = false, description = STORAGE_AUTH)
                                        String storageAuth) {
         // This is the same for files and folders
-        return getFileInfo(auth, seUrl, destination, storageAuth);
+        return getFileInfo(auth, seUri, destination, storageAuth);
     }
 
     /**
      * Create a new folder.
      * @param auth The access token needed to call the service.
-     * @param seUrl The link to the folder to create.
+     * @param seUri The link to the folder to create.
      * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
@@ -463,10 +463,10 @@ public class DataStorage extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> createFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                      @RestQuery("seUrl")
+                                      @RestQuery("seUri")
                                       @Parameter(required = true,
-                                                 description = "URL to the storage element (folder) to create")
-                                      String seUrl,
+                                                 description = "URI to the storage element (folder) to create")
+                                      String seUri,
                                       @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                       @Parameter(schema = @Schema(implementation = Destination.class),
                                                  description = DESTINATION_STORAGE)
@@ -475,23 +475,23 @@ public class DataStorage extends DataTransferBase {
                                       @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
 
-        MDC.put("seUrl", seUrl);
+        MDC.put("seUri", seUri);
         MDC.put("dest", destination);
 
         log.info("Creating folder");
 
-        final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
+        final String seUriWithAuth = applyStorageCredentials(destination, seUri, storageAuth);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
-                if(null == seUrlWithAuth)
-                    return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
+                if(null == seUriWithAuth)
+                    return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
-                // Pick storage system and create REST client for it
+                // Pick storage system and create a client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, seUrl, auth, storageAuth)) {
-                    // Could not get REST client
+                if (!getStorageSystem(params, seUri, auth, storageAuth)) {
+                    // Could not get storage system client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
 
@@ -504,7 +504,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Create folder
-                return params.ss.createFolder(auth, storageAuth, seUrlWithAuth);
+                return params.ss.createFolder(auth, storageAuth, seUriWithAuth);
             })
             .chain(created -> {
                 // Folder got created, success
@@ -514,7 +514,7 @@ public class DataStorage extends DataTransferBase {
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to create folder");
                 return new ActionError(e, Arrays.asList(
-                             Tuple2.of("seUrl", seUrl),
+                             Tuple2.of("seUri", seUri),
                              Tuple2.of("destination", destination)) ).toResponse();
             });
 
@@ -524,7 +524,7 @@ public class DataStorage extends DataTransferBase {
     /**
      * Delete existing folder.
      * @param auth The access token needed to call the service.
-     * @param seUrl The link to the folder to delete.
+     * @param seUri The link to the folder to delete.
      * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
@@ -556,10 +556,10 @@ public class DataStorage extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> deleteFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                      @RestQuery("seUrl")
+                                      @RestQuery("seUri")
                                       @Parameter(required = true,
-                                                 description = "URL to the storage element (folder) to delete")
-                                      String seUrl,
+                                                 description = "URI to the storage element (folder) to delete")
+                                      String seUri,
                                       @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                       @Parameter(schema = @Schema(implementation = Destination.class),
                                                  description = DESTINATION_STORAGE)
@@ -568,23 +568,23 @@ public class DataStorage extends DataTransferBase {
                                       @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
 
-        MDC.put("seUrl", seUrl);
+        MDC.put("seUri", seUri);
         MDC.put("dest", destination);
 
         log.info("Deleting folder");
 
-        final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
+        final String seUriWithAuth = applyStorageCredentials(destination, seUri, storageAuth);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
-                if(null == seUrlWithAuth)
-                    return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
+                if(null == seUriWithAuth)
+                    return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
-                // Pick storage system and create REST client for it
+                // Pick storage system and create a client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, seUrl, auth, storageAuth)) {
-                    // Could not get REST client
+                if (!getStorageSystem(params, seUri, auth, storageAuth)) {
+                    // Could not get storage system client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
 
@@ -597,7 +597,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Delete folder
-                return params.ss.deleteFolder(auth, storageAuth, seUrlWithAuth);
+                return params.ss.deleteFolder(auth, storageAuth, seUriWithAuth);
             })
             .chain(deleted -> {
                 // Folder got deleted, success
@@ -607,7 +607,7 @@ public class DataStorage extends DataTransferBase {
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to delete folder");
                 return new ActionError(e, Arrays.asList(
-                             Tuple2.of("seUrl", seUrl),
+                             Tuple2.of("seUri", seUri),
                              Tuple2.of("destination", destination)) ).toResponse();
             });
 
@@ -617,7 +617,7 @@ public class DataStorage extends DataTransferBase {
     /**
      * Delete existing file.
      * @param auth The access token needed to call the service.
-     * @param seUrl The link to the file to delete.
+     * @param seUri The link to the file to delete.
      * @param destination The type of destination storage (selects transfer service to call).
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
      * @return API Response, wraps an ActionError entity in case of error
@@ -649,10 +649,10 @@ public class DataStorage extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> deleteFile(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                    @RestQuery("seUrl")
+                                    @RestQuery("seUri")
                                     @Parameter(required = true,
-                                               description = "URL to the storage element (file) to delete")
-                                    String seUrl,
+                                               description = "URI to the storage element (file) to delete")
+                                    String seUri,
                                     @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                     @Parameter(schema = @Schema(implementation = Destination.class),
                                                description = DESTINATION_STORAGE)
@@ -661,23 +661,23 @@ public class DataStorage extends DataTransferBase {
                                     @Parameter(required = false, description = STORAGE_AUTH)
                                     String storageAuth) {
 
-        MDC.put("seUrl", seUrl);
+        MDC.put("seUri", seUri);
         MDC.put("dest", destination);
 
         log.info("Deleting file");
 
-        final String seUrlWithAuth = applyStorageCredentials(destination, seUrl, storageAuth);
+        final String seUriWithAuth = applyStorageCredentials(destination, seUri, storageAuth);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
-                if(null == seUrlWithAuth)
-                    return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
+                if(null == seUriWithAuth)
+                    return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
-                // Pick storage system and create REST client for it
+                // Pick storage system and create a client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, seUrl, auth, storageAuth)) {
-                    // Could not get REST client
+                if (!getStorageSystem(params, seUri, auth, storageAuth)) {
+                    // Could not get storage system client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
 
@@ -690,7 +690,7 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Delete file
-                return params.ss.deleteFile(auth, storageAuth, seUrlWithAuth);
+                return params.ss.deleteFile(auth, storageAuth, seUriWithAuth);
             })
             .chain(deleted -> {
                 // File got deleted, success
@@ -700,7 +700,7 @@ public class DataStorage extends DataTransferBase {
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to delete file");
                 return new ActionError(e, Arrays.asList(
-                             Tuple2.of("seUrl", seUrl),
+                             Tuple2.of("seUri", seUri),
                              Tuple2.of("destination", destination)) ).toResponse();
             });
 
@@ -753,34 +753,34 @@ public class DataStorage extends DataTransferBase {
 
         MDC.put("dest", destination);
 
-        if(null != operation && null != operation.seUrlOld && null != operation.seUrlNew) {
-            MDC.put("seUrlOld", operation.seUrlOld);
-            MDC.put("seUrlNew", operation.seUrlNew);
+        if(null != operation && null != operation.seUriOld && null != operation.seUriNew) {
+            MDC.put("seUriOld", operation.seUriOld);
+            MDC.put("seUriNew", operation.seUriNew);
             log.info("Renaming storage element");
         }
         else {
             log.error("Cannot rename storage element");
             return Uni.createFrom().item(new ActionError("missingOperationParameters",
-                                         Arrays.asList(Tuple2.of("seUrlOld", operation.seUrlOld),
-                                                       Tuple2.of("seUrlNew", operation.seUrlNew),
+                                         Arrays.asList(Tuple2.of("seUriOld", operation.seUriOld),
+                                                       Tuple2.of("seUriNew", operation.seUriNew),
                                                        Tuple2.of("destination", destination)) )
                                             .setStatus(Status.BAD_REQUEST)
                                             .toResponse());
         }
 
-        final String seUrlOldWithAuth = applyStorageCredentials(destination, operation.seUrlOld, storageAuth);
-        final String seUrlNewWithAuth = applyStorageCredentials(destination, operation.seUrlNew, storageAuth);
+        final String seUrlOldWithAuth = applyStorageCredentials(destination, operation.seUriOld, storageAuth);
+        final String seUrlNewWithAuth = applyStorageCredentials(destination, operation.seUriNew, storageAuth);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
                 if(null == seUrlOldWithAuth || null == seUrlNewWithAuth)
-                    return Uni.createFrom().failure(new TransferServiceException("urlInvalid"));
+                    return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
-                // Pick storage system and create REST client for it
+                // Pick storage system and create a client for it
                 var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, operation.seUrlOld, auth, storageAuth)) {
-                    // Could not get REST client
+                if (!getStorageSystem(params, operation.seUriOld, auth, storageAuth)) {
+                    // Could not get storage system client
                     return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
                 }
 
@@ -803,8 +803,8 @@ public class DataStorage extends DataTransferBase {
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to rename storage element");
                 return new ActionError(e, Arrays.asList(
-                             Tuple2.of("seUrlOld", operation.seUrlOld),
-                             Tuple2.of("seUrlNew", operation.seUrlNew),
+                             Tuple2.of("seUrlOld", operation.seUriOld),
+                             Tuple2.of("seUrlNew", operation.seUriNew),
                              Tuple2.of("destination", destination)) ).toResponse();
             });
 

@@ -3,9 +3,7 @@ package egi.eu;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eosc.eu.DataStorageCredentials;
-import io.minio.GetObjectArgs;
-import io.minio.StatObjectArgs;
-import io.minio.StatObjectResponse;
+import io.minio.*;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.apache.commons.lang3.StringUtils;
@@ -23,8 +21,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import jakarta.annotation.PostConstruct;
-
-import io.minio.MinioAsyncClient;
 
 import eosc.eu.StorageService;
 import eosc.eu.TransferServiceException;
@@ -123,6 +119,41 @@ public class MinioStorage implements StorageService {
         return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
     }
 
+    /***
+     * Extract the bucket and object name from an URI that points to an object in object storage
+     * @param seUri is the fully qualified URI to the object
+     * @return Tuple with bucketName, objectName, throws exceptions on error
+     */
+    private Uni<Tuple2<String, String>> getBucketObjectFromUri(String seUri) {
+        // Split the storage element URI into a bucket and an object name
+        java.lang.String bucketName = null;
+        java.lang.String objectName = null;
+        try {
+            URI uri = new URI(seUri);
+            if(!this.baseUrl.equals(uri.getScheme() + "://" + uri.getAuthority())) {
+                return Uni.createFrom().failure(new TransferServiceException("uriMismatch"));
+            }
+
+            var elements = uri.getPath().split("/");
+            if(elements.length >= 1 && elements[0].isBlank())
+                elements = Arrays.copyOfRange(elements, 1, elements.length);
+
+            if(elements.length < 1)
+                // No bucket or object in URI
+                return Uni.createFrom().failure(new TransferServiceException("seInvalid"));
+
+            bucketName = elements[0];
+            elements = Arrays.copyOfRange(elements, 1, elements.length);
+
+            objectName = StringUtils.join(elements, '/');
+
+        } catch(URISyntaxException e) {
+            return Uni.createFrom().failure(new TransferServiceException(e, "uriInvalid"));
+        }
+
+        return Uni.createFrom().item(Tuple2.of(bucketName, objectName));
+    }
+
     /**
      * List all files and sub-folders in a folder.
      * @param auth The access token needed to call the service.
@@ -181,35 +212,13 @@ public class MinioStorage implements StorageService {
                 .failWith(new TransferServiceException("getStorageElementInfoTimeout"))
             .chain(unused -> {
                 // Split the storage element URI into a bucket and an object name
-                String bucketName = null;
-                String objectName = null;
-                try {
-                    URI uri = new URI(seUri);
-                    if(!this.baseUrl.equals(uri.getScheme() + "://" + uri.getAuthority())) {
-                        return Uni.createFrom().failure(new TransferServiceException("uriMismatch"));
-                    }
-
-                    var elements = uri.getPath().split("/");
-                    if(elements.length >= 1 && elements[0].isBlank())
-                        elements = Arrays.copyOfRange(elements, 1, elements.length);
-
-                    if(elements.length < 1)
-                        // No bucket or object in URI
-                        return Uni.createFrom().failure(new TransferServiceException("seInvalid"));
-
-                    bucketName = elements[0];
-                    elements = Arrays.copyOfRange(elements, 1, elements.length);
-
-                    objectName = StringUtils.join(elements, '/');
-
-                } catch(URISyntaxException e) {
-                    return Uni.createFrom().failure(new TransferServiceException(e, "uriInvalid"));
-                }
-
+                return getBucketObjectFromUri(seUri);
+            })
+            .chain(buckobj -> {
                 // Build Minio param
                 return Uni.createFrom().item(StatObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(objectName)
+                        .bucket(buckobj.getItem1())
+                        .object(buckobj.getItem2())
                         .build());
             })
             .chain(statArgs -> {
@@ -319,10 +328,10 @@ public class MinioStorage implements StorageService {
      * Delete existing file.
      * @param auth The access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param fileUrl The link to the file to delete.
+     * @param fileUri The link to the file to delete.
      * @return Confirmation message.
      */
-    public Uni<String> deleteFile(String auth, String storageAuth, String fileUrl) {
+    public Uni<String> deleteFile(String auth, String storageAuth, String fileUri) {
         if(null == minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
@@ -331,22 +340,31 @@ public class MinioStorage implements StorageService {
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("deleteFileTimeout"))
-//            .chain(unused -> {
-//                // When necessary, configure S3 destination
-//                if(null != storageAuth && !storageAuth.isBlank())
-//                    return prepareStorages(auth, storageAuth, List.of(fileUrl));
-//
-//                return Uni.createFrom().item(true);
-//            })
-            .chain(s3ConfigResult -> {
-                // Delete file
-                var operation = new ObjectOperation(fileUrl);
-                //return minio.deleteFileAsync(auth, operation);
-                return Uni.createFrom().item("fsh");
+            .chain(unused -> {
+                // Split the storage element URI into a bucket and an object name
+                return getBucketObjectFromUri(fileUri);
             })
-            .chain(code -> {
-                // Got success code
-                return Uni.createFrom().item(code);
+            .chain(buckobj -> {
+                // Build Minio param
+                return Uni.createFrom().item(RemoveObjectArgs.builder()
+                        .bucket(buckobj.getItem1())
+                        .object(buckobj.getItem2())
+                        .build());
+            })
+            .chain(removeArgs -> {
+                // Ready to delete file
+                CompletableFuture<Void> nope = null;
+                try {
+                    nope = minio.removeObject(removeArgs);
+                }
+                catch(Exception e) {
+                    return Uni.createFrom().failure(new TransferServiceException(e, "removeObject"));
+                }
+                return Uni.createFrom().completionStage(nope);
+            })
+            .chain(unused -> {
+                // If we got here, object was successfully deleted
+                return Uni.createFrom().item("Success");
             })
             .onFailure().invoke(e -> {
                 log.error(e);

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import egi.s3.model.ObjectInfo;
 
@@ -41,20 +40,19 @@ public class StorageContent {
     }
 
     /**
-     * Construct from FTS folder listing
-     * @param folderUrl The URL to the folder.
-     * @param folderContent The list of files in the folder.
+     * Construct from Minio bucket content list.
+     * @param folderUrl The URL to the bucket.
+     * @param folderContent The list of objects in the bucket.
      */
-    public StorageContent(String folderUrl, Map<String, ObjectInfo> folderContent) {
+    public StorageContent(String folderUrl, List<ObjectInfo> folderContent) {
         this.elements = new ArrayList<>();
 
         if('/' != folderUrl.charAt(folderUrl.length() - 1))
             folderUrl += "/";
 
-        for(var seName : folderContent.keySet()) {
-            StorageElement se = new StorageElement(folderContent.get(seName));
-            se.name = seName;
-            se.accessUrl = folderUrl + seName;
+        for(var element : folderContent) {
+            StorageElement se = new StorageElement(element);
+            se.accessUrl = folderUrl + se.name;
 
             this.elements.add(se);
         }

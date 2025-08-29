@@ -144,10 +144,10 @@ public class StorageElement extends StorageElementBase {
         this.createdAt = obj.createdAt();
         this.accessedAt = obj.accessedAt();
         this.modifiedAt = obj.modifiedAt();
-        this.isFolder = obj.isFolder();
+        this.isFolder = obj.isFolder;
         this.name = obj.getName();
 
-        if(null != obj.bucket && !obj.bucket.isBlank())
+        if(!isFolder && null != obj.bucket && !obj.bucket.isBlank())
             this.path = obj.bucket;
     }
 }

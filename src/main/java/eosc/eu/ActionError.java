@@ -224,9 +224,12 @@ public class ActionError {
                this.id.equals("seInvalid") ||
                this.id.equals("notFile") ||
                this.id.equals("notFolder") ||
+               this.id.equals("noArgs") ||
                this.id.equals("noFilesLink"))
                 // Return BAD_REQUEST instead of INTERNAL_ERROR
                 this.status = Status.BAD_REQUEST;
+            else if(tse.hasCode())
+                this.status = Status.fromStatusCode(tse.getCode());
 
             // Collect the details from the exception (if any)
             var tseDetails = tse.getDetails();

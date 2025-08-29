@@ -24,7 +24,7 @@ public class StorageElementBase {
      * to construct the destination path when this file is included in a
      * data transfer.
      */
-    @Schema(description="The path of the file in the data repository. Can be used, together with the field 'path', " +
+    @Schema(description="The path of the file in the data repository. Can be used, together with the field 'name', " +
                         "to construct the destination path when this file is included in a " +
                         "data transfer.")
     public String path = "/";

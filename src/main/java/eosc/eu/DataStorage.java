@@ -445,7 +445,9 @@ public class DataStorage extends DataTransferBase {
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "createFolder",  summary = "Create new folder in a storage system")
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Success"),
+            @APIResponse(responseCode = "200", description = "Success",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionSuccess.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
@@ -509,7 +511,7 @@ public class DataStorage extends DataTransferBase {
             .chain(created -> {
                 // Folder got created, success
                 log.info("Created folder");
-                return Uni.createFrom().item(Response.ok().build());
+                return Uni.createFrom().item(new ActionSuccess(created).toResponse());
             })
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to create folder");
@@ -534,7 +536,9 @@ public class DataStorage extends DataTransferBase {
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "deleteFolder",  summary = "Delete existing folder from a storage system")
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Success"),
+            @APIResponse(responseCode = "200", description = "Success",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionSuccess.class))),
             @APIResponse(responseCode = "400",
                     description="Invalid parameters/configuration or storage element is not a folder",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -602,7 +606,7 @@ public class DataStorage extends DataTransferBase {
             .chain(deleted -> {
                 // Folder got deleted, success
                 log.info("Deleted folder");
-                return Uni.createFrom().item(Response.ok().build());
+                return Uni.createFrom().item(new ActionSuccess(deleted).toResponse());
             })
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to delete folder");
@@ -627,7 +631,9 @@ public class DataStorage extends DataTransferBase {
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "deleteFile",  summary = "Delete existing file from a storage system")
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Success"),
+            @APIResponse(responseCode = "200", description = "Success",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionSuccess.class))),
             @APIResponse(responseCode = "400",
                     description="Invalid parameters/configuration or storage element is not a file",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -695,7 +701,7 @@ public class DataStorage extends DataTransferBase {
             .chain(deleted -> {
                 // File got deleted, success
                 log.infof("Deleted file");
-                return Uni.createFrom().item(Response.ok().build());
+                return Uni.createFrom().item(new ActionSuccess(deleted).toResponse());
             })
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to delete file");
@@ -721,7 +727,9 @@ public class DataStorage extends DataTransferBase {
     @Operation(operationId = "renameFile",  summary = "Rename existing file in a storage system")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Success"),
+            @APIResponse(responseCode = "200", description = "Success",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionSuccess.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
@@ -768,13 +776,13 @@ public class DataStorage extends DataTransferBase {
                                             .toResponse());
         }
 
-        final String seUrlOldWithAuth = applyStorageCredentials(destination, operation.seUriOld, storageAuth);
-        final String seUrlNewWithAuth = applyStorageCredentials(destination, operation.seUriNew, storageAuth);
+        final String seUriOldWithAuth = applyStorageCredentials(destination, operation.seUriOld, storageAuth);
+        final String seUriNewWithAuth = applyStorageCredentials(destination, operation.seUriNew, storageAuth);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
-                if(null == seUrlOldWithAuth || null == seUrlNewWithAuth)
+                if(null == seUriOldWithAuth || null == seUriNewWithAuth)
                     return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
                 // Pick storage system and create a client for it
@@ -793,24 +801,23 @@ public class DataStorage extends DataTransferBase {
             })
             .chain(params -> {
                 // Rename storage element
-                return params.ss.renameStorageElement(auth, storageAuth, seUrlOldWithAuth, seUrlNewWithAuth);
+                return params.ss.renameStorageElement(auth, storageAuth, seUriOldWithAuth, seUriNewWithAuth);
             })
             .chain(renamed -> {
                 // Storage element got renamed, success
                 log.info("Renamed storage element");
-                return Uni.createFrom().item(Response.ok().build());
+                return Uni.createFrom().item(new ActionSuccess(renamed).toResponse());
             })
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to rename storage element");
                 return new ActionError(e, Arrays.asList(
-                             Tuple2.of("seUrlOld", operation.seUriOld),
-                             Tuple2.of("seUrlNew", operation.seUriNew),
+                             Tuple2.of("seUriOld", operation.seUriOld),
+                             Tuple2.of("seUriNew", operation.seUriNew),
                              Tuple2.of("destination", destination)) ).toResponse();
             });
 
         return result;
     }
-
 
     /**
      * Rename a folder.
@@ -826,7 +833,9 @@ public class DataStorage extends DataTransferBase {
     @Operation(operationId = "renameFolder",  summary = "Rename existing folder in a storage system")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Success"),
+            @APIResponse(responseCode = "200", description = "Success",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionSuccess.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),

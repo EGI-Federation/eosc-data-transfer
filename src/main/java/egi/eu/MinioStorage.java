@@ -18,6 +18,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.minio.*;
 import io.minio.messages.Item;
 import io.minio.messages.Bucket;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
+import io.minio.errors.ErrorResponseException;
+import io.minio.errors.ServerException;
 
 import eosc.eu.DataStorageCredentials;
 import eosc.eu.StorageService;
@@ -116,9 +120,9 @@ public class MinioStorage implements StorageService {
     }
 
     /***
-     * Extract the bucket and object name from an URI that points to an object in object storage
+     * Extract the bucket and object name from an URI.
      * @param seUri is the fully qualified URI to the object
-     * @return Tuple with (bucketName, objectName, baseUri), throws exceptions on error
+     * @return Uni containing Tuple with (bucketName, objectName, baseUri), failure Uni on error
      */
     private Uni<Tuple2<String, String>> getBucketObjectFromUri(String seUri) {
         // Split the storage element URI into a bucket and an object name
@@ -207,9 +211,9 @@ public class MinioStorage implements StorageService {
                 try {
                     // List buckets
                     buckets = minio.listBuckets();
-
                 } catch(Exception e) {
-                    return Uni.createFrom().failure(new TransferServiceException(e, "listBuckets"));
+                    var msg = e.getMessage().replaceAll("\\.$", "");
+                    return Uni.createFrom().failure(new TransferServiceException("listBuckets", msg));
                 }
 
                 return Uni.createFrom().completionStage(buckets);
@@ -220,14 +224,7 @@ public class MinioStorage implements StorageService {
                     return Uni.createFrom().item(Tuple2.of(bucketList, null));
 
                 var listArgs = loa.get();
-                Iterable<Result<Item>> objects = null;
-                try {
-                    // List objects
-                    objects = minio.listObjects(listArgs);
-
-                } catch(Exception e) {
-                    return Uni.createFrom().failure(new TransferServiceException(e, "listObjects"));
-                }
+                var objects = minio.listObjects(listArgs);
                 return Uni.createFrom().item(Tuple2.of(null, objects));
             })
             .chain(contentLists -> {
@@ -257,7 +254,14 @@ public class MinioStorage implements StorageService {
                             content.add(objInfo);
                         }
                         catch(Exception e) {
-                            return Uni.createFrom().failure(new TransferServiceException(e, "listObjects"));
+                            var code = 0;
+                            var type = e.getClass();
+                            if(type.equals(ErrorResponseException.class))
+                                code = ((ErrorResponseException)e).response().code();
+                            else if(type.equals(ServerException.class))
+                                code = ((ServerException)e).statusCode();
+                            return Uni.createFrom().failure(new TransferServiceException("listObjects", code,
+                                                                        e.getMessage().replaceAll("\\.$", "")));
                         }
                 }
 
@@ -312,7 +316,8 @@ public class MinioStorage implements StorageService {
                     stats = minio.statObject(statArgs);
                 }
                 catch(Exception e) {
-                    return Uni.createFrom().failure(new TransferServiceException(e, "statObject"));
+                    var msg = e.getMessage().replaceAll("\\.$", "");
+                    return Uni.createFrom().failure(new TransferServiceException("statObject", msg));
                 }
                 return Uni.createFrom().completionStage(stats);
             })
@@ -377,13 +382,14 @@ public class MinioStorage implements StorageService {
                     nope = minio.makeBucket(makeArgs);
                 }
                 catch(Exception e) {
-                    return Uni.createFrom().failure(new TransferServiceException(e, "makeBucket"));
+                    var msg = e.getMessage().replaceAll("\\.$", "");
+                    return Uni.createFrom().failure(new TransferServiceException("makeBucket", msg));
                 }
                 return Uni.createFrom().completionStage(nope);
             })
             .chain(unused -> {
-                // If we got here, bucket was successfully deleted
-                return Uni.createFrom().item("Success");
+                // If we got here, bucket was successfully created
+                return Uni.createFrom().item("Created");
             })
             .onFailure().invoke(e -> {
                 log.error(e);
@@ -393,37 +399,169 @@ public class MinioStorage implements StorageService {
     }
 
     /**
-     * Delete existing bucket.
+     * Delete existing bucket or virtual folder. If deleting a bucket, the bucket must be empty.
+     * If deleting a virtual folder, it will delete all objects in that virtual folder (and deeper).
      * @param auth The access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
-     * @param folderUrl The link to the bucket to delete.
+     * @param folderUri The link to the bucket or virtual folder to delete.
      * @return Confirmation message.
      */
-    public Uni<String> deleteFolder(String auth, String storageAuth, String folderUrl) {
+    public Uni<String> deleteFolder(String auth, String storageAuth, String folderUri) {
         if(null == minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
+        var bucket = new AtomicReference<String>(null);
+        var message = new AtomicReference<String>("Deleted");
+        var objectCount = new AtomicReference<Integer>(null);
         Uni<String> result = Uni.createFrom().nullItem()
 
             .ifNoItem()
-                .after(Duration.ofMillis(this.timeout))
-                .failWith(new TransferServiceException("deleteFolderTimeout"))
-//            .chain(unused -> {
-//                // When necessary, configure S3 destination
-//                if(null != storageAuth && !storageAuth.isBlank())
-//                    return prepareStorages(auth, storageAuth, List.of(folderUrl));
-//
-//                return Uni.createFrom().item(true);
-//            })
-            .chain(s3ConfigResult -> {
-                // Delete folder
-                var operation = new ObjectOperation(folderUrl);
-                //return minio.deleteFolderAsync(auth, operation);
-                return Uni.createFrom().item("fsh");
+            .after(Duration.ofMillis(this.timeout))
+            .failWith(new TransferServiceException("deleteFolderTimeout"))
+            .chain(unused -> {
+                // Split the storage element URI into bucket and object names
+                return getBucketObjectFromUri(folderUri);
             })
-            .chain(code -> {
-                // Got success code
-                return Uni.createFrom().item(code);
+            .chain(buckobj -> {
+                // Got the URI parsed
+                var bucketName = buckobj.getItem1();
+                var objectName = buckobj.getItem2();
+                if(null != objectName && !objectName.isBlank() && '/' != objectName.charAt(objectName.length() - 1))
+                    // This is an object, not a virtual folder, bail
+                    return Uni.createFrom().failure(new TransferServiceException("notFolder"));
+
+                bucket.set(bucketName);
+
+                if(null == objectName)
+                    // Deleting a bucket, skip this step
+                    return Uni.createFrom().nullItem();
+
+                // For virtual folders prepare to list objects
+                return Uni.createFrom().item(ListObjectsArgs.builder()
+                        .bucket(bucketName)
+                        .prefix(objectName)
+                        .build());
+            })
+            .chain(listArgs -> {
+                if(null != listArgs) {
+                    // If we have arguments for listing objects, use it
+                    Iterable<Result<Item>> objects = minio.listObjects(listArgs);
+                    return Uni.createFrom().item(objects);
+                }
+
+                // Deleting a bucket, skip this step
+                return Uni.createFrom().nullItem();
+            })
+            .chain(objectsToDelete -> {
+                if(null != objectsToDelete) {
+                    // If we have a list of objects, prepare to delete them
+                    List<DeleteObject> objects = new LinkedList<>();
+                    var bucketName = bucket.get();
+                    var bucketUri = this.baseUri + "/" + bucketName;
+
+                    for(var object : objectsToDelete)
+                        try {
+                            var item = object.get();
+                            var objInfo = new ObjectInfo(bucketUri, item);
+                            objects.add(new DeleteObject(objInfo.getName()));
+                        }
+                        catch(Exception e) {
+                            var code = 0;
+                            var type = e.getClass();
+                            if(type.equals(ErrorResponseException.class))
+                                code = ((ErrorResponseException)e).response().code();
+                            else if(type.equals(ServerException.class))
+                                code = ((ServerException)e).statusCode();
+                            return Uni.createFrom().failure(new TransferServiceException("deleteObject", code,
+                                                                                e.getMessage().replaceAll("\\.$", "")));
+                        }
+
+                    MDC.put("objectCount", objects.size());
+                    objectCount.set(objects.size());
+
+                    // Prepare to delete objects
+                    return Uni.createFrom().item(RemoveObjectsArgs.builder()
+                            .bucket(bucketName)
+                            .objects(objects)
+                            .build());
+                }
+
+                // Deleting a bucket, skip this step
+                return Uni.createFrom().nullItem();
+            })
+            .chain(removeArgs -> {
+                if(null != removeArgs) {
+                    // If we have arguments for deleting objects, use it
+                    Iterable<Result<DeleteError>> deleted = minio.removeObjects(removeArgs);
+                    return Uni.createFrom().item(deleted);
+                }
+
+                // Deleting a bucket, skip this step
+                return Uni.createFrom().nullItem();
+            })
+            .chain(deleteErrors -> {
+                if(null != deleteErrors) {
+                    // If we got object delete errors, package them for the response
+                    List<Tuple2<String, String>> details = new ArrayList<>();
+                    for(var error : deleteErrors) {
+                        try {
+                            var e = error.get();
+                            var code = e.code();
+                            var msg = e.message();
+                            details.add(Tuple2.of(code, msg));
+                        } catch(Exception e) {
+                            var code = 0;
+                            var type = e.getClass();
+                            if(type.equals(ErrorResponseException.class))
+                                code = ((ErrorResponseException)e).response().code();
+                            else if(type.equals(ServerException.class))
+                                code = ((ServerException)e).statusCode();
+                            return Uni.createFrom().failure(new TransferServiceException("deleteError", code,
+                                                                                    e.getMessage().replaceAll("\\.$", "")));
+                        }
+                    }
+
+                    if(details.isEmpty()) {
+                        // Success
+                        var msg = String.format("Deleted %d prefixed objects", objectCount.get());
+                        log.info(msg);
+                        message.set(msg);
+                    }
+                    else {
+                        MDC.put("errorCount", details.size());
+                        log.infof("Failed to deleted %d prefixed objects", objectCount.get());
+                        return Uni.createFrom().failure(new TransferServiceException("deleteError", details));
+                    }
+
+                    return Uni.createFrom().nullItem();
+                }
+
+                // Prepare to delete a bucket
+                var bucketName = bucket.get();
+                return Uni.createFrom().item(RemoveBucketArgs.builder()
+                        .bucket(bucketName)
+                        .build());
+            })
+            .chain(bucketArgs -> {
+                if(null != bucketArgs) {
+                    // If we have arguments for deleting a bucket, use it
+                    CompletableFuture<Void> deleted = null;
+                    try {
+                        // Delete bucket
+                        deleted = minio.removeBucket(bucketArgs);
+
+                    } catch(Exception e) {
+                        var msg = e.getMessage().replaceAll("\\.$", "");
+                        return Uni.createFrom().failure(new TransferServiceException("removeBucket", msg));
+                    }
+                    return Uni.createFrom().completionStage(deleted);
+                }
+
+                return Uni.createFrom().nullItem();
+            })
+            .chain(unused -> {
+                // If we got here, bucket or prefixed objects were deleted
+                return Uni.createFrom().item(message.get());
             })
             .onFailure().invoke(e -> {
                 log.error(e);
@@ -473,13 +611,14 @@ public class MinioStorage implements StorageService {
                     nope = minio.removeObject(removeArgs);
                 }
                 catch(Exception e) {
-                    return Uni.createFrom().failure(new TransferServiceException(e, "removeObject"));
+                    var msg = e.getMessage().replaceAll("\\.$", "");
+                    return Uni.createFrom().failure(new TransferServiceException("removeObject", msg));
                 }
                 return Uni.createFrom().completionStage(nope);
             })
             .chain(unused -> {
                 // If we got here, object was successfully deleted
-                return Uni.createFrom().item("Success");
+                return Uni.createFrom().item("Deleted");
             })
             .onFailure().invoke(e -> {
                 log.error(e);
@@ -489,7 +628,7 @@ public class MinioStorage implements StorageService {
     }
 
     /**
-     * Rename a folder or file.
+     * Rename a bucket or object.
      * @param auth The access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param seOld The link to the storage element to rename.
@@ -500,21 +639,44 @@ public class MinioStorage implements StorageService {
         if(null == minio)
             throw new TransferServiceException("configInvalid");
 
+        var bucketOld = new AtomicReference<String>(null);
+        var objectOld = new AtomicReference<String>(null);
+        var bucketNew = new AtomicReference<String>(null);
+        var objectNew = new AtomicReference<String>(null);
         Uni<String> result = Uni.createFrom().nullItem()
 
             .ifNoItem()
-                .after(Duration.ofMillis(this.timeout))
-                .failWith(new TransferServiceException("renameStorageElementTimeout"))
-//            .chain(unused -> {
-//                // When necessary, configure S3 destination
-//                if(null != storageAuth && !storageAuth.isBlank())
-//                    return prepareStorages(auth, storageAuth, List.of(seOld));
-//
-//                return Uni.createFrom().item(true);
-//            })
+            .after(Duration.ofMillis(this.timeout))
+            .failWith(new TransferServiceException("renameStorageElementTimeout"))
+            .chain(unused -> {
+                // Split the new storage element URI into bucket and object names
+                return getBucketObjectFromUri(seNew);
+            })
+            .chain(buckobj -> {
+                // Got the new URI parsed
+                var bucketName = buckobj.getItem1();
+                var objectName = buckobj.getItem2();
+                bucketNew.set(bucketName);
+                objectNew.set(objectName);
+
+                // Split the old storage element URI into bucket and object names
+                return getBucketObjectFromUri(seOld);
+            })
+            .chain(buckobj -> {
+                // Got the old URI parsed
+                var bucketName = buckobj.getItem1();
+                var objectName = buckobj.getItem2();
+                bucketOld.set(bucketName);
+                objectOld.set(objectName);
+
+                var bucketNameNew = bucketNew.get();
+                var objectNameNew = objectNew.get();
+
+                return Uni.createFrom().nullItem();
+            })
             .chain(s3ConfigResult -> {
                 // Rename storage element
-                var operation = new ObjectOperation(seOld, seNew);
+                //var operation = new ObjectOperation(seOld, seNew);
                 //return minio.renameObjectAsync(auth, operation);
                 return Uni.createFrom().item("fsh");
             })

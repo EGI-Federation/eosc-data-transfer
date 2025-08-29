@@ -2,10 +2,7 @@ package eosc.eu;
 
 import io.smallrye.mutiny.tuples.Tuple2;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -13,8 +10,9 @@ import java.util.Map;
  */
 public class TransferServiceException extends RuntimeException {
 
-    private String id;
+    private final String id;
     private Map<String, String> details;
+    private Optional<Integer> code = Optional.empty();
 
 
     /**
@@ -33,16 +31,41 @@ public class TransferServiceException extends RuntimeException {
     }
 
     /**
+     * Construct with error id, status code, and message
+     */
+    public TransferServiceException(String id, int code, String message) {
+        super(message);
+        this.id = id;
+
+        if(0 != code)
+            this.code = Optional.of(code);
+    }
+
+    /**
      * Construct with error id and detail
      */
     public TransferServiceException(String id, Tuple2<String, String> detail) {
-        this(id, Arrays.asList(detail));
+        this(id, 0, Arrays.asList(detail));
+    }
+
+    /**
+     * Construct with error id, status code, and detail
+     */
+    public TransferServiceException(String id, int code, Tuple2<String, String> detail) {
+        this(id, code, Arrays.asList(detail));
     }
 
     /**
      * Construct with error id and details
      */
     public TransferServiceException(String id, List<Tuple2<String, String>> details) {
+        this(id, 0, details);
+    }
+
+    /**
+     * Construct with error id, status code, and details
+     */
+    public TransferServiceException(String id, int code, List<Tuple2<String, String>> details) {
         this.id = id;
         this.details = new HashMap<>() {
             {
@@ -51,6 +74,9 @@ public class TransferServiceException extends RuntimeException {
                         put(detail.getItem1(), detail.getItem2());
             }
         };
+
+        if(0 != code)
+            this.code = Optional.of(code);
     }
 
     /**
@@ -86,4 +112,8 @@ public class TransferServiceException extends RuntimeException {
     public String getId() { return id; }
 
     public Map<String, String> getDetails() { return details; }
+
+    public boolean hasCode() { return code.isPresent(); }
+
+    public int getCode() { return code.orElse(0); }
 }

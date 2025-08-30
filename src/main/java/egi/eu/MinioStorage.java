@@ -1,5 +1,6 @@
 package egi.eu;
 
+import io.minio.errors.*;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.apache.commons.lang3.StringUtils;
@@ -8,8 +9,11 @@ import org.jboss.logging.MDC;
 
 import jakarta.annotation.PostConstruct;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -20,8 +24,6 @@ import io.minio.messages.Item;
 import io.minio.messages.Bucket;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
-import io.minio.errors.ErrorResponseException;
-import io.minio.errors.ServerException;
 
 import eosc.eu.DataStorageCredentials;
 import eosc.eu.StorageService;
@@ -51,7 +53,7 @@ public class MinioStorage implements StorageService {
     public MinioStorage() {}
 
     /***
-     * Initialize the client for the S3 storage system
+     * Initialize the client for the S3 storage system.
      * @param serviceConfig Configuration loaded from the config file
      * @param storageElementUrl the URL to a folder or file on the target storage system
      * @param storageAuth Credentials for the storage system, Base-64 encoded "accesskey:secretkey"
@@ -529,7 +531,7 @@ public class MinioStorage implements StorageService {
                     }
                     else {
                         MDC.put("errorCount", details.size());
-                        log.infof("Failed to deleted %d prefixed objects", objectCount.get());
+                        log.infof("Failed to delete %d prefixed objects", objectCount.get());
                         return Uni.createFrom().failure(new TransferServiceException("deleteError", details));
                     }
 
@@ -557,6 +559,7 @@ public class MinioStorage implements StorageService {
                     return Uni.createFrom().completionStage(deleted);
                 }
 
+                // Deleting virtual folder, nothing else left to do
                 return Uni.createFrom().nullItem();
             })
             .chain(unused -> {
@@ -628,7 +631,9 @@ public class MinioStorage implements StorageService {
     }
 
     /**
-     * Rename a bucket or object.
+     * Rename an object. Attempts to rename a bucket or a virtual folder will fail.
+     * Note: Rename is not supported even for objects. Instead, the object is copied to
+     *       the new location with the new name, then the old one will be deleted.
      * @param auth The access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param seOld The link to the storage element to rename.
@@ -656,6 +661,12 @@ public class MinioStorage implements StorageService {
                 // Got the new URI parsed
                 var bucketName = buckobj.getItem1();
                 var objectName = buckobj.getItem2();
+
+                if(null == objectName || objectName.isBlank() ||
+                    '/' == objectName.charAt(objectName.length() - 1))
+                    // This is a bucket or a virtual folder, bail
+                    return Uni.createFrom().failure(new TransferServiceException("notFile"));
+
                 bucketNew.set(bucketName);
                 objectNew.set(objectName);
 
@@ -666,23 +677,72 @@ public class MinioStorage implements StorageService {
                 // Got the old URI parsed
                 var bucketName = buckobj.getItem1();
                 var objectName = buckobj.getItem2();
+
+                if(null == objectName || objectName.isBlank() ||
+                    '/' == objectName.charAt(objectName.length() - 1))
+                    // The old location cannot be a bucket or a virtual folder either, bail
+                    return Uni.createFrom().failure(new TransferServiceException("notFile"));
+
                 bucketOld.set(bucketName);
                 objectOld.set(objectName);
 
                 var bucketNameNew = bucketNew.get();
                 var objectNameNew = objectNew.get();
 
-                return Uni.createFrom().nullItem();
+                if(bucketName.equals(bucketNameNew) && objectName.equals(objectNameNew))
+                    // Source and destination the same, nothing to do
+                    return Uni.createFrom().failure(new TransferServiceException("noOp",
+                                                                    "Source and destination the same, nothing to do"));
+
+                // Prepare to copy object
+                return Uni.createFrom().item(CopyObjectArgs.builder()
+                                .bucket(bucketNameNew)
+                                .object(objectNameNew)
+                                .source(CopySource.builder()
+                                    .bucket(bucketName)
+                                    .object(objectName)
+                                    .build())
+                                .build());
             })
-            .chain(s3ConfigResult -> {
-                // Rename storage element
-                //var operation = new ObjectOperation(seOld, seNew);
-                //return minio.renameObjectAsync(auth, operation);
-                return Uni.createFrom().item("fsh");
+            .chain(copyArgs -> {
+                // Copy object to new location
+                CompletableFuture<ObjectWriteResponse> copied = null;
+                try {
+                    copied = minio.copyObject(copyArgs);
+                } catch(Exception e) {
+                    var msg = e.getMessage().replaceAll("\\.$", "");
+                    return Uni.createFrom().failure(new TransferServiceException("copyObject", msg));
+                }
+                return Uni.createFrom().completionStage(copied);
             })
-            .chain(code -> {
-                // Got success code
-                return Uni.createFrom().item(code);
+            .chain(copied -> {
+                // Object copied to new location
+                if(null == copied)
+                    return Uni.createFrom().failure(new TransferServiceException("copyObject"));
+
+                var bucketName = bucketOld.get();
+                var objectName = objectOld.get();
+
+                // Prepare to delete original object
+                return Uni.createFrom().item(RemoveObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(objectName)
+                        .build());
+            })
+            .chain(removeArgs -> {
+                // Delete object from old location
+                CompletableFuture<Void> removed = null;
+                try {
+                    removed = minio.removeObject(removeArgs);
+                } catch(Exception e) {
+                    var msg = e.getMessage().replaceAll("\\.$", "");
+                    return Uni.createFrom().failure(new TransferServiceException("removeObject", msg));
+                }
+                return Uni.createFrom().completionStage(removed);
+            })
+            .chain(unused -> {
+                // If we got here, object was moved
+                return Uni.createFrom().item("Renamed");
             })
             .onFailure().invoke(e -> {
                 log.error(e);

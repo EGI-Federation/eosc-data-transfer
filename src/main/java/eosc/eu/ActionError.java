@@ -216,6 +216,8 @@ public class ActionError {
         if(type.equals(TransferServiceException.class)) {
             TransferServiceException tse = (TransferServiceException)t;
             this.id = tse.getId();
+            if(this.id.equals("noOp"))
+                this.status = Status.OK;
             if(this.id.equals("fieldNotSupported") ||
                this.id.equals("doiNotSupported") ||
                this.id.equals("doiInvalid") ||

@@ -22,10 +22,11 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 
 import eosc.eu.model.*;
 import eosc.eu.model.Transfer.Destination;
+
+import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
 
 /***
@@ -445,7 +446,7 @@ public class DataStorage extends DataTransferBase {
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "createFolder",  summary = "Create new folder in a storage system")
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Success",
+            @APIResponse(responseCode = "201", description = "Created",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionSuccess.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
@@ -511,7 +512,7 @@ public class DataStorage extends DataTransferBase {
             .chain(created -> {
                 // Folder got created, success
                 log.info("Created folder");
-                return Uni.createFrom().item(new ActionSuccess(created).toResponse());
+                return Uni.createFrom().item(new ActionSuccess(created).toResponse(Response.Status.CREATED));
             })
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to create folder");
@@ -536,7 +537,7 @@ public class DataStorage extends DataTransferBase {
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "deleteFolder",  summary = "Delete existing folder from a storage system")
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Success",
+            @APIResponse(responseCode = "200", description = "Deleted",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionSuccess.class))),
             @APIResponse(responseCode = "400",
@@ -631,7 +632,7 @@ public class DataStorage extends DataTransferBase {
     @SecurityRequirement(name = "OIDC")
     @Operation(operationId = "deleteFile",  summary = "Delete existing file from a storage system")
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Success",
+            @APIResponse(responseCode = "200", description = "Deleted",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionSuccess.class))),
             @APIResponse(responseCode = "400",
@@ -727,7 +728,7 @@ public class DataStorage extends DataTransferBase {
     @Operation(operationId = "renameFile",  summary = "Rename existing file in a storage system")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Success",
+            @APIResponse(responseCode = "200", description = "Renamed",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionSuccess.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
@@ -772,7 +773,7 @@ public class DataStorage extends DataTransferBase {
                                          Arrays.asList(Tuple2.of("seUriOld", operation.seUriOld),
                                                        Tuple2.of("seUriNew", operation.seUriNew),
                                                        Tuple2.of("destination", destination)) )
-                                            .setStatus(Status.BAD_REQUEST)
+                                            .setStatus(BAD_REQUEST)
                                             .toResponse());
         }
 
@@ -833,7 +834,7 @@ public class DataStorage extends DataTransferBase {
     @Operation(operationId = "renameFolder",  summary = "Rename existing folder in a storage system")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Success",
+            @APIResponse(responseCode = "200", description = "Renamed",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionSuccess.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",

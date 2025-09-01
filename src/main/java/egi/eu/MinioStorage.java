@@ -124,7 +124,7 @@ public class MinioStorage implements StorageService {
     /***
      * Extract the bucket and object name from an URI.
      * @param seUri is the fully qualified URI to the object
-     * @return Uni containing Tuple with (bucketName, objectName, baseUri), failure Uni on error
+     * @return Uni containing Tuple with (bucketName, objectName), failure Uni on error.
      */
     private Uni<Tuple2<String, String>> getBucketObjectFromUri(String seUri) {
         // Split the storage element URI into a bucket and an object name
@@ -196,6 +196,7 @@ public class MinioStorage implements StorageService {
                     // If no bucket name, then we need to list the buckets
                     return Uni.createFrom().nullItem();
 
+                // Prepare to list objects
                 var listArgs = ListObjectsArgs.builder().bucket(bucketName);
                 if(null != objectName && !objectName.isBlank())
                     listArgs.prefix(objectName);
@@ -225,11 +226,13 @@ public class MinioStorage implements StorageService {
                     // If we got buckets, skip this step
                     return Uni.createFrom().item(Tuple2.of(bucketList, null));
 
+                // List objects
                 var listArgs = loa.get();
                 var objects = minio.listObjects(listArgs);
                 return Uni.createFrom().item(Tuple2.of(null, objects));
             })
             .chain(contentLists -> {
+                // When we get here, we have either a list of buckets or a list of objects
                 var buckets = (List<Bucket>)contentLists.getItem1();
                 var objects = (Iterable<Result<Item>>)contentLists.getItem2();
 
@@ -305,16 +308,16 @@ public class MinioStorage implements StorageService {
                     // This is not an object, bail
                     return Uni.createFrom().failure(new TransferServiceException("notFile"));
 
-                // Build Minio param
+                // Prepare to get object statistics
                 return Uni.createFrom().item(StatObjectArgs.builder()
                         .bucket(bucketName)
                         .object(objectName)
                         .build());
             })
             .chain(statArgs -> {
-                // Ready to get storage element stats
                 CompletableFuture<StatObjectResponse> stats = null;
                 try {
+                    // Get storage element stats
                     stats = minio.statObject(statArgs);
                 }
                 catch(Exception e) {
@@ -367,20 +370,18 @@ public class MinioStorage implements StorageService {
                     // For virtual folders we don't have to do anything
                     return Uni.createFrom().nullItem();
 
-                // Build Minio param
+                // Prepare to make bucket
                 return Uni.createFrom().item(MakeBucketArgs.builder()
                         .bucket(bucketName)
                         .build());
             })
             .chain(makeArgs -> {
-                // Check if we have to do anything
                 if(null == makeArgs)
-                    // Nope :-)
                     return Uni.createFrom().nullItem();
 
-                // Ready to delete bucket
                 CompletableFuture<Void> nope = null;
                 try {
+                    // Create bucket
                     nope = minio.makeBucket(makeArgs);
                 }
                 catch(Exception e) {
@@ -601,16 +602,16 @@ public class MinioStorage implements StorageService {
                     // This is not an object, bail
                     return Uni.createFrom().failure(new TransferServiceException("notFile"));
 
-                // Build Minio param
+                // Prepare to delete object
                 return Uni.createFrom().item(RemoveObjectArgs.builder()
                         .bucket(bucketName)
                         .object(objectName)
                         .build());
             })
             .chain(removeArgs -> {
-                // Ready to delete file
                 CompletableFuture<Void> nope = null;
                 try {
+                    // Delete object
                     nope = minio.removeObject(removeArgs);
                 }
                 catch(Exception e) {
@@ -705,9 +706,9 @@ public class MinioStorage implements StorageService {
                                 .build());
             })
             .chain(copyArgs -> {
-                // Copy object to new location
                 CompletableFuture<ObjectWriteResponse> copied = null;
                 try {
+                    // Copy object to new location
                     copied = minio.copyObject(copyArgs);
                 } catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
@@ -730,9 +731,9 @@ public class MinioStorage implements StorageService {
                         .build());
             })
             .chain(removeArgs -> {
-                // Delete object from old location
                 CompletableFuture<Void> removed = null;
                 try {
+                    // Delete object from old location
                     removed = minio.removeObject(removeArgs);
                 } catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");

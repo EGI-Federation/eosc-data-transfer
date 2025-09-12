@@ -9,8 +9,11 @@ import org.jboss.logging.MDC;
 
 import jakarta.annotation.PostConstruct;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -32,9 +35,9 @@ import egi.s3.model.*;
 
 
 /***
- * Class for manipulating storage elements in S3 storage systems
+ * Class for manipulating storage elements in WebDAV systems
  */
-public class MinioStorage implements StorageService {
+public class WebDavStorage implements StorageService {
 
     private static final Logger log = Logger.getLogger(MinioStorage.class);
 
@@ -47,10 +50,10 @@ public class MinioStorage implements StorageService {
     /***
      * Constructor
      */
-    public MinioStorage() {}
+    public WebDavStorage() {}
 
     /***
-     * Initialize the client for the S3 storage system.
+     * Initialize the client for the WebDAV system.
      * @param serviceConfig Configuration loaded from the config file
      * @param storageElementUrl the URL to a folder or file on the target storage system
      * @param storageAuth Credentials for the storage system, Base-64 encoded "accesskey:secretkey"
@@ -78,7 +81,7 @@ public class MinioStorage implements StorageService {
         }
 
         try {
-            // Create the Minio client for the storage system
+            // Create the WebDAV client for the storage system
             var userInfo = new DataStorageCredentials(storageAuth);
             minio = MinioAsyncClient.builder()
                         .endpoint(this.baseUri)

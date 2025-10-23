@@ -549,6 +549,7 @@ public class EgiDataTransfer implements TransferService {
         if(null == fts)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
+        var jobInfoExt = new AtomicReference<JobInfoExtended>(null);
         Uni<TransferInfoExtended> result = Uni.createFrom().nullItem()
 
             .ifNoItem()
@@ -558,15 +559,20 @@ public class EgiDataTransfer implements TransferService {
                 // Get transfer info
                 return fts.getTransferInfoAsync(auth, jobId);
             })
-            .chain(jobInfoExt -> {
-                // Got transfer info, success
-                try {
-                    MDC.put("jobInfo", this.objectMapper.writeValueAsString(jobInfoExt));
-                }
-                catch(JsonProcessingException e) {
-                    return Uni.createFrom().failure(new TransferServiceException(e, "serialize"));
-                }
-                return Uni.createFrom().item(new TransferInfoExtended(jobInfoExt));
+            .chain(jobInfo -> {
+                // Got transfer info
+                jobInfoExt.set(jobInfo);
+
+                // Get detailed status for each file in the transfer
+                return fts.getTransferFilesAsync(auth, jobId);
+            })
+            .chain(jobFileInfos -> {
+                // Got detailed status of each file, success
+                var jobInfo = jobInfoExt.get();
+                if(null != jobFileInfos)
+                    jobInfo.file_info = Optional.of(jobFileInfos);
+
+                return Uni.createFrom().item(new TransferInfoExtended(jobInfo));
             })
             .onFailure().invoke(e -> {
                 log.error(e);

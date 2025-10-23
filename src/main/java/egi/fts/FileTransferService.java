@@ -47,6 +47,10 @@ public interface FileTransferService {
     Uni<JobInfoExtended> getTransferInfoAsync(@RestHeader("Authorization") String auth, String jobId);
 
     @GET
+    @Path("/jobs/{jobId}/files")
+    Uni<List<JobFileInfo>> getTransferFilesAsync(@RestHeader("Authorization") String auth, String jobId);
+
+    @GET
     @Path("/jobs/{jobId}/{fieldName}")
     Uni<Object> getTransferFieldAsync(@RestHeader("Authorization") String auth, String jobId, String fieldName);
 

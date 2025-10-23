@@ -3,14 +3,17 @@ package eosc.eu.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
-import egi.fts.model.JobInfoExtended;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Optional;
+import java.util.Date;
+
+import egi.fts.model.JobFileInfo;
+import egi.fts.model.JobInfoExtended;
 
 
 /**
@@ -36,18 +39,12 @@ public class TransferInfoExtended extends TransferInfo {
     public Map<String, String> jobMetadata;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Schema(description="Source storage element")
-    public String source_se;
+    @Schema(description="Source storage system")
+    public String source_ss;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String source_space_token;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Schema(description="Destination storage element")
-    public String destination_se;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String destination_space_token;
+    @Schema(description="Destination storage system")
+    public String destination_ss;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String verifyChecksum;
@@ -86,6 +83,7 @@ public class TransferInfoExtended extends TransferInfo {
     public Date finishedAt;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description="Cause of data transfer failure")
     public String reason;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -97,8 +95,12 @@ public class TransferInfoExtended extends TransferInfo {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String cred_id;
 
+    @Schema(description="Detailed status of each transfer payload in this job "+
+                        "(if the used transfer engine can supply it)")
+    public Optional<List<TransferPayloadInfo>> payload_info;
 
-    /**
+
+    /***
      * Construct from extended FTS job info
      * @param jie The concrete job to construct from
      */
@@ -116,10 +118,8 @@ public class TransferInfoExtended extends TransferInfo {
         if(null != jie.job_metadata && !jie.job_metadata.isEmpty())
             this.jobMetadata.putAll(jie.job_metadata);
 
-        this.source_se = jie.source_se;
-        this.source_space_token = jie.source_space_token;
-        this.destination_se = jie.destination_se;
-        this.destination_space_token = jie.space_token;
+        this.source_ss = jie.source_se;
+        this.destination_ss = jie.destination_se;
 
         this.verifyChecksum = jie.verify_checksum;
 
@@ -134,12 +134,24 @@ public class TransferInfoExtended extends TransferInfo {
 
         this.submittedAt = jie.submit_time;
         this.submittedTo = jie.submit_host;
-        this.finishedAt = jie.job_finished.isPresent() ? jie.job_finished.get() : null;
+        this.finishedAt = jie.job_finished.orElse(null);
         this.reason = jie.reason;
 
         this.vo_name = jie.vo_name;
         this.user_dn = jie.user_dn;
         this.cred_id = jie.cred_id;
+
+        if(jie.file_info.isPresent()) {
+            List<JobFileInfo> jfl = jie.file_info.get();
+            List<TransferPayloadInfo> tpl = new ArrayList<>();
+
+            for(JobFileInfo jf : jfl)
+                tpl.add(new TransferPayloadInfo(jf));
+
+            this.payload_info = Optional.of(tpl);
+        }
+        else
+            this.payload_info = Optional.empty();
     }
 
 

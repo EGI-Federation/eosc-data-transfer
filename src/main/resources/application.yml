@@ -34,11 +34,14 @@ eosc:
         description: StoRM
         service: fts
         storage: webdav
+      ftp:
+        description: Storage site supporting the FTP protocol
+        service: fts
     service:
       fts:
         name: EGI Data Transfer
         class: egi.eu.EgiDataTransfer
-        url: https://fts3-public.cern.ch:8446
+        url: https://fts-egi.cern.ch:8446
         timeout: 3000
         trust-store-file: cern-truststore.jks
         trust-store-password: password
@@ -119,7 +122,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.81
+    info-version: 1.1.85
     security-scheme-name: OIDC
     security-scheme-description: OpenID Connect access token issued by EGI Check-In
     security-scheme: jwt

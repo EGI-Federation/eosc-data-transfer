@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -56,7 +57,7 @@ public class JobInfoExtended extends JobInfo {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Optional<Boolean> cancel_job;
 
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Optional<Date> job_finished;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -77,17 +78,19 @@ public class JobInfoExtended extends JobInfo {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String cred_id;
 
+    public Optional<List<JobFileInfo>> file_info;
 
     /**
      * Constructor
      */
     public JobInfoExtended() {
-        overwrite_flag = Optional.empty();
-        priority = Optional.empty();
-        retry = Optional.empty();
-        retry_delay = Optional.empty();
-        max_time_in_queue = Optional.empty();
-        cancel_job = Optional.empty();
-        job_finished = Optional.empty();
+        this.overwrite_flag = Optional.empty();
+        this.priority = Optional.empty();
+        this.retry = Optional.empty();
+        this.retry_delay = Optional.empty();
+        this.max_time_in_queue = Optional.empty();
+        this.cancel_job = Optional.empty();
+        this.job_finished = Optional.empty();
+        this.file_info = Optional.empty();
     }
 }

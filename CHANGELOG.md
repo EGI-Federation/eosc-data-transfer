@@ -5,8 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.86]
+- Added parameter to endpoint `GET /transfer/{jobId}` to control for which files to fetch transfer status
+
 ## [1.1.85]
-- Endpoint GET /transfer/{jobId} now also returns status of each file in the job
+- Endpoint `GET /transfer/{jobId}` now also returns status of each file in the job
 
 ## [1.1.80]
 - Implemented S3 storage support based on Min.io
@@ -23,11 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.72]
 - Added automated Docker image building
 - Refactor to separate transfer and storage system interfaces
-- Fix GET /transfer endpoint handling in FTS wrapper
+- Fix `GET /transfer` endpoint handling in FTS wrapper
 
 ## [1.1.70]
-- Fix POST /transfers endpoint handling in FTS wrapper
-- Remove params from /version endpoint
+- Fix `POST /transfers` endpoint handling in FTS wrapper
+- Remove params from `GET /version` endpoint
 - Improve SQAaS score
 - Upgrade to latest Quarkus version
 
@@ -39,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.63]
 - Added support for S3S
-- Moved Swagger-UI to the root, path is now /swagger-ui
+- Moved Swagger-UI to the root, path is now `/swagger-ui`
 
 ## [1.1.58]
 - Fix authentication schemes in Swagger-UI
@@ -69,8 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documented Java17 dependency and fixed some typos
 
 ## [1.1.44]
-- Endpoint /parser should accept canonical DOI format
-- Added valid example DOI for endpoint /parser
+- Endpoint `GET /parser` should accept canonical DOI format
+- Added valid example DOI for endpoint `GET /parser`
 - Fix accessUrl of parsed ESRF files
 - Create/modified date times of parsed ESRF files incorrect
 
@@ -85,7 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated documentation
 
 ## [1.0.17]
-- Fixed misconfiguration causing endpoint GET /storage/types to fail
+- Fixed misconfiguration causing endpoint `GET /storage/types` to fail
 
 ## [1.0.16]
 - Added support to parse any PID that implements Signposting

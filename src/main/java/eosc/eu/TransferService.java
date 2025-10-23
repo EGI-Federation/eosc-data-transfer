@@ -4,6 +4,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.ws.rs.core.Response;
 
 import eosc.eu.model.*;
+import eosc.eu.model.TransferPayloadInfo.FileDetails;
 import eosc.eu.TransferConfig.TransferServiceConfig;
 
 
@@ -71,9 +72,10 @@ public interface TransferService {
      * Request information about a transfer.
      * @param tsAuth The access token needed to call the service.
      * @param jobId The ID of the transfer to request info about.
+     * @param fileInfo For which files to return transfer info
      * @return Details of the transfer.
      */
-    Uni<TransferInfoExtended> getTransferInfo(String tsAuth, String jobId);
+    Uni<TransferInfoExtended> getTransferInfo(String tsAuth, String jobId, FileDetails fileInfo);
 
     /**
      * Request specific field from information about a transfer.

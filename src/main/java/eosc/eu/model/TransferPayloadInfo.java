@@ -67,12 +67,6 @@ public class TransferPayloadInfo {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> fileMetadata;
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String vo_name;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String job_id;
-
 
     /***
      * Construct from FTS job file info
@@ -96,9 +90,6 @@ public class TransferPayloadInfo {
         this.fileMetadata = new HashMap<>();
         if(null != jfi.file_metadata && !jfi.file_metadata.isEmpty())
             this.fileMetadata.putAll(jfi.file_metadata);
-
-        this.vo_name = jfi.vo_name;
-        this.job_id = jfi.job_id;
     }
 
     /***
@@ -108,8 +99,6 @@ public class TransferPayloadInfo {
             "and 'failed' if all files failed to transfer.")
     public enum FileState
     {
-        unknown("unknown"),
-        staging("staging"),
         submitted("submitted"),
         active("active"),
         unused("unused"),
@@ -132,12 +121,8 @@ public class TransferPayloadInfo {
          */
         public static FileState fromString(String status) {
             final String statusLo = status.toLowerCase();
-            if(statusLo.contains("staging"))
-                return staging;
-            else if(statusLo.contains("submitted") || statusLo.contains("hold"))
-                return submitted;
-            else if(statusLo.contains("ready") || statusLo.contains("active") || statusLo.contains("start") ||
-                    statusLo.contains("arch") || statusLo.contains("progress"))
+            if(statusLo.contains("staging") || statusLo.contains("ready") || statusLo.contains("active") ||
+               statusLo.contains("start") || statusLo.contains("arch") || statusLo.contains("progress"))
                 return active;
             else if(statusLo.contains("succe") || statusLo.contains("finish"))
                 return succeeded;
@@ -145,8 +130,10 @@ public class TransferPayloadInfo {
                 return failed;
             else if(statusLo.contains("cancel"))
                 return canceled;
+            else if(statusLo.contains("not_used"))
+                return unused;
 
-            return unknown;
+            return submitted;
         }
 
         /***
@@ -156,5 +143,36 @@ public class TransferPayloadInfo {
         public String toString() {
             return this.status;
         }
+    }
+
+    /***
+     * For which files in a transfer to return status
+     */
+    public enum FileDetails
+    {
+        none("none"),
+        failed("failed"),
+        all("all");
+
+        private final String detailsFor;
+
+        FileDetails(String detailsFor) { this.detailsFor = detailsFor; }
+
+        /***
+         * Build from a string
+         * @param detailsFor the desired details
+         * @return FileDetails with specified details
+         */
+        public static FileDetails fromString(String detailsFor) {
+            final String detailsForLo = detailsFor.toLowerCase();
+            if(detailsForLo.equals("all"))
+                return all;
+            else if(detailsForLo.equals("failed"))
+                return failed;
+
+            return none;
+        }
+
+        public String detailsFor() { return this.detailsFor; }
     }
 }

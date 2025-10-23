@@ -17,7 +17,6 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.micrometer.core.instrument.MeterRegistry;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
@@ -29,6 +28,7 @@ import jakarta.ws.rs.core.Response;
 
 import eosc.eu.model.*;
 import eosc.eu.model.Transfer.Destination;
+import eosc.eu.model.TransferPayloadInfo.FileDetails;
 
 
 /***
@@ -348,10 +348,15 @@ public class DataTransfer extends DataTransferBase {
                                          @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                          @Parameter(schema = @Schema(implementation = Destination.class),
                                                     description = DESTINATION_STORAGE)
-                                         String destination) {
+                                         String destination,
+                                         @RestQuery("fileInfo") @DefaultValue(DEFAULT_FILE_INFO)
+                                         @Parameter(schema = @Schema(implementation = FileDetails.class),
+                                                    description = FILE_INFO_FOR)
+                                         String fileInfo) {
 
         MDC.put("jobId", jobId);
         MDC.put("dest", destination);
+        MDC.put("fileInfo", fileInfo);
 
         log.info("Retrieving details of transfer");
 
@@ -369,7 +374,7 @@ public class DataTransfer extends DataTransferBase {
             })
             .chain(params -> {
                 // Get transfer details
-                return params.ts.getTransferInfo(auth, jobId);
+                return params.ts.getTransferInfo(auth, jobId, FileDetails.fromString(fileInfo));
             })
             .chain(transferInfo -> {
                 // Got transfer details, success

@@ -18,8 +18,10 @@ import eosc.eu.model.Transfer;
 public class DataTransferBase {
 
     public static final String DEFAULT_DESTINATION = "dcache";
+    public static final String DEFAULT_FILE_INFO = "none";
     public static final String HEADER_STORAGE_AUTH = "Authorization-Storage";
-    public static final String DESTINATION_STORAGE = "The destination of a transfer";
+    public static final String DESTINATION_STORAGE = "The destination of the transfer";
+    public static final String FILE_INFO_FOR = "Selects for which files to return transfer status";
     public static final String STORAGE_AUTH = "Optional credentials for the destination storage, " +
                                               "Base-64 encoded 'user:password' or 'access-key:secret-key'";
 

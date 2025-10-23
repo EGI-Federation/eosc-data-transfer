@@ -15,6 +15,9 @@ import java.util.Date;
 import egi.fts.model.JobFileInfo;
 import egi.fts.model.JobInfoExtended;
 
+import eosc.eu.model.TransferPayloadInfo.FileDetails;
+import eosc.eu.model.TransferPayloadInfo.FileState;
+
 
 /**
  * Extended details of a transfer job.
@@ -47,7 +50,7 @@ public class TransferInfoExtended extends TransferInfo {
     public String destination_ss;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String verifyChecksum;
+    public boolean verifyChecksum;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description="True to overwrite destination files")
@@ -95,6 +98,7 @@ public class TransferInfoExtended extends TransferInfo {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String cred_id;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description="Detailed status of each transfer payload in this job "+
                         "(if the used transfer engine can supply it)")
     public Optional<List<TransferPayloadInfo>> payload_info;
@@ -105,6 +109,15 @@ public class TransferInfoExtended extends TransferInfo {
      * @param jie The concrete job to construct from
      */
     public TransferInfoExtended(JobInfoExtended jie) {
+        this(jie, FileDetails.none);
+    }
+
+    /***
+     * Construct from extended FTS job info
+     * @param jie The concrete job to construct from
+     * @param fileInfo For which files to include transfer info
+     */
+    public TransferInfoExtended(JobInfoExtended jie, FileDetails fileInfo) {
 
         super(jie);
 
@@ -120,8 +133,7 @@ public class TransferInfoExtended extends TransferInfo {
 
         this.source_ss = jie.source_se;
         this.destination_ss = jie.destination_se;
-
-        this.verifyChecksum = jie.verify_checksum;
+        this.verifyChecksum = null != jie.verify_checksum && jie.verify_checksum.equalsIgnoreCase("Y");
 
         this.overwrite = jie.job_finished.isPresent() ?
                                 Optional.of(jie.overwrite_flag.get().equals("Y")) :
@@ -141,12 +153,14 @@ public class TransferInfoExtended extends TransferInfo {
         this.user_dn = jie.user_dn;
         this.cred_id = jie.cred_id;
 
-        if(jie.file_info.isPresent()) {
+        if(FileDetails.none != fileInfo && jie.file_info.isPresent()) {
             List<JobFileInfo> jfl = jie.file_info.get();
             List<TransferPayloadInfo> tpl = new ArrayList<>();
+            final boolean allFiles = FileDetails.all == fileInfo;
 
             for(JobFileInfo jf : jfl)
-                tpl.add(new TransferPayloadInfo(jf));
+                if(allFiles || FileState.failed == FileState.fromString(jf.file_state))
+                    tpl.add(new TransferPayloadInfo(jf));
 
             this.payload_info = Optional.of(tpl);
         }
@@ -162,8 +176,6 @@ public class TransferInfoExtended extends TransferInfo {
                         "and 'failed' if all files failed to transfer.")
     public enum TransferState
     {
-        unknown("unknown"),
-        staging("staging"),
         submitted("submitted"),
         active("active"),
         succeeded("succeeded"),
@@ -186,11 +198,8 @@ public class TransferInfoExtended extends TransferInfo {
          */
         public static TransferState fromString(String status) {
             final String statusLo = status.toLowerCase();
-            if(statusLo.contains("staging"))
-                return staging;
-            else if(statusLo.contains("submitted"))
-                return submitted;
-            else if(statusLo.contains("ready") || statusLo.contains("active") || statusLo.contains("progress"))
+            if(statusLo.contains("staging") || statusLo.contains("ready") ||
+               statusLo.contains("active") || statusLo.contains("progress"))
                 return active;
             else if(statusLo.contains("dirty"))
                 return partial;
@@ -201,7 +210,7 @@ public class TransferInfoExtended extends TransferInfo {
             else if(statusLo.contains("cancel"))
                 return canceled;
 
-            return unknown;
+            return submitted;
         }
 
         /***

@@ -38,6 +38,7 @@ import eosc.eu.TransferService;
 import eosc.eu.TransferServiceException;
 import eosc.eu.DataStorageCredentials;
 import eosc.eu.TransferConfig.TransferServiceConfig;
+import eosc.eu.model.TransferPayloadInfo.FileDetails;
 import eosc.eu.model.*;
 
 import egi.fts.FileTransferService;
@@ -543,9 +544,10 @@ public class EgiDataTransfer implements TransferService {
      * Request information about a transfer.
      * @param auth The access token that authorizes calling the service.
      * @param jobId The ID of the transfer to request info about.
+     * @param fileInfo For which files to return transfer info.
      * @return Details of the transfer.
      */
-    public Uni<TransferInfoExtended> getTransferInfo(String auth, String jobId) {
+    public Uni<TransferInfoExtended> getTransferInfo(String auth, String jobId, FileDetails fileInfo) {
         if(null == fts)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
@@ -563,6 +565,9 @@ public class EgiDataTransfer implements TransferService {
                 // Got transfer info
                 jobInfoExt.set(jobInfo);
 
+                if(FileDetails.none == fileInfo)
+                    return Uni.createFrom().nullItem();
+
                 // Get detailed status for each file in the transfer
                 return fts.getTransferFilesAsync(auth, jobId);
             })
@@ -572,7 +577,7 @@ public class EgiDataTransfer implements TransferService {
                 if(null != jobFileInfos)
                     jobInfo.file_info = Optional.of(jobFileInfos);
 
-                return Uni.createFrom().item(new TransferInfoExtended(jobInfo));
+                return Uni.createFrom().item(new TransferInfoExtended(jobInfo, fileInfo));
             })
             .onFailure().invoke(e -> {
                 log.error(e);

@@ -30,10 +30,10 @@ eosc:
         description: S3 compatible object storage over HTTPS
         service: fts
         storage: minios
-      storm:
-        description: StoRM
-        service: fts
-        storage: webdav
+#      storm:
+#        description: StoRM
+#        service: fts
+#        storage: webdav
       ftp:
         description: Storage site supporting the FTP protocol
         service: fts
@@ -64,15 +64,14 @@ eosc:
         auth: keys
         protocol: https
         timeout: 3000
-      webdav:
-        name: WebDAV storage
-        class: egi.eu.WebDavStorage
-        auth: token
-        protocol: https
+#      webdav:
+#        name: WebDAV storage
+#        class: egi.eu.WebDavStorage
+#        auth: token
+#        protocol: https
   qos:
     quantiles: [0.95]
     slos: [500] # SLOs expressed in milliseconds
-
 
 quarkus:
   application:
@@ -122,7 +121,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.86
+    info-version: 1.1.87
     security-scheme-name: OIDC
     security-scheme-description: OpenID Connect access token issued by EGI Check-In
     security-scheme: jwt

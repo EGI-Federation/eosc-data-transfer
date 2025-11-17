@@ -80,12 +80,12 @@ quarkus:
     level: INFO
     min-level: DEBUG
     console:
-      enable: true
+      enabled: true
       format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
       json:
         ~: false
     file:
-      enable: true
+      enabled: true
       path: logs/data-transfer.json
       format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
       rotation:
@@ -121,7 +121,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.87
+    info-version: 1.1.88
     security-scheme-name: OIDC
     security-scheme-description: OpenID Connect access token issued by EGI Check-In
     security-scheme: jwt

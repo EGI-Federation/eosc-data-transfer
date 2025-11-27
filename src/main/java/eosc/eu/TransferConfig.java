@@ -59,12 +59,6 @@ public interface TransferConfig {
 
         @WithName("trust-store-password")
         Optional<String> trustStorePassword();
-
-        @WithName("key-store-file")
-        Optional<String> keyStoreFile();
-
-        @WithName("key-store-password")
-        Optional<String> keyStorePassword();
     }
 
     /***

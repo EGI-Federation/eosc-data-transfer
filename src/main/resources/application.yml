@@ -58,11 +58,11 @@ eosc:
         auth: keys
         protocol: https
         timeout: 3000
-#      webdav:
-#        name: WebDAV storage
-#        class: egi.eu.WebDavStorage
-#        auth: token
-#        protocol: https
+      webdav:
+        name: WebDAV storage
+        class: egi.eu.WebDavStorage
+        auth: token
+        protocol: https
   qos:
     quantiles: [0.95]
     slos: [500] # SLOs expressed in milliseconds
@@ -94,7 +94,9 @@ quarkus:
 #      otlp:
 #        traces:
 #          endpoint: http://localhost:4317
-#      logs:
+#        metrics:
+#          endpoint: http://localhost:4317
+#        logs:
 #          endpoint: http://localhost:3100
   micrometer:
     enabled: true
@@ -115,7 +117,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.90
+    info-version: 1.1.92
     security-scheme-name: OIDC
     security-scheme-description: OpenID Connect access token issued by EGI Check-In
     security-scheme: jwt

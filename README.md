@@ -420,6 +420,11 @@ certificate and will only do dry runs for requesting a certificate to avoid the
 > you redeploy the API (prevents exceeding Let's Encrypt rate limit).
 
 
+## Running the API with telemetry using Kubernetes
+
+TODO Describe prerequisites for the K8s cluster (Argo) nd the steps to deploy it
+
+
 ## Related Guides
 
 - [REST server implementation](https://quarkus.io/guides/resteasy-reactive) Writing reactive REST services

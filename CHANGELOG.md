@@ -5,12 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.95]
+
+- Fixed exception while parsing byte array returned by REST client calls
+- Added server in Swagger UI to access locally run container
+- Corrected deprecated configuration params
+
 ## [1.1.92]
-- Replaced Jaeger with Tempo in Docker Compose deployment
 - Upgrade to latest Quarkus version
 
 ## [1.1.90]
-- Removed 2nd REST client for FTS, called using a certificate and used to configure S3 hosts
+- Removed 2nd REST client for FTS, called using a certificate to configure S3 hosts
 - Removed the keystore file settings from the configuration file
 - Removed env vars from Docker Compose deployment passing keystore file settings to the Java app
 

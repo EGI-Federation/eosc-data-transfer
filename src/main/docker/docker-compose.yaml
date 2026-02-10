@@ -1,6 +1,4 @@
 ---
-version: "3.9"
-
 networks:
   default:
     name: eosc
@@ -47,10 +45,8 @@ services:
 
   # Data transfer service
   api:
+    image: registry.egi.eu/eosc-beyond.eu/eosc-data-transfer/app
     container_name: data-transfer-api
-    image: eosc/data-transfer-api:latest
-    build:
-      context: data-transfer/
     environment:
       - EOSC_TRANSFER_SERVICE_FTS_URL=${FTS_URL:-https://fts-egi.cern.ch:8446}
       - EOSC_TRANSFER_SERVICE_FTS_TRUST_STORE_PASSWORD=${FTS_TRUST_STORE_PASSWORD}
@@ -59,7 +55,7 @@ services:
       - QUARKUS_LOG_FILE_PATH=/deployments/logs/data-transfer-1.json
       - QUARKUS_OPENTELEMETRY_TRACES_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
       - QUARKUS_OPENTELEMETRY_TRACES_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.name=data-transfer
-      - QUARKUS_HTTP_CORS_ORIGINS=\/\/${SERVICE_DOMAIN}|https?:\/\/(?:.+\.)?eosc\-beyond\.eu?
+      - QUARKUS_HTTP_CORS_ORIGINS=https?:\/\/${SERVICE_DOMAIN}|http:\/\/localhost:(?::\d+)?
       - QUARKUS_HTTP_CORS_HEADERS=${CORS_HEADERS:-Origin,Content-Type,Accept}
       - QUARKUS_HTTP_CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
     volumes:
@@ -98,7 +94,7 @@ services:
 
   # Loki (logs)
   loki:
-    image: grafana/loki:2.4.1
+    image: grafana/loki
     container_name: loki
     volumes:
       - ./loki/loki.yaml:/etc/loki/local-config.yaml
@@ -112,7 +108,7 @@ services:
 
   # Prometheus (metrics)
   prometheus:
-    image: quay.io/prometheus/prometheus:v2.34.0
+    image: quay.io/prometheus/prometheus
     container_name: prometheus
     command:
       - --web.console.templates=/etc/prometheus/consoles
@@ -134,7 +130,7 @@ services:
 
   # Grafana (dashboard)
   grafana:
-    image: grafana/grafana:9.1.0
+    image: grafana/grafana
     container_name: grafana
     deploy:
       resources:
@@ -148,7 +144,7 @@ services:
 
   # OpenTelemetry collector
   otelcol:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: otel/opentelemetry-collector-contrib
     container_name: otel-collector
     deploy:
       resources:

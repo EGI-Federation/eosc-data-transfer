@@ -1,4 +1,4 @@
 #!/bin/bash
 
-echo "Building API containers..."
+echo "Deploying Data Transfer API..."
 sudo -E docker compose -p eosc-data-transfer up -d --build --remove-orphans

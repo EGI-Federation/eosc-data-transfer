@@ -77,7 +77,7 @@ quarkus:
       enabled: true
       format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
       json:
-        ~: false
+        enabled: false
     file:
       enabled: true
       path: logs/data-transfer.json
@@ -86,7 +86,7 @@ quarkus:
         max-file-size: 1M
         max-backup-index: 10
       json:
-        ~: true
+        enabled: true
   otel:
     logs:
       enabled: false
@@ -130,7 +130,7 @@ quarkus:
     auth:
       basic: false
     cors:
-      ~: true
+      enabled: true
       headers: Authorization,Accept,Content-Type
       methods: HEAD,GET,POST,PUT,DELETE,OPTIONS
     proxy:

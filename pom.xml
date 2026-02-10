@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>eosc.eu</groupId>
   <artifactId>eosc-data-transfer</artifactId>
-  <version>1.1</version>
+  <version>1.1.95</version>
   <properties>
     <compiler-plugin.version>3.12.1</compiler-plugin.version>
     <failsafe.useModulePath>false</failsafe.useModulePath>
@@ -13,7 +13,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>3.30.7</quarkus.platform.version>
+    <quarkus.platform.version>3.31.2</quarkus.platform.version>
     <surefire-plugin.version>3.2.3</surefire-plugin.version>
   </properties>
   <dependencyManagement>
@@ -71,7 +71,7 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-junit5</artifactId>
+      <artifactId>quarkus-junit</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -117,6 +117,7 @@
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
             <maven.home>${maven.home}</maven.home>
           </systemPropertyVariables>
+          <argLine>@{argLine}</argLine>
         </configuration>
       </plugin>
     </plugins>
@@ -149,6 +150,9 @@
                 </configuration>
               </execution>
             </executions>
+            <configuration>
+              <argLine>@{argLine}</argLine>
+            </configuration>
           </plugin>
         </plugins>
       </build>

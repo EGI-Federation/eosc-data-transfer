@@ -114,7 +114,6 @@ quarkus:
     theme: flattop
     urls:
       default: /openapi
-      local: /openapi
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi

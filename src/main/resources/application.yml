@@ -88,6 +88,10 @@ quarkus:
       json:
         enabled: true
   otel:
+    traces:
+      enabled: true
+    metrics:
+      enabled: true
     logs:
       enabled: false
 #    exporter:

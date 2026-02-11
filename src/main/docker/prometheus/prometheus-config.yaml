@@ -2,16 +2,16 @@ global:
   evaluation_interval: 30s
   scrape_interval: 5s
 scrape_configs:
-- job_name: otel
-  honor_labels: true
-  static_configs:
-  - targets:
-    - 'otelcol:9464'
-- job_name: otel-collector
-  static_configs:
-  - targets:
-    - 'otelcol:8888'
-- job_name: data-transfer
-  static_configs:
-  - targets:
-    - 'api:8081'
+  - job_name: otel
+    honor_labels: true
+    static_configs:
+    - targets:
+      - 'otelcol:9464'
+  - job_name: otel-collector
+    static_configs:
+    - targets:
+      - 'otelcol:8888'
+  - job_name: data-transfer
+    static_configs:
+    - targets:
+      - 'api:8081'

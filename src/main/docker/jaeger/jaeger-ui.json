@@ -1,0 +1,34 @@
+{
+  "monitor": {
+    "menuEnabled": true
+  },
+  "themes": {
+    "enabled": true
+  },
+  "archiveEnabled": true,
+  "menu": [
+    {
+      "label": "About Jaeger",
+      "items": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/jaegertracing/jaeger"
+        },
+        {
+          "label": "Docs",
+          "url": "https://www.jaegertracing.io/docs/latest/"
+        }
+      ]
+    }
+  ],
+  "search": {
+    "maxLookback": {
+      "label": "2 Days",
+      "value": "2d"
+    },
+    "maxLimit": 1500
+  },
+  "traceIdDisplayLength": 20,
+  "criticalPathEnabled": true,
+  "topTagPrefixes": ["http.", "db."]
+}

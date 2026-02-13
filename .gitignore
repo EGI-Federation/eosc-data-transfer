@@ -21,6 +21,7 @@ bin/
 gen/
 logs/*.json
 logs/*.json.*
+.quarkus/
 
 # NetBeans
 nb-configuration.xml

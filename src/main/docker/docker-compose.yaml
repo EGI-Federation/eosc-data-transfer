@@ -1,7 +1,6 @@
 ---
 networks:
   default:
-    name: eosc
     driver: bridge
 
 volumes:
@@ -9,9 +8,9 @@ volumes:
   logs:
 
 services:
-  # ************************
+  # ***************************
   # Data Transfer components
-  # ************************
+  # ***************************
   # SSL terminator
   cert:
     container_name: data-transfer-ssl
@@ -53,48 +52,69 @@ services:
       - EOSC_TRANSFER_SERVICE_FTS_TRUST_STORE_FILE=${FTS_TRUST_STORE_FILE:-cern-truststore.jks}
       - QUARKUS_SMALLRYE_OPENAPI_SERVERS=https://${SERVICE_DOMAIN}${LOCAL_SERVER}
       - QUARKUS_LOG_FILE_PATH=/deployments/logs/data-transfer-1.json
-      - QUARKUS_OPENTELEMETRY_TRACES_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
-      - QUARKUS_OPENTELEMETRY_TRACES_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.name=data-transfer
+      - QUARKUS_OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES}
+      - QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${OTEL_EXPORTER_TRACES_ENDPOINT}
+      - QUARKUS_OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=${OTEL_EXPORTER_TRACES_ENDPOINT}
       - QUARKUS_HTTP_CORS_ORIGINS=https?:\/\/${SERVICE_DOMAIN}|http:\/\/localhost:(?::\d+)?
       - QUARKUS_HTTP_CORS_HEADERS=${CORS_HEADERS:-Origin,Content-Type,Accept}
       - QUARKUS_HTTP_CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
     volumes:
       - logs:/deployments/logs:rw
-    restart: unless-stopped
     ports:
       - "8081:8089"
+    restart: unless-stopped
     depends_on:
-      - otelcol
+      - jaeger
 
-  # ************************
+  # ***************************
   # Telemetry components
-  # ************************
+  # ***************************
+
+  # OpenTelemetry collector
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command:
+      - "--config"
+      - "/etc/otelcol-config.yml"
+    environment:
+      LOG_LEVEL: info
+    volumes:
+      - ./otelcollector/otelcol-config.yml:/etc/otelcol-config.yml
+      - logs:/usr/logs/data-transfer:ro
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 125M
+    depends_on:
+      - loki
+
   # Jaeger (traces)
   jaeger:
-    image: jaegertracing/all-in-one
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.15.0
     container_name: jaeger
     command:
-      - "--memory.max-traces"
-      - "10000"
-      - "--query.base-path"
-      - "/jaeger/ui"
-      - "--prometheus.server-url"
-      - "http://prometheus:9090"
+      - "--config"
+      - "/jaeger/config.yaml"
     environment:
-      - COLLECTOR_OTLP_ENABLED=true
-      - METRICS_STORAGE_TYPE=prometheus
+      LOG_LEVEL: info
+    volumes:
+      - ./jaeger/jaeger.yaml:/jaeger/config.yaml
+      - ./jaeger/jaeger-ui.json:/jaeger/config-ui.json
+    ports:
+      - "${JAEGER_SERVICE_PORT}:16686"  # UI and Query API
+      - "${JAEGER_COLLECTOR_PORT}:4317" # gRPC receiver
+      - "8889:8889"                     # Jaeger metrics
+    restart: unless-stopped
     deploy:
       resources:
         limits:
           memory: 300M
-    restart: unless-stopped
-    ports:
-      - "${JAEGER_SERVICE_PORT}:16686" # Jaeger UI
-      - "${JAEGER_COLLECTOR_PORT}:4317"
 
   # Loki (logs)
   loki:
-    image: grafana/loki
+    image: grafana/loki:3.6
     container_name: loki
     volumes:
       - ./loki/loki.yaml:/etc/loki/local-config.yaml
@@ -108,7 +128,7 @@ services:
 
   # Prometheus (metrics)
   prometheus:
-    image: quay.io/prometheus/prometheus
+    image: prom/prometheus:v3.9.1
     container_name: prometheus
     command:
       - --web.console.templates=/etc/prometheus/consoles
@@ -130,7 +150,7 @@ services:
 
   # Grafana (dashboard)
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:12.3.2
     container_name: grafana
     deploy:
       resources:
@@ -141,24 +161,3 @@ services:
       - ./grafana/provisioning/:/etc/grafana/provisioning/
     ports:
       - "3000:3000"
-
-  # OpenTelemetry collector
-  otelcol:
-    image: otel/opentelemetry-collector-contrib
-    container_name: otel-collector
-    deploy:
-      resources:
-        limits:
-          memory: 125M
-    restart: unless-stopped
-    command: ["--config=/etc/otelcol-config.yml"]
-    volumes:
-      - ./otelcollector/otelcol-config.yml:/etc/otelcol-config.yml
-      - logs:/usr/logs/data-transfer:ro
-    ports:
-      - "${OTEL_COLLECTOR_PORT}:4317"
-      - "9464:9464"   # Prometheus exporter
-      - "8888:8888"   # Metrics endpoint
-      - "13133:13133" # Health check
-    depends_on:
-      - jaeger

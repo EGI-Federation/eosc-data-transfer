@@ -30,6 +30,9 @@ public class DataTransferBase {
     @Inject
     protected TransferConfig config;
 
+    @Inject
+    protected ServiceConfig serviceConfig;
+
 
     /***
      * Construct with logger

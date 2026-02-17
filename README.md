@@ -3,7 +3,6 @@
 
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?label=License)
 ![Release](https://img.shields.io/github/v/release/EGI-Federation/eosc-data-transfer?label=Release)
-![Image size](https://img.shields.io/docker/image-size/registry.egi.eu/eosc-beyond.eu/eosc-data-transfer?label=Size)
 ![Image build](https://github.com/EGI-Federation/eosc-data-transfer/workflows/Build/badge.svg)
 ![GitHub issues](https://img.shields.io/github/issues/EGI-Federation/eosc-data-transfer?label=Issues)
 ![GitHub issues labeled bugs](https://img.shields.io/github/issues-search/EGI-Federation/eosc-data-transfer?label=Bugs&color=red&query=is%3Aopen%20label%3Abug)
@@ -15,10 +14,11 @@ researchers access to a wide web of [FAIR data](https://en.wikipedia.org/wiki/FA
 and science-related services. The [EOSC Beyond](https://www.eosc-beyond.eu) project
 continues this development to deliver the next generation of EOSC.
 
-This project buil            ds a generic data transfer service that can be used in EOSC to transfer
-large amounts of data to cloud storage, by just indicating the source and destination.
-The EOSC Data Transfer Service features a [RESTful](https://restfulapi.net) Application
-Programming Interface (REST API).
+This project builds a generic data transfer service that can be used in EOSC
+nodes to transfer large amounts of data to cloud storage, by just indicating
+the source and destination. The EOSC Data Transfer Service features a
+[RESTful](https://restfulapi.net) Application Programming Interface
+(REST API).
 
 The API covers three sets of functionalities:
 
@@ -48,19 +48,17 @@ HTTP header `Authorization` (if present) will be forwarded as received. This ens
 the EOSC Data Transfer API can be [extended with new parsers](#integrating-new-doi-parsers)
 for data repositories that require authentication.
 
-The API endpoints that create and manage transfers, as well as the ones that manage storage
-elements, do require authorization, in the form of an access token passed via the HTTP
-header `Authorization`. This gets passed to the
-[transfer service registered to handle the destination storage](#3-register-new-destinations-serviced-by-the-new-data-transfer-service).
+The API endpoints that create and manage transfers do require authorization, in the form
+of an access token passed via the HTTP header `Authorization`. This gets passed to the
+[transfer engine registered to handle the destination storage](#3-register-new-destinations-serviced-by-the-new-data-transfer-service).
 The challenge is that some storage systems used as the target of the transfer may need
-a different authentication and/or authorization (than the one the transfer service uses).
-Thus, an additional set of credentials can be supplied to the endpoints in these groups
-via the HTTP header `Authorization-Storage`.
+a different authentication and/or authorization (than what the transfer engine requires).
+Thus, an additional set of credentials can be supplied via the HTTP header `Authorization-Storage`.
 
-> For example, for transfers to [dCache](https://www.dcache.org), the configured transfer service
+> For example, for transfers to [dCache](https://www.dcache.org), the configured transfer engine
 > that handles the transfers is [EGI Data Transfer](https://www.egi.eu/service/data-transfer/).
-> These both can use the same EGI Check-in access token, thus no additional credentials are needed
-> besides the access token for the transfer service, passed via the `Authorization` HTTP header.
+> Both dCache and EGI Data Transfer can use the same EGI Check-in access token, thus no additional
+> credentials are needed besides the access token, passed via the `Authorization` HTTP header.
 
 When used, the HTTP header parameter `Authorization-Storage` receives a
 key value pair, separated by a colon (`:`), no leading or trailing whitespace, which

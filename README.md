@@ -12,7 +12,7 @@ funded by the European Commission, that implemented the
 [European Open Science Cloud](https://eosc-portal.eu) (EOSC) to give European
 researchers access to a wide web of [FAIR data](https://en.wikipedia.org/wiki/FAIR_data)
 and science-related services. The [EOSC Beyond](https://www.eosc-beyond.eu) project
-continues this development to deliver the next generation of EOSC node core services.
+continues this development to deliver the next generation of EOSC core services.
 
 This project builds a generic data transfer service that can be used in EOSC
 nodes to transfer large amounts of data to cloud storage, by just indicating

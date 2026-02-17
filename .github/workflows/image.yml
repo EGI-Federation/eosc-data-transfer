@@ -51,5 +51,5 @@ jobs:
           context: src/main/docker/data-transfer/
           #On pull requests no image push is done before merging
           push: ${{ github.event_name == 'push' }}
-          tags: registry.egi.eu/eosc-beyond.eu/eosc-data-transfer/app:latest
+          tags: ${{ env.REPO_IMAGE }}:latest
         if: ${{ github.event_name != 'release' }}

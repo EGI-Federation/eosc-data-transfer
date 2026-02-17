@@ -351,6 +351,7 @@ The application can be packaged using:
 ```shell script
 ./mvnw package
 ```
+
 It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
 Be aware that it’s not an _über-jar_ as the dependencies are copied into the
 `target/quarkus-app/lib/` directory.
@@ -388,6 +389,7 @@ The architecture and interaction between these containers is illustrated below:
 Steps to run the API in a container:
 
 1. Copy the file `src/main/docker/.env.template` to `src/main/docker/.env`, then:
+
   - Provide the domain name and port where you will deploy the API in the environment
   variables `SERVICE_DOMAIN` and `SERVICE_PORT`, respectively.
   - Provide an email address in the environment variable `SERVICE_EMAIL` to be used,

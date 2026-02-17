@@ -12,6 +12,9 @@ import java.util.Map;
 import java.util.HashMap;
 
 
+/***
+ * Class for dynamically computed configuration properties.
+ */
 @StaticInitSafe
 public class DynamicConfiguration implements ConfigSource {
 
@@ -20,11 +23,17 @@ public class DynamicConfiguration implements ConfigSource {
     private static final String instanceConfigProperty = "eosc.service.instance";
     private static final Map<String, String> configuration = new HashMap<>();
 
+    /***
+     * Constructor
+     */
     public DynamicConfiguration() {
         initInstance();
     }
 
-    synchronized static void initInstance() {
+    /***
+     * Initialize instance name (use machine hostname)
+     */
+    static synchronized void initInstance() {
         String instance = configuration.get(instanceConfigProperty);
         if(null == instance) {
             // Get machine hostname
@@ -58,28 +67,49 @@ public class DynamicConfiguration implements ConfigSource {
         }
     }
 
+    /***
+     * Returns the priority of this configuration source.
+     * If a property is specified in multiple config sources, the value in the config source with the
+     * highest ordinal takes precedence.
+     * @return Configuration source priority
+     */
     @Override
     public int getOrdinal() {
         return 275;
     }
 
+    /***
+     * Gets all property names known to this configuration source, without evaluating the values.
+     * The returned set is not required to allow concurrent iteration; however, if the same set is returned
+     * by multiple calls to this method, then the implementation must support concurrent iteration.
+     * The set of keys returned may be a point-in-time snapshot, or may change over time.
+     * @return Property names that are known to this configuration source
+     */
     @Override
     public Set<String> getPropertyNames() {
         return configuration.keySet();
     }
 
+    /***
+     * Get the value for a configuration property.
+     * @return The value of the requested property, null if not known by this configuration source.
+     */
     @Override
     public String getValue(final String propertyName) {
 
         if(propertyName.equals("quarkus.otel.resource.attributes")) {
 
             String instance = configuration.get(instanceConfigProperty);
-            return String.format("service.namespace=eosc,service.name=data-transfer,service.instance=%s", instance);
+            return String.format("service.namespace=eosc,service.name=data-transfer,service.instance.id=%s", instance);
         }
 
         return configuration.get(propertyName);
     }
 
+    /***
+     * Gets the name of the configuration source.
+     * @return The name of the configuration source
+     */
     @Override
     public String getName() {
         return DynamicConfiguration.class.getSimpleName();

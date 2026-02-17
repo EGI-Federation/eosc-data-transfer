@@ -1,16 +1,14 @@
 default: true
 
+# Consecutive blank lines
 MD012:
-  # Consecutive blank lines
   maximum: 2
 
-MD007:
-  # Unordered list indentation
-  enabled: false
+# Unordered list indentation
+MD007: false
 
 MD013:
   line_length: 120
 
-MD029:
-  # Ordered list item prefix
-  enabled: false
+# Ordered list item prefix
+MD029: false

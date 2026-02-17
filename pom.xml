@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>eosc.eu</groupId>
   <artifactId>eosc-data-transfer</artifactId>
-  <version>1.1.98</version>
+  <version>1.1.100</version>
   <properties>
     <compiler-plugin.version>3.12.1</compiler-plugin.version>
     <failsafe.useModulePath>false</failsafe.useModulePath>

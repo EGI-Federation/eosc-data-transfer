@@ -1,10 +1,12 @@
 
 # EOSC Data Transfer Service
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/EGI-Federation/eosc-data-transfer?color=darkcyan&label=Release)
+![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?label=License)
+![Release](https://img.shields.io/github/v/release/EGI-Federation/eosc-data-transfer?label=Release)
+![Image size](https://img.shields.io/docker/image-size/registry.egi.eu/eosc-beyond.eu/eosc-data-transfer?label=Size)
+![Image build](https://github.com/EGI-Federation/eosc-data-transfer/workflows/Build/badge.svg)
 ![GitHub issues](https://img.shields.io/github/issues/EGI-Federation/eosc-data-transfer?label=Issues)
-![GitHub issue custom search in repo](https://img.shields.io/github/issues-search/EGI-Federation/eosc-data-transfer?label=Bugs&color=red&query=is%3Aopen%20label%3Abug)
+![GitHub issues labeled bugs](https://img.shields.io/github/issues-search/EGI-Federation/eosc-data-transfer?label=Bugs&color=red&query=is%3Aopen%20label%3Abug)
 
 [EOSC Future](https://eoscfuture.eu) is a Horizon Europe 2020 project,
 funded by the European Commission, that implemented the
@@ -13,7 +15,7 @@ researchers access to a wide web of [FAIR data](https://en.wikipedia.org/wiki/FA
 and science-related services. The [EOSC Beyond](https://www.eosc-beyond.eu) project
 continues this development to deliver the next generation of EOSC.
 
-This project builds a generic data transfer service that can be used in EOSC to transfer
+This project buil            ds a generic data transfer service that can be used in EOSC to transfer
 large amounts of data to cloud storage, by just indicating the source and destination.
 The EOSC Data Transfer Service features a [RESTful](https://restfulapi.net) Application
 Programming Interface (REST API).

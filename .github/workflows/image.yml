@@ -1,5 +1,5 @@
 ---
-name: Container image workflow
+name: Build
 
 on:
   pull_request:
@@ -9,6 +9,10 @@ on:
   release:
     types:
       - published
+
+env:
+  REPO_IMAGE: registry.egi.eu/eosc-beyond.eu/eosc-data-transfer
+
 jobs:
   build_container:
     name: Building container from
@@ -37,8 +41,8 @@ jobs:
           context: src/main/docker/data-transfer/
           push: true
           tags: |
-            registry.egi.eu/eosc-beyond.eu/eosc-data-transfer/app:latest
-            registry.egi.eu/eosc-beyond.eu/eosc-data-transfer/app:${{ github.event.release.tag_name }}
+            ${{ env.REPO_IMAGE }}:latest
+            ${{ env.REPO_IMAGE }}:${{ github.event.release.tag_name }}
         if: ${{ github.event_name == 'release' }}
 
       - name: Build and push the latest version

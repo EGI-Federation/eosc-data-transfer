@@ -3,6 +3,12 @@
 export DOMAIN=${DOMAIN}
 export EMAIL=${EMAIL}
 
+# Setup telemetry
+if [ -e /opt/telemetry.conf ]; then
+    echo "Configuring telemetry"
+    envsubst '${TELEMETRY_URL}${HOSTNAME}' < /opt/telemetry.conf > /etc/nginx/conf.d/opentelemetry_module.conf
+fi
+
 # Ensure we have a folder for the certificates
 if [ ! -d /usr/share/nginx/certificates ]; then
     echo "Creating certificate folder"

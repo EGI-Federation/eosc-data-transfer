@@ -15,6 +15,7 @@ ARG CORS_METHODS
 # Run-time environment variables
 ENV EMAIL ${SERVICE_EMAIL}
 ENV DOMAIN ${SERVICE_DOMAIN}
+ENV TELEMETRY_URL ${TELEMETRY_URL}
 
 # Install certbot and openssl
 # Using inotifywait to watch our certificates and trigger actions on change
@@ -35,17 +36,13 @@ RUN envsubst '${DOMAIN}${SERVICE}${GRAFANA_URL}${CORS_ORIGINS}${CORS_METHODS}${C
 
 # Configure telemetry
 WORKDIR /opt
+COPY telemetry.conf telemetry.conf
 ADD https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/download/webserver%2Fv1.0.3/opentelemetry-webserver-sdk-x64-linux.tgz .
 RUN tar xvfz opentelemetry-webserver-sdk-x64-linux.tgz && \
     rm -f opentelemetry-webserver-sdk-x64-linux.tgz
 
 WORKDIR /opt/opentelemetry-webserver-sdk
 RUN ./install.sh
-
-WORKDIR /opt
-COPY telemetry.conf telemetry.conf
-RUN envsubst '${TELEMETRY_URL}' < /opt/telemetry.conf > /etc/nginx/conf.d/opentelemetry_module.conf && \
-    rm -f telemetry.conf
 
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/opentelemetry-webserver-sdk/sdk_lib/lib
 

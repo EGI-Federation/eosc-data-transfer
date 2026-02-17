@@ -1,3 +1,16 @@
 default: true
-extends: null
-ul-indent: false
+
+MD012:
+  # Consecutive blank lines
+  maximum: 2
+
+MD007:
+  # Unordered list indentation
+  enabled: false
+
+MD013:
+  line_length: 120
+
+MD029:
+  # Ordered list item prefix
+  enabled: false

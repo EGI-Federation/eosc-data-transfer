@@ -91,16 +91,19 @@ public class DynamicConfiguration implements ConfigSource {
     }
 
     /***
-     * Get the value for a configuration property.
+     * Get dynamic value for a configuration property.
      * @return The value of the requested property, null if not known by this configuration source.
      */
     @Override
     public String getValue(final String propertyName) {
 
         if(propertyName.equals("quarkus.otel.resource.attributes")) {
-
             String instance = configuration.get(instanceConfigProperty);
             return String.format("service.namespace=eosc,service.name=data-transfer,service.instance.id=%s", instance);
+        }
+        if(propertyName.equals("quarkus.log.file.path")) {
+            String instance = configuration.get(instanceConfigProperty);
+            return String.format("logs/data-transfer-%s.json", instance);
         }
 
         return configuration.get(propertyName);

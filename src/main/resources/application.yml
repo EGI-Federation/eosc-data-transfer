@@ -1,6 +1,7 @@
 ---
 eosc:
   service:
+    # Set to the machine hostname in class DynamicConfiguration
     instance: default
   parser:
     zenodo:
@@ -82,6 +83,7 @@ quarkus:
         enabled: false
     file:
       enabled: true
+      # Changed to include instance in class DynamicConfiguration
       path: logs/data-transfer.json
       format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
       rotation:
@@ -116,7 +118,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.98
+    info-version: 1.1.100
     security-scheme-name: OIDC
     security-scheme-description: OpenID Connect access token issued by EGI Check-In
     security-scheme: jwt

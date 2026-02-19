@@ -5,10 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.95]
+## [1.1.100]
+- Dynamic log filename in configuration now includes instance id
+- Simplified image name/tag
+- Automatic telemetry resource attributes `service.namespace`, `service.name`, and `service.instance.id`
+- SSL terminator telemetry now uses hostname as service.instance.id attribute
+- Upgrade to latest Quarkus version
 
+## [1.1.98]
+- Added dynamic config property initialized with the machine hostname
+- Made local server in Swagger UI configurable
+- Use Jaeger as the open telemetry collector
+- Updated architecture diagram
+
+## [1.1.95]
 - Fixed exception while parsing byte array returned by REST client calls
-- Added server in Swagger UI to access locally run container
+- Added server in Swagger UI to access locally run API
 - Corrected deprecated configuration params
 
 ## [1.1.92]

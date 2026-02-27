@@ -42,28 +42,38 @@ public class DynamicConfiguration implements ConfigSource {
                 Process p = pb.start();
 
                 instance = new BufferedReader(
-                        new InputStreamReader(pb.start().getInputStream())
-                ).readLine();
+                           new InputStreamReader(pb.start().getInputStream())
+                           ).readLine();
             } catch(Exception e) {
-                // Could not get hostname
-                log.error(e);
-                log.info("Fallback to random instance name");
+                // Could not get hostname, try again
+                try {
+                    ProcessBuilder pb = new ProcessBuilder("hostname");
+                    Process p = pb.start();
 
-                // Fallback to a random string
-                int leftLimit = 97;     // 'a'
-                int rightLimit = 122;   // 'z'
-                Random random = new Random();
+                    instance = new BufferedReader(
+                            new InputStreamReader(pb.start().getInputStream())
+                    ).readLine();
+                } catch(Exception ex) {
+                    // Could not get hostname
+                    log.error(ex);
+                    log.info("Fallback to random instance name");
 
-                instance = random.ints(leftLimit, rightLimit + 1)
-                        .limit(12)
-                        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-                        .toString();
+                    // Fallback to a random string
+                    int leftLimit = 97;     // 'a'
+                    int rightLimit = 122;   // 'z'
+                    Random random = new Random();
+
+                    instance = random.ints(leftLimit, rightLimit + 1)
+                            .limit(12)
+                            .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                            .toString();
+                }
             }
-
-            log.infof("Service instance: %s", instance);
 
             // Store it as the instance configuration property
             configuration.put(instanceConfigProperty, instance);
+
+            log.infof("Service instance: %s", instance);
         }
     }
 

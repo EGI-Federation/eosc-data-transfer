@@ -4,6 +4,11 @@ datasources:
   - name: Jaeger
     uid: my-traces
     type: jaeger
-    url: http://jaeger:16686/jaeger/ui
+    url: http://jaeger:16686
+    editable: true
+    isDefault: false
+  - name: Jaeger Infinity
+    type: yesoreyeram-infinity-datasource
+    url: http://jaeger:16686
     editable: true
     isDefault: false

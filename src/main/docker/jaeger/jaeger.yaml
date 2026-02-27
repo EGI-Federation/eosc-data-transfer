@@ -38,6 +38,12 @@ processors:
 exporters:
   jaeger_storage_exporter:
     trace_storage: trace_store
+  prometheus:
+    endpoint: 0.0.0.0:8888
+    enable_open_metrics: true
+    send_timestamps: true
+    resource_to_telemetry_conversion:
+      enabled: true
 #  debug:
 #    verbosity: detailed
 
@@ -48,6 +54,10 @@ service:
       receivers: [ otlp ]
       processors: [ tail_sampling, batch ]
       exporters: [ jaeger_storage_exporter ]
+    metrics:
+      receivers: [ otlp ]
+      processors: [ batch ]
+      exporters: [ prometheus ]
   telemetry:
     resource:
       service.name: jaeger

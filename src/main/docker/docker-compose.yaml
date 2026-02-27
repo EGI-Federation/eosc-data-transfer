@@ -6,6 +6,9 @@ networks:
 volumes:
   certificates:
   logs:
+  loki:
+  prometheus:
+  grafana:
 
 services:
   # ***************************
@@ -44,17 +47,14 @@ services:
 
   # Data transfer service
   api:
-    image: registry.egi.eu/eosc-beyond.eu/eosc-data-transfer/app
+    image: registry.egi.eu/eosc-beyond.eu/eosc-data-transfer
     container_name: data-transfer-api
     environment:
       - EOSC_TRANSFER_SERVICE_FTS_URL=${FTS_URL:-https://fts-egi.cern.ch:8446}
       - EOSC_TRANSFER_SERVICE_FTS_TRUST_STORE_PASSWORD=${FTS_TRUST_STORE_PASSWORD}
       - EOSC_TRANSFER_SERVICE_FTS_TRUST_STORE_FILE=${FTS_TRUST_STORE_FILE:-cern-truststore.jks}
       - QUARKUS_SMALLRYE_OPENAPI_SERVERS=https://${SERVICE_DOMAIN}${LOCAL_SERVER}
-      - QUARKUS_LOG_FILE_PATH=/deployments/logs/data-transfer-1.json
-      - QUARKUS_OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES}
-      - QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${OTEL_EXPORTER_TRACES_ENDPOINT}
-      - QUARKUS_OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=${OTEL_EXPORTER_TRACES_ENDPOINT}
+      - QUARKUS_OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_ENDPOINT}
       - QUARKUS_HTTP_CORS_ORIGINS=https?:\/\/${SERVICE_DOMAIN}|http:\/\/localhost:(?::\d+)?
       - QUARKUS_HTTP_CORS_HEADERS=${CORS_HEADERS:-Origin,Content-Type,Accept}
       - QUARKUS_HTTP_CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
@@ -90,6 +90,21 @@ services:
     depends_on:
       - loki
 
+  # Loki (logs)
+  loki:
+    image: grafana/loki:3.6
+    container_name: loki
+    volumes:
+      - loki:/loki
+      - ./loki/loki.yaml:/etc/loki/local-config.yaml
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+    restart: unless-stopped
+    ports:
+      - "${LOKI_COLLECTOR_PORT}:3100"
+
   # Jaeger (traces)
   jaeger:
     image: cr.jaegertracing.io/jaegertracing/jaeger:2.15.0
@@ -105,6 +120,7 @@ services:
     ports:
       - "${JAEGER_SERVICE_PORT}:16686"  # UI and Query API
       - "${JAEGER_COLLECTOR_PORT}:4317" # gRPC receiver
+      - "8888:8888"                     # Data Transfer metrics
       - "8889:8889"                     # Jaeger metrics
     restart: unless-stopped
     deploy:
@@ -112,35 +128,17 @@ services:
         limits:
           memory: 300M
 
-  # Loki (logs)
-  loki:
-    image: grafana/loki:3.6
-    container_name: loki
-    volumes:
-      - ./loki/loki.yaml:/etc/loki/local-config.yaml
-    deploy:
-      resources:
-        limits:
-          memory: 250M
-    restart: unless-stopped
-    ports:
-      - "${LOKI_COLLECTOR_PORT}:3100"
-
   # Prometheus (metrics)
   prometheus:
     image: prom/prometheus:v3.9.1
     container_name: prometheus
     command:
-      - --web.console.templates=/etc/prometheus/consoles
-      - --web.console.libraries=/etc/prometheus/console_libraries
-      - --storage.tsdb.retention.time=1h
       - --config.file=/etc/prometheus/prometheus-config.yaml
-      - --storage.tsdb.path=/prometheus
-      - --web.enable-lifecycle
-      - --web.route-prefix=/
       - --enable-feature=exemplar-storage
     volumes:
+      - prometheus:/prometheus
       - ./prometheus/prometheus-config.yaml:/etc/prometheus/prometheus-config.yaml
+      - ./prometheus/alerting-rules.yml:/etc/prometheus/alerting-rules.yml
     deploy:
       resources:
         limits:
@@ -157,6 +155,7 @@ services:
         limits:
           memory: 75M
     volumes:
+      - grafana:/var/lib/grafana
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./grafana/provisioning/:/etc/grafana/provisioning/
     ports:

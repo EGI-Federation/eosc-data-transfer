@@ -20,7 +20,7 @@ processors:
       # Add hint for Loki that the attribute "filename" should be placed as a Loki label
       - action: insert
         key: loki.attribute.labels
-        value: filename
+        value: filename,service_name
 
 extensions:
   health_check:

@@ -115,6 +115,10 @@ public class DynamicConfiguration implements ConfigSource {
             String instance = configuration.get(instanceConfigProperty);
             return String.format("logs/data-transfer-%s.json", instance);
         }
+        if(propertyName.equals("quarkus.http.access-log.base-file-name")) {
+            String instance = configuration.get(instanceConfigProperty);
+            return String.format("data-transfer-%s", instance);
+        }
 
         return configuration.get(propertyName);
     }

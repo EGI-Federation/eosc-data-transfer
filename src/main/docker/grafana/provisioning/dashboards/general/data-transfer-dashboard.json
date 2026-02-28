@@ -1651,7 +1651,7 @@
               },
               "direction": "backward",
               "editorMode": "builder",
-              "expr": "{service_name=\"unknown_service\"} | filename =~ `$service-$instance.*` | json | line_format `span:{{.mdc_spanId}} trace:{{.mdc_traceId}} sequence:{{.sequence}} | {{.message}} | {{.loggerName}}`",
+              "expr": "{service_name=\"unknown_service\"} | filename =~ `$service-$instance.json.*` | json | line_format `span:{{.mdc_spanId}} trace:{{.mdc_traceId}} sequence:{{.sequence}} | {{.message}} | {{.loggerName}}`",
               "queryType": "range",
               "refId": "A"
             }

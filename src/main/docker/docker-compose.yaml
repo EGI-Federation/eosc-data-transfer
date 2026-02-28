@@ -5,6 +5,7 @@ networks:
 
 volumes:
   certificates:
+  jobs:
   logs:
   loki:
   prometheus:
@@ -65,6 +66,20 @@ services:
     restart: unless-stopped
     depends_on:
       - jaeger
+      - redis
+
+  redis:
+    image: redis:8.6.1-alpine
+    container_name: redis
+    environment:
+      - REDIS_MAXMEMORY=512mb
+      - REDIS_APPENDONLY=yes
+    volumes:
+      - jobs:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
 
   # ***************************
   # Telemetry components

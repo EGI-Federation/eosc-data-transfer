@@ -9,7 +9,7 @@ import java.util.Optional;
 
 
 /***
- * The configuration of the parsers
+ * The configuration of the PID parsers
  */
 @ConfigMapping(prefix = "eosc")
 public interface ParsersConfig {

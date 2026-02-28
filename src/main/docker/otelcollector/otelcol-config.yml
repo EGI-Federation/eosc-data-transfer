@@ -2,7 +2,7 @@ receivers:
   filelog:
     start_at: beginning
     include:
-      - /usr/logs/data-transfer/*.json*
+      - /usr/logs/data-transfer*.json*
 
 exporters:
   otlp_http:
@@ -20,7 +20,7 @@ processors:
       # Add hint for Loki that the attribute "filename" should be placed as a Loki label
       - action: insert
         key: loki.attribute.labels
-        value: filename,service_name
+        value: filename
 
 extensions:
   health_check:

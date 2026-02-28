@@ -9,7 +9,7 @@ import java.util.Optional;
 
 
 /***
- * The configuration of the supported storage types and the transfer services that will handle them
+ * The configuration of the supported destinations and the transfer services that will handle them
  */
 @ConfigMapping(prefix = "eosc.transfer")
 public interface TransferConfig {

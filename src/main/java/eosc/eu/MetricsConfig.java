@@ -9,7 +9,7 @@ import java.util.Optional;
 /***
  * The configuration of the service QoS
  */
-@ConfigMapping(prefix = "eosc.qos")
+@ConfigMapping(prefix = "eosc.service.qos")
 public interface MetricsConfig {
 
     /***

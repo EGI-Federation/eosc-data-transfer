@@ -53,11 +53,11 @@ services:
       - EOSC_TRANSFER_SERVICE_FTS_URL=${FTS_URL:-https://fts-egi.cern.ch:8446}
       - EOSC_TRANSFER_SERVICE_FTS_TRUST_STORE_PASSWORD=${FTS_TRUST_STORE_PASSWORD}
       - EOSC_TRANSFER_SERVICE_FTS_TRUST_STORE_FILE=${FTS_TRUST_STORE_FILE:-cern-truststore.jks}
-      - QUARKUS_SMALLRYE_OPENAPI_SERVERS=https://${SERVICE_DOMAIN}${LOCAL_SERVER}
+      - EOSC_SERVICE_ACCOUNTING_SERVER=${ACCOUNTING_SERVER}
+      - EOSC_SERVICE_ACCOUNTING_METRIC=${ACCOUNTING_METRIC}
       - QUARKUS_OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_ENDPOINT}
       - QUARKUS_HTTP_CORS_ORIGINS=https?:\/\/${SERVICE_DOMAIN}|http:\/\/localhost:(?::\d+)?
-      - QUARKUS_HTTP_CORS_HEADERS=${CORS_HEADERS:-Origin,Content-Type,Accept}
-      - QUARKUS_HTTP_CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
+      - QUARKUS_SMALLRYE_OPENAPI_SERVERS=https://${SERVICE_DOMAIN}${LOCAL_SERVER}
     volumes:
       - logs:/deployments/logs:rw
     ports:
@@ -81,7 +81,7 @@ services:
       LOG_LEVEL: info
     volumes:
       - ./otelcollector/otelcol-config.yml:/etc/otelcol-config.yml
-      - logs:/usr/logs/data-transfer:ro
+      - logs:/usr/logs:ro
     restart: unless-stopped
     deploy:
       resources:
@@ -145,6 +145,7 @@ services:
           memory: 300M
     ports:
       - "${PROMETHEUS_SERVICE_PORT}:9090"
+    restart: unless-stopped
 
   # Grafana (dashboard)
   grafana:
@@ -160,3 +161,4 @@ services:
       - ./grafana/provisioning/:/etc/grafana/provisioning/
     ports:
       - "3000:3000"
+    restart: unless-stopped

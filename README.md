@@ -134,7 +134,7 @@ After a parser is identified, the methods `init()` and `parseDOI()` are called i
 
 #### 2. Add configuration for the new DOI parser
 
-Add a new entry in the [configuration file](#configuration) under `eosc/parser` for the
+Add a new entry in the [configuration file](#configuration) under `eosc.parser` for the
 new parser, with the following settings:
 
 - `name` is the human-readable name of the data repository.

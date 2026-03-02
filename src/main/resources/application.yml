@@ -4,8 +4,9 @@ eosc:
     # Set to unique instance ID (machine hostname) in class DynamicConfiguration
     instance: default
     accounting:
-      server:
-      metric:
+      server: my-accounting-server
+      installation: my-installation-id
+      metric: my-metric-id
       group:
     qos:
       quantiles: [ 0.95, 0.98 ]
@@ -77,12 +78,14 @@ eosc:
 quarkus:
   application:
     name: data-transfer
+  redis:
+    hosts: redis://localhost:6379
   log:
     level: INFO
     min-level: DEBUG
     console:
       enabled: true
-      format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, spanId=%X{spanId}, sampled=%X{sampled} [%c{2.}] (%t) %s%e%n"
+      format: "%d{HH:mm:ss} %-5p traceId=%X{traceId}, spanId=%X{spanId}, [%c{2.}] (%t) %s%e%n"
       json:
         enabled: false
     file:

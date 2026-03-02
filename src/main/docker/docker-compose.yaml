@@ -55,6 +55,7 @@ services:
       - EOSC_TRANSFER_SERVICE_FTS_TRUST_STORE_PASSWORD=${FTS_TRUST_STORE_PASSWORD}
       - EOSC_TRANSFER_SERVICE_FTS_TRUST_STORE_FILE=${FTS_TRUST_STORE_FILE:-cern-truststore.jks}
       - EOSC_SERVICE_ACCOUNTING_SERVER=${ACCOUNTING_SERVER}
+      - EOSC_SERVICE_ACCOUNTING_INSTALLATION=${ACCOUNTING_INSTALLATION}
       - EOSC_SERVICE_ACCOUNTING_METRIC=${ACCOUNTING_METRIC}
       - QUARKUS_OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_ENDPOINT}
       - QUARKUS_HTTP_CORS_ORIGINS=https?:\/\/${SERVICE_DOMAIN}|http:\/\/localhost:(?::\d+)?
@@ -68,13 +69,13 @@ services:
       - jaeger
       - redis
 
+  # State store (transfer jobs)
   redis:
     image: redis:8.6.1-alpine
     container_name: redis
-    environment:
-      - REDIS_MAXMEMORY=512mb
-      - REDIS_APPENDONLY=yes
+    command: redis-server /etc/redis/redis.conf
     volumes:
+      - ./redis/redis.conf:/etc/redis/redis.conf
       - jobs:/data
     ports:
       - "6379:6379"

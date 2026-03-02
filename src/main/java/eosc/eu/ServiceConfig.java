@@ -25,6 +25,8 @@ public interface ServiceConfig {
         // Accounting server to send accounting records to
         Optional<String> server();
 
+        Optional<String> installation();
+
         // Type of accounting record to use
         Optional<String> metric();
 

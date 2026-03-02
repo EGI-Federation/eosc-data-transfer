@@ -1,4 +1,4 @@
-package egi.fts.model;
+package cern.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

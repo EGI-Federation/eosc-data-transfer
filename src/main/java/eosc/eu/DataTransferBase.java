@@ -85,7 +85,7 @@ public class DataTransferBase {
             if(params.ts.initService(serviceConfig)) {
                 var tsName = params.ts.getServiceName();
                 MDC.put("serviceName", tsName);
-                log.infof("Transfers handled by %s", tsName);
+                log.infof("Transfer handled by %s", tsName);
                 return true;
             }
         }

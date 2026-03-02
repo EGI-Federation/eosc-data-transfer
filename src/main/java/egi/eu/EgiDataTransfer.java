@@ -33,17 +33,17 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import static jakarta.ws.rs.core.HttpHeaders.*;
 
+import cern.model.*;
+import cern.model.UserInfo;
+import cern.FileTransferService;
+
+import eosc.eu.model.*;
 import eosc.eu.BooleanAccumulator;
 import eosc.eu.TransferService;
 import eosc.eu.TransferServiceException;
 import eosc.eu.DataStorageCredentials;
 import eosc.eu.TransferConfig.TransferServiceConfig;
 import eosc.eu.model.TransferPayloadInfo.FileDetails;
-import eosc.eu.model.*;
-
-import egi.fts.FileTransferService;
-import egi.fts.model.UserInfo;
-import egi.fts.model.*;
 
 
 /***

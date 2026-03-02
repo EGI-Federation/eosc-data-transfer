@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.Date;
 
-import egi.fts.model.JobFileInfo;
-import egi.fts.model.JobInfoExtended;
+import cern.model.JobFileInfo;
+import cern.model.JobInfoExtended;
 
 import eosc.eu.model.TransferPayloadInfo.FileDetails;
 import eosc.eu.model.TransferPayloadInfo.FileState;
@@ -84,10 +84,6 @@ public class TransferInfoExtended extends TransferInfo {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Schema(description="Date and time when transfer ended", example = "2022-10-15T20:14:22")
     public Date finishedAt;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Schema(description="Cause of data transfer failure")
-    public String reason;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String vo_name;

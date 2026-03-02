@@ -1,4 +1,4 @@
-package egi.fts;
+package cern;
 
 import org.eclipse.microprofile.rest.client.ext.ResponseExceptionMapper;
 import org.jboss.logging.Logger;

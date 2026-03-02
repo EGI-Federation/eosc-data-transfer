@@ -16,10 +16,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.quarkus.redis.datasource.ReactiveRedisDataSource;
+import io.quarkus.redis.datasource.stream.ReactiveStreamCommands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Arrays;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -41,14 +43,23 @@ public class DataTransfer extends DataTransferBase {
 
     private static final Logger log = Logger.getLogger(DataTransfer.class);
 
+    public static final String JOBSTORE_STREAM = "transfer:jobs";
+
     @Inject
     MeterRegistry registry;
+
+    ReactiveStreamCommands<String, String, String> stream;
 
 
     /***
      * Constructor
      */
-    public DataTransfer() { super(log); }
+    public DataTransfer(ReactiveRedisDataSource ds) {
+        super(log);
+
+        if(null != ds)
+            this.stream = ds.stream(String.class);
+    }
 
     /**
      * Initiate new transfer of multiple sets of files.
@@ -126,6 +137,8 @@ public class DataTransfer extends DataTransferBase {
             }
         }
 
+        var jobInfo = new AtomicReference<TransferInfo>(null);
+
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
@@ -143,11 +156,45 @@ public class DataTransfer extends DataTransferBase {
                 return params.ts.startTransfer(auth, storageAuth, transfer);
             })
             .chain(transferInfo -> {
-                // Transfer started, success
+                // Transfer started
+                MDC.put("jobId", transferInfo.jobId);
                 log.info("Started new transfer");
-                return Uni.createFrom().item(Response.accepted(transferInfo).build());
+                jobInfo.set(transferInfo);
+
+                // Remember this transfer job by adding it to the job store
+                // This allows us to poll the transfer engine until the transfer finishes,
+                // then collect accounting information for it
+                if(null != this.stream) {
+                    var jobCheckInfo = new HashMap<String, String>();
+                    jobCheckInfo.put("jobId", transferInfo.jobId);
+                    jobCheckInfo.put("destination", destination);
+                    jobCheckInfo.put("lastChecked", null);
+
+                    return stream.xadd(JOBSTORE_STREAM, jobCheckInfo);
+                }
+
+                return Uni.createFrom().item("");
+            })
+            .chain(messageId -> {
+                if(null != messageId && !messageId.isEmpty()) {
+                    MDC.put("messageId", messageId);
+                    log.infof("Added transfer to job store (%s)", messageId);
+                }
+
+                // Success, return job ID
+                return Uni.createFrom().item(Response.accepted(jobInfo.get()).build());
             })
             .onFailure().recoverWithItem(e -> {
+                // Check if a new transfer job was created
+                var ji = jobInfo.get();
+                if(null != ji) {
+                    // Job creation was successful but adding it to the job store failed
+                    log.warnf("Failed to add transfer to job store: %s", e.getMessage());
+                    ji.description = "Warning: Accounting information will not be collected for this transfer.";
+                    ji.reason = e.getMessage();
+                    return Response.accepted(ji).build();
+                }
+
                 log.error("Failed to start new transfer");
                 return new ActionError(e, Tuple2.of("destination", destination)).toResponse();
             });

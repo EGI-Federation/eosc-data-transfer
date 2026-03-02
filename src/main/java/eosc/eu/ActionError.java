@@ -16,7 +16,7 @@ import jakarta.ws.rs.core.Response.Status;
 import parser.b2share.B2ShareException;
 import parser.esrf.EsrfException;
 import parser.zenodo.ZenodoException;
-import egi.fts.FileTransferServiceException;
+import cern.FileTransferServiceException;
 
 
 /**

@@ -1,5 +1,6 @@
-package egi.fts;
+package cern;
 
+import cern.model.*;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.jboss.resteasy.reactive.RestHeader;
@@ -8,8 +9,6 @@ import org.jboss.resteasy.reactive.RestQuery;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
-
-import egi.fts.model.*;
 
 
 /***

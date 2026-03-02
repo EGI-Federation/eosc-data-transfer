@@ -44,7 +44,7 @@ public class UserInfo {
     /**
      * Construct from FTS user info, makes deep copy
      */
-    public UserInfo(egi.fts.model.UserInfo ui) {
+    public UserInfo(cern.model.UserInfo ui) {
         this.base_id = ui.base_id;
         this.delegation_id = ui.delegation_id;
         this.user_dn = ui.user_dn;

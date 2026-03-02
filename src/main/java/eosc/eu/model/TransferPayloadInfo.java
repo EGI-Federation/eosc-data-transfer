@@ -10,7 +10,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.HashMap;
 
-import egi.fts.model.JobFileInfo;
+import cern.model.JobFileInfo;
 
 
 /**

@@ -1,4 +1,4 @@
-package egi.fts;
+package cern;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;

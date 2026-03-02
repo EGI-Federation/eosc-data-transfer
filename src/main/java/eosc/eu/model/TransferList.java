@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 import java.util.ArrayList;
 
-import egi.fts.model.JobInfoExtended;
+import cern.model.JobInfoExtended;
 
 
 /**

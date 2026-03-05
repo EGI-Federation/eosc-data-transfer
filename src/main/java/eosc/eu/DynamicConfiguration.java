@@ -31,44 +31,55 @@ public class DynamicConfiguration implements ConfigSource {
     }
 
     /***
+     * Get a unique instance name (use machine hostname)
+     */
+    public static String getInstanceName() {
+        String instanceName = null;
+
+        // Get machine hostname
+        try {
+            ProcessBuilder pb = new ProcessBuilder("/bin/uname", "--nodename");
+            Process p = pb.start();
+
+            instanceName = new BufferedReader(
+                           new InputStreamReader(pb.start().getInputStream())
+            ).readLine();
+        } catch(Exception e) {
+            // Could not get hostname, try again
+            try {
+                ProcessBuilder pb = new ProcessBuilder("hostname");
+                Process p = pb.start();
+
+                instanceName = new BufferedReader(
+                               new InputStreamReader(pb.start().getInputStream())
+                ).readLine();
+            } catch(Exception ex) {
+                // Could not get hostname
+                log.error(ex);
+                log.info("Fallback to random instance name");
+
+                // Fallback to a random string
+                int leftLimit = 97;     // 'a'
+                int rightLimit = 122;   // 'z'
+                Random random = new Random();
+
+                instanceName = random.ints(leftLimit, rightLimit + 1)
+                        .limit(12)
+                        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                        .toString();
+            }
+        }
+
+        return instanceName;
+    }
+
+    /***
      * Initialize instance name (use machine hostname)
      */
     static synchronized void initInstance() {
         String instance = configuration.get(instanceConfigProperty);
         if(null == instance) {
-            // Get machine hostname
-            try {
-                ProcessBuilder pb = new ProcessBuilder("/bin/uname", "--nodename");
-                Process p = pb.start();
-
-                instance = new BufferedReader(
-                           new InputStreamReader(pb.start().getInputStream())
-                           ).readLine();
-            } catch(Exception e) {
-                // Could not get hostname, try again
-                try {
-                    ProcessBuilder pb = new ProcessBuilder("hostname");
-                    Process p = pb.start();
-
-                    instance = new BufferedReader(
-                            new InputStreamReader(pb.start().getInputStream())
-                    ).readLine();
-                } catch(Exception ex) {
-                    // Could not get hostname
-                    log.error(ex);
-                    log.info("Fallback to random instance name");
-
-                    // Fallback to a random string
-                    int leftLimit = 97;     // 'a'
-                    int rightLimit = 122;   // 'z'
-                    Random random = new Random();
-
-                    instance = random.ints(leftLimit, rightLimit + 1)
-                            .limit(12)
-                            .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-                            .toString();
-                }
-            }
+            instance = getInstanceName();
 
             // Store it as the instance configuration property
             configuration.put(instanceConfigProperty, instance);

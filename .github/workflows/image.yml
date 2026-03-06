@@ -36,7 +36,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build and push the newest release
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: src/main/docker/data-transfer/
           push: true
@@ -46,7 +46,7 @@ jobs:
         if: ${{ github.event_name == 'release' }}
 
       - name: Build and push the latest version
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: src/main/docker/data-transfer/
           #On pull requests no image push is done before merging

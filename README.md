@@ -7,17 +7,20 @@
 ![GitHub issues](https://img.shields.io/github/issues/EGI-Federation/eosc-data-transfer?label=Issues)
 ![GitHub issues labeled bugs](https://img.shields.io/github/issues-search/EGI-Federation/eosc-data-transfer?label=Bugs&color=red&query=is%3Aopen%20label%3Abug)
 
-[EOSC Future](https://eoscfuture.eu) was a
-[Horizon Europe](https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/horizon-europe_en)
-project, funded by the European Commission, which implemented the
-[European Open Science Cloud](https://eosc-portal.eu) (EOSC) to give European
+The [European Open Science Cloud](https://eosc-portal.eu) (EOSC) gives European
 researchers access to a wide web of [FAIR data](https://en.wikipedia.org/wiki/FAIR_data)
-and science-related services. The [EOSC Beyond](https://www.eosc-beyond.eu) project
-continues this development to deliver the next generation of EOSC core services.
+and science-related services. It was designed, delivered, and is contiunously improved under the
+[Horizon Europe](https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/horizon-europe_en)
+project, funded by the European Commission. EOSC was initially delivered by the
+[EOSC Future](https://eoscfuture.eu), while the
+[EOSC Beyond](https://www.eosc-beyond.eu) project continues this development to deliver the
+next generation of EOSC core services.
 
 This project builds a generic data transfer service that can be used in EOSC
 nodes to transfer large amounts of data to cloud storage, by just indicating
-the source and destination. The EOSC Data Transfer Service features a
+the source and destination. The EOSC Data Transfer Service can also estimate
+costs of data transfers (in credits) before actually performing them, and can
+account for the data transferred by each user. It features a
 [RESTful](https://restfulapi.net) Application Programming Interface
 (REST API).
 
@@ -27,9 +30,9 @@ The API covers three sets of functionalities:
 - [Creating and managing data transfers](#creating-and-managing-data-transfers)
 - [Managing storage elements](#managing-storage-elements)
 
-This project uses [Quarkus](https://quarkus.io), the Supersonic Subatomic Java Framework.
-It requires [Java 17](https://openjdk.org/projects/jdk/17/) and
-Quarkus [tooling](https://quarkus.io/guides/cli-tooling).
+> This project uses [Quarkus](https://quarkus.io), the Supersonic Subatomic Java Framework.
+> It requires [Java 17](https://openjdk.org/projects/jdk/17/) and
+> Quarkus [tooling](https://quarkus.io/guides/cli-tooling).
 
 
 ## Authentication and authorization

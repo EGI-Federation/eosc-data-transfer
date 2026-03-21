@@ -1,19 +1,20 @@
 package eosc.eu;
 
+import egi.checkin.model.CheckinUser;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
-import org.jboss.resteasy.reactive.RestQuery;
+import org.jboss.resteasy.reactive.NoCache;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.tuples.Tuple2;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.quarkus.security.identity.SecurityIdentity;
+import io.quarkus.security.Authenticated;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -22,8 +23,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import eosc.eu.model.*;
-import eosc.eu.model.Transfer.Destination;
-
 
 
 /***
@@ -42,6 +41,9 @@ public class DataTransferUser extends DataTransferBase {
     @Inject
     MeterRegistry registry;
 
+    @Inject
+    SecurityIdentity identity;
+
 
     /***
      * Construct with meter
@@ -51,12 +53,13 @@ public class DataTransferUser extends DataTransferBase {
     /**
      * Retrieve information about current user.
      * @param auth The access token needed to call the service.
-     * @param destination The type of destination storage (selects transfer service to call).
      * @return API Response, wraps an ActionSuccess(UserInfo) or an ActionError entity
      */
     @GET
     @Path("/info")
+    @NoCache
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "getUserInfo",  summary = "Retrieve information about authenticated user")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
@@ -78,40 +81,25 @@ public class DataTransferUser extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> getUserInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                     @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
-                                     @Parameter(schema = @Schema(implementation = Destination.class),
-                                                description = "The destination storage")
-                                     String destination) {
+    public Uni<Response> getUserInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth) {
 
-        MDC.put("dest", destination);
+        final var oidcAttributes = identity.getAttributes();
+        MDC.put("callerId", oidcAttributes.get(CheckinUser.ATTR_USERID));
 
         log.info("Getting current user info");
 
-        Uni<Response> result = Uni.createFrom().nullItem()
+        Uni<Response> result = Uni.createFrom().item(oidcAttributes)
 
-            .chain(unused -> {
-                // Pick transfer service and create REST client for it
-                var params = new ActionParameters(destination);
-                if (!getTransferService(params)) {
-                    // Could not get REST client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
-                }
+            .chain(attributes -> {
+                // Got attributes from the access token
+                var userinfo = new UserInfo(attributes);
 
-                return Uni.createFrom().item(params);
-            })
-            .chain(params -> {
-                // Get user info
-                return params.ts.getUserInfo(auth);
-            })
-            .chain(userinfo -> {
-                // Got user info, success
                 log.info("Got user info");
                 return Uni.createFrom().item(Response.ok(userinfo).build());
             })
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to get user info");
-                return new ActionError(e, Tuple2.of("destination", destination)).toResponse();
+                return new ActionError(e).toResponse();
             });
 
         return result;

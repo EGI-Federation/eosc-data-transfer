@@ -2,6 +2,7 @@ package eosc.eu;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import egi.checkin.model.CheckinUser;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -15,7 +16,10 @@ import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
+import io.quarkus.security.Authenticated;
+import io.quarkus.security.identity.SecurityIdentity;
 
+import jakarta.annotation.security.PermitAll;
 import java.util.Arrays;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -40,6 +44,9 @@ public class DataStorage extends DataTransferBase {
     private static final Logger log = Logger.getLogger(DataStorage.class);
 
     @Inject
+    SecurityIdentity identity;
+
+    @Inject
     TransferConfig config;
 
 
@@ -56,6 +63,7 @@ public class DataStorage extends DataTransferBase {
      */
     @GET
     @Path("/destinations")
+    @PermitAll
     @Operation(operationId = "listSupportedDestinations",  summary = "List all supported transfer destinations")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
@@ -120,6 +128,7 @@ public class DataStorage extends DataTransferBase {
      */
     @GET
     @Path("/destination")
+    @PermitAll
     @Operation(operationId = "getDestinationInfo",  summary = "Retrieve information about transfer destination")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
@@ -202,6 +211,7 @@ public class DataStorage extends DataTransferBase {
     @GET
     @Path("/folder/list")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "listFolderContent",  summary = "List the content of a folder from a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
@@ -242,6 +252,7 @@ public class DataStorage extends DataTransferBase {
                                                       description = STORAGE_AUTH)
                                            String storageAuth) {
 
+        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
         MDC.put("seUri", folderUri);
         MDC.put("dest", destination);
 
@@ -299,6 +310,7 @@ public class DataStorage extends DataTransferBase {
     @GET
     @Path("/file")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "getFileInfo",  summary = "Retrieve information about a file in a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
@@ -336,6 +348,7 @@ public class DataStorage extends DataTransferBase {
                                      @Parameter(required = false, description = STORAGE_AUTH)
                                      String storageAuth) {
 
+        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
         MDC.put("seUri", seUri);
         MDC.put("dest", destination);
 
@@ -393,6 +406,7 @@ public class DataStorage extends DataTransferBase {
     @GET
     @Path("/folder")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "getFolderInfo",  summary = "Retrieve information about a folder in a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
@@ -444,6 +458,7 @@ public class DataStorage extends DataTransferBase {
     @POST
     @Path("/folder")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "createFolder",  summary = "Create new folder in a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "201", description = "Created",
@@ -478,6 +493,7 @@ public class DataStorage extends DataTransferBase {
                                       @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
 
+        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
         MDC.put("seUri", seUri);
         MDC.put("dest", destination);
 
@@ -535,6 +551,7 @@ public class DataStorage extends DataTransferBase {
     @DELETE
     @Path("/folder")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "deleteFolder",  summary = "Delete existing folder from a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Deleted",
@@ -573,6 +590,7 @@ public class DataStorage extends DataTransferBase {
                                       @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
 
+        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
         MDC.put("seUri", seUri);
         MDC.put("dest", destination);
 
@@ -630,6 +648,7 @@ public class DataStorage extends DataTransferBase {
     @DELETE
     @Path("/file")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "deleteFile",  summary = "Delete existing file from a storage system")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Deleted",
@@ -668,6 +687,7 @@ public class DataStorage extends DataTransferBase {
                                     @Parameter(required = false, description = STORAGE_AUTH)
                                     String storageAuth) {
 
+        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
         MDC.put("seUri", seUri);
         MDC.put("dest", destination);
 
@@ -725,6 +745,7 @@ public class DataStorage extends DataTransferBase {
     @PUT
     @Path("/file")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "renameFile",  summary = "Rename existing file in a storage system")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
@@ -760,6 +781,7 @@ public class DataStorage extends DataTransferBase {
                                     @Parameter(required = false, description = STORAGE_AUTH)
                                     String storageAuth) {
 
+        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
         MDC.put("dest", destination);
 
         if(null != operation && null != operation.seUriOld && null != operation.seUriNew) {
@@ -831,6 +853,7 @@ public class DataStorage extends DataTransferBase {
     @PUT
     @Path("/folder")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "renameFolder",  summary = "Rename existing folder in a storage system")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {

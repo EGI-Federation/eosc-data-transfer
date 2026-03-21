@@ -34,13 +34,6 @@ public interface TransferService {
     String translateTransferInfoFieldName(String genericFieldName);
 
     /**
-     * Retrieve information about current user.
-     * @param tsAuth The access token needed to call the service.
-     * @return User information.
-     */
-    Uni<UserInfo> getUserInfo(String tsAuth);
-
-    /**
      * Initiate new transfer of multiple sets of files.
      * @param tsAuth The access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"

@@ -14,11 +14,27 @@ public interface ServiceConfig {
     // Unique instance ID
     Optional<String> instance();
 
+    // Contains details of the OIDC client
+    CheckinConfig checkin();
+
     // Contains details of the service accounting
     AccountingConfig accounting();
 
     /***
-     * The configuration of service accounting
+     * Configuration for OIDC integration
+     */
+    interface CheckinConfig {
+
+        // OIDC server
+        String server();
+
+        // Client credentials
+        String client();
+        String secret();
+    }
+
+    /***
+     * Configuration for accounting usage
      */
     interface AccountingConfig {
 

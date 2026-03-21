@@ -3,13 +3,17 @@ eosc:
   service:
     # Set to unique instance ID (machine hostname) in class DynamicConfiguration
     instance: default
+    checkin:
+      server: https://aai-demo.egi.eu
+      client: username
+      secret: password
     accounting:
       server: my-accounting-server
       installation: my-installation-id
       metric: my-metric-id
       group:
     qos:
-      quantiles: [ 0.95, 0.98 ]
+      quantiles: [ 0.90, 0.95, 0.98 ]
       slos: [ 500 ] # SLOs expressed in milliseconds
   parser:
     zenodo:
@@ -41,12 +45,12 @@ eosc:
         description: S3 compatible object storage over HTTPS
         service: fts
         storage: minios
-#      storm:
-#        description: StoRM
-#        service: fts
-#        storage: webdav
+      storm:
+        description: StoRM
+        service: fts
+        storage: webdav
       ftp:
-        description: Storage site supporting the FTP protocol
+        description: FTP server
         service: fts
     service:
       fts:
@@ -78,6 +82,19 @@ eosc:
 quarkus:
   application:
     name: data-transfer
+  oidc:
+    auth-server-url: ${eosc.service.checkin.server}/auth/realms/egi
+    client-id: ${eosc.service.checkin.client}
+    credentials:
+      secret: ${eosc.service.checkin.secret}
+    #discovery-enabled: false
+    #introspection-path: /protocol/openid-connect/token/introspect
+    roles:
+      source: userinfo
+    token-cache:
+      max-size: 1000              # Set to > 0 to enable cache
+      time-to-live: 5M            # How long a cache entry can be valid
+      clean-up-timer-interval: 1M # Enable cleanup timer
   redis:
     hosts: redis://localhost:6379
   log:

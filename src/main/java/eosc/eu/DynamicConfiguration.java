@@ -118,17 +118,19 @@ public class DynamicConfiguration implements ConfigSource {
     @Override
     public String getValue(final String propertyName) {
 
-        if(propertyName.equals("quarkus.otel.resource.attributes")) {
-            String instance = configuration.get(instanceConfigProperty);
-            return String.format("service.namespace=eosc,service.name=data-transfer,service.instance.id=%s", instance);
-        }
-        if(propertyName.equals("quarkus.log.file.path")) {
-            String instance = configuration.get(instanceConfigProperty);
-            return String.format("logs/data-transfer-%s.json", instance);
-        }
-        if(propertyName.equals("quarkus.http.access-log.base-file-name")) {
-            String instance = configuration.get(instanceConfigProperty);
-            return String.format("data-transfer-%s", instance);
+        switch(propertyName) {
+            case "quarkus.otel.resource.attributes" -> {
+                final String instance = configuration.get(instanceConfigProperty);
+                return String.format("service.namespace=eosc,service.name=data-transfer,service.instance.id=%s", instance);
+            }
+            case "quarkus.log.file.path" -> {
+                final String instance = configuration.get(instanceConfigProperty);
+                return String.format("logs/data-transfer-%s.json", instance);
+            }
+            case "quarkus.http.access-log.base-file-name" -> {
+                final String instance = configuration.get(instanceConfigProperty);
+                return String.format("data-transfer-%s", instance);
+            }
         }
 
         return configuration.get(propertyName);

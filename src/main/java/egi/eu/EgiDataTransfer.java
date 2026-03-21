@@ -33,8 +33,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import static jakarta.ws.rs.core.HttpHeaders.*;
 
-import cern.model.*;
 import cern.model.UserInfo;
+import cern.model.*;
 import cern.FileTransferService;
 
 import eosc.eu.model.*;
@@ -198,7 +198,7 @@ public class EgiDataTransfer implements TransferService {
             infoFieldsRenamed.put("maxTimeInQueue", "max_time_in_queue");
             infoFieldsRenamed.put("copyPinLifetime", "copy_pin_lifetime");
             infoFieldsRenamed.put("bringOnline", "bring_online");
-            infoFieldsRenamed.put("targetQOS", "target_qos");
+            infoFieldsRenamed.put("targetQoS", "target_qos");
             infoFieldsRenamed.put("cancel", "cancel_job");
             infoFieldsRenamed.put("finishedAt", "job_finished");
             infoFieldsRenamed.put("submittedAt", "submit_time");

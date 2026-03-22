@@ -1,13 +1,15 @@
 package eosc.eu;
 
 import io.smallrye.mutiny.Uni;
+import org.jboss.resteasy.reactive.RestQuery;
+import io.quarkus.oidc.token.propagation.common.AccessToken;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
 import eosc.eu.model.StorageContent;
-import org.jboss.resteasy.reactive.RestHeader;
-import org.jboss.resteasy.reactive.RestQuery;
+import eosc.eu.model.TransferInfoExtended;
+import eosc.eu.model.TransferPayloadInfo.FileDetails;
 
 
 /***
@@ -18,7 +20,12 @@ public interface DataTransferSelf {
     @GET
     @Path("/parser")
     @Produces(MediaType.APPLICATION_JSON)
-    Uni<StorageContent> parseDOIAsync(@RestHeader("Authorization") String auth,
-                                      @RestQuery("doi") String doi,
-                                      @RestQuery("level") int level);
+    @AccessToken
+    Uni<StorageContent> parseDOIAsync(@RestQuery("doi") String doi, @RestQuery("level") int level);
+
+    @GET
+    @Path("/transfer/{jobId}")
+    Uni<TransferInfoExtended> getTransferInfo(String jobId,
+                                              @RestQuery("dest") String destination,
+                                              @RestQuery("fileInfo") FileDetails fileInfo);
 }

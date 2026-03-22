@@ -62,6 +62,8 @@ public class EgiDataTransfer implements TransferService {
     private final ObjectMapper objectMapper;
 
 
+    // TODO: Use FileTransferServiceException to get actual error message from FTS
+
     /***
      * Constructor
      */
@@ -225,7 +227,7 @@ public class EgiDataTransfer implements TransferService {
                 .failWith(new TransferServiceException("getUserInfoTimeout"))
             .chain(unused -> {
                 // Get user info
-                return fts.getUserInfoAsync(auth);
+                return fts.getUserInfoAsync();
             })
             .chain(userInfo -> {
                 // Got user info
@@ -249,7 +251,7 @@ public class EgiDataTransfer implements TransferService {
      * @param storageHost Destination S3 system.
      * @return true on success
      */
-    private Uni<Boolean> registerStorage(String tsAuth, String storageHost) {
+    private Uni<Boolean> registerStorage(String storageHost) {
 
         MDC.put("storageHost", storageHost);
         log.info("Registering S3 destination");
@@ -262,7 +264,7 @@ public class EgiDataTransfer implements TransferService {
             .chain(unused -> {
                 // Register S3 destination
                 S3Info s3info = new S3Info(storageHost);
-                return fts.registerS3HostAsync(tsAuth, s3info);
+                return fts.registerS3HostAsync(s3info);
             })
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
@@ -300,15 +302,13 @@ public class EgiDataTransfer implements TransferService {
 
     /**
      * Prepare S3 storage system for transfer.
-     * @param tsAuth The access token needed to call the service.
      * @param accessKey Access key for the destination storage.
      * @param secretKey Secret key for the destination storage.
      * @param storageHost Destination S3 system.
      * @param ui Optional user information
      * @return true on success
      */
-    private Uni<Boolean> prepareStorage(String tsAuth,
-                                        String accessKey, String secretKey,
+    private Uni<Boolean> prepareStorage(String accessKey, String secretKey,
                                         String storageHost, UserInfo ui) {
 
         MDC.put("storageHost", storageHost);
@@ -327,13 +327,13 @@ public class EgiDataTransfer implements TransferService {
                 .failWith(new TransferServiceException("prepareStorageTimeout"))
             .chain(unused -> {
                 // Register S3 destination
-                return registerStorage(tsAuth, storageHost);
+                return registerStorage(storageHost);
             })
             .chain(s3info -> {
                 // Get user info from auth token, if not supplied
                 return (null != ui) ?
                         Uni.createFrom().item(ui) :
-                        fts.getUserInfoAsync(tsAuth);
+                        fts.getUserInfoAsync();
             })
             .chain(userInfo -> {
                 // Configure S3 destination with provided credentials
@@ -342,7 +342,7 @@ public class EgiDataTransfer implements TransferService {
 
                 var voName = (null == userInfo.vos || userInfo.vos.isEmpty()) ? null : userInfo.vos.get(0);
                 var s3info = new S3Info(userInfo.user_dn, voName, accessKey, secretKey);
-                return fts.configureS3HostAsync(tsAuth, "s3:" + storageHost, s3info);
+                return fts.configureS3HostAsync("s3:" + storageHost, s3info);
             })
             .chain(unused -> {
                 // Success
@@ -359,12 +359,11 @@ public class EgiDataTransfer implements TransferService {
 
     /**
      * Prepare S3 storage systems for transfer.
-     * @param tsAuth The access token needed to call the service.
      * @param storageAuth Credentials for the destination storage, Base-64 encoded "key:value"
      * @param destinations List of destination S3 hostnames.
      * @return true on success
      */
-    private Uni<Boolean> prepareStorages(String tsAuth, String storageAuth, List<String> destinations) {
+    private Uni<Boolean> prepareStorages(String storageAuth, List<String> destinations) {
         // Make sure we have storage credentials
         var storageCreds = new DataStorageCredentials(storageAuth);
         if(!storageCreds.isValid())
@@ -378,7 +377,7 @@ public class EgiDataTransfer implements TransferService {
                 .failWith(new TransferServiceException("prepareStoragesTimeout"))
             .chain(unused -> {
                 // Get user info from auth token
-                return fts.getUserInfoAsync(tsAuth);
+                return fts.getUserInfoAsync();
             })
             .onItem().transformToMulti(ui -> {
                 // Got user info, save DN
@@ -387,9 +386,9 @@ public class EgiDataTransfer implements TransferService {
             })
             .onItem().transformToUniAndConcatenate(dest -> {
                 // Prepare this storage
-                return prepareStorage(tsAuth, storageCreds.getAccessKey(),
-                                              storageCreds.getSecretKey(),
-                                              dest, userInfo);
+                return prepareStorage(storageCreds.getAccessKey(),
+                                      storageCreds.getSecretKey(),
+                                      dest, userInfo);
             })
             .onFailure().invoke(e -> {
                 log.error("Failed to configure S3 destinations");
@@ -439,14 +438,14 @@ public class EgiDataTransfer implements TransferService {
 
                     if(!destinations.isEmpty())
                         // Configure FTS for all S3 destinations
-                        return prepareStorages(auth, storageAuth, destinations);
+                        return prepareStorages(storageAuth, destinations);
                 }
 
                 return Uni.createFrom().item(true);
             })
             .chain(s3ConfigResult -> {
                 // Start new transfer
-                return fts.startTransferAsync(auth, new Job(transfer));
+                return fts.startTransferAsync(new Job(transfer));
             })
             .chain(jobInfo -> {
                 // Transfer started
@@ -511,9 +510,9 @@ public class EgiDataTransfer implements TransferService {
                 .failWith(new TransferServiceException("findTransfersTimeout"))
             .chain(unused -> {
                 // List matching transfers
-                return fts.findTransfersAsync(auth, searchFields.get(), limit, timeWindow, stateIn,
-                                                    srcStorageElement, dstStorageElement,
-                                                    delegationId, voName, userDN);
+                return fts.findTransfersAsync(searchFields.get(), limit, timeWindow, stateIn,
+                                              srcStorageElement, dstStorageElement,
+                                              delegationId, voName, userDN);
             })
             .chain(jobs -> {
                 // Got matching transfers
@@ -546,7 +545,7 @@ public class EgiDataTransfer implements TransferService {
                 .failWith(new TransferServiceException("getTransferInfoTimeout"))
             .chain(unused -> {
                 // Get transfer info
-                return fts.getTransferInfoAsync(auth, jobId);
+                return fts.getTransferInfoAsync(jobId);
             })
             .chain(jobInfo -> {
                 // Got transfer info
@@ -556,7 +555,7 @@ public class EgiDataTransfer implements TransferService {
                     return Uni.createFrom().nullItem();
 
                 // Get detailed status for each file in the transfer
-                return fts.getTransferFilesAsync(auth, jobId);
+                return fts.getTransferFilesAsync(jobId);
             })
             .chain(jobFileInfos -> {
                 // Got detailed status of each file, success
@@ -595,7 +594,7 @@ public class EgiDataTransfer implements TransferService {
                 .failWith(new TransferServiceException("getTransferInfoFieldTimeout"))
             .chain(unused -> {
                 // Get field value
-                return fts.getTransferFieldAsync(auth, jobId, jobFieldName);
+                return fts.getTransferFieldAsync(jobId, jobFieldName);
             })
             .chain(jobField -> {
                 // Got field value
@@ -647,7 +646,7 @@ public class EgiDataTransfer implements TransferService {
                 .failWith(new TransferServiceException("cancelTransferTimeout"))
             .chain(unused -> {
                 // Cancel transfer
-                return fts.cancelTransferAsync(auth, jobId);
+                return fts.cancelTransferAsync(jobId);
             })
             .chain(jobInfoExt -> {
                 // Transfer canceled, got updated transfer info

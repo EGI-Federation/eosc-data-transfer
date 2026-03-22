@@ -124,7 +124,7 @@ public class DigitalObjectIdentifier {
                 // Note: Remove this check once we can cancel the Multi stream
                 // Check if this parser can handle the DOI
                 if(null == params.parser)
-                    return parser.canParseDOI(auth, doi, helper);
+                    return parser.canParseDOI(doi, helper);
 
                 // Once we selected a parser that supports the DOI, skip all others
                 return Uni.createFrom().item(Tuple2.of(false, parser));
@@ -217,7 +217,7 @@ public class DigitalObjectIdentifier {
                 }
 
                 // Parse DOI and get source files
-                return params.parser.parseDOI(auth, doi, depth);
+                return params.parser.parseDOI(doi, depth);
             })
             .chain(sourceFiles -> {
                 // Got list of source files, success

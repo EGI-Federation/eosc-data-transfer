@@ -79,8 +79,8 @@ public class SignpostParser implements ParserService {
 
             return true;
         }
-        catch (RestClientDefinitionException e) {
-            log.error(e.getMessage());
+        catch(RestClientDefinitionException e) {
+            log.errorf("Failed to create REST client for ourselves (%s)", e.getMessage());
         }
 
         return false;
@@ -106,12 +106,11 @@ public class SignpostParser implements ParserService {
 
     /***
      * Checks if the parser service understands this DOI.
-     * @param auth   The access token needed to call the service.
      * @param doi    The DOI for a data set.
      * @param helper Helper class that can follow (and cache) redirects.
      * @return Return true if the parser service can parse this DOI.
      */
-    public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper) {
+    public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String doi, ParserHelper helper) {
 
         log.debug("Check if DOI supports Signposting");
 
@@ -155,13 +154,12 @@ public class SignpostParser implements ParserService {
 
     /**
      * Parse the DOI and return a set of files in the data set.
-     * @param auth  The access token needed to call the service.
      * @param doi   The DOI for a data set.
      * @param level The level of recursion. If we have to call ourselves, this gets increased
      *              each time, providing for a mechanism to avoid infinite recursion.
      * @return List of files in the data set.
      */
-    public Uni<StorageContent> parseDOI(String auth, String doi, int level) {
+    public Uni<StorageContent> parseDOI(String doi, int level) {
 
         log.debug("Parse Signposting DOI");
 
@@ -228,7 +226,7 @@ public class SignpostParser implements ParserService {
                         // Content with a DOI
                         if(!doi.equalsIgnoreCase(link.url) && level <= MAX_RECURSION) {
                             log.debug("Signposting relation 'identifier' to be tried");
-                            return parser.parseDOIAsync(auth, link.url, level + 1);
+                            return parser.parseDOIAsync(link.url, level + 1);
                         }
 
                         log.error("Signposting relation 'identifier' max recursion depth reached");

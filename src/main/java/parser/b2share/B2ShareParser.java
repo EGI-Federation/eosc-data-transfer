@@ -97,12 +97,11 @@ public class B2ShareParser implements ParserService {
 
     /***
      * Checks if the parser service understands this DOI.
-     * @param auth   The access token needed to call the service.
      * @param doi    The DOI for a data set.
      * @param helper Helper class that can follow (and cache) redirects.
      * @return Return true if the parser service can parse this DOI.
      */
-    public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper) {
+    public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String doi, ParserHelper helper) {
 
         log.debug("Check if DOI points to B2Share record");
 
@@ -157,12 +156,11 @@ public class B2ShareParser implements ParserService {
 
     /**
      * Parse the DOI and return a set of files in the data set.
-     * @param auth  The access token needed to call the service.
      * @param doi   The DOI for a data set.
      * @param level Unused.
      * @return List of files in the data set.
      */
-    public Uni<StorageContent> parseDOI(String auth, String doi, int level) {
+    public Uni<StorageContent> parseDOI(String doi, int level) {
 
         log.debug("Parse B2Share DOI");
 

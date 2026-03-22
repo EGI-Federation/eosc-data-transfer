@@ -5,11 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.102]
+- Added integration with EGI Check-in
+- Added Redis container to Docker compose deployment
+- Record started transfer jobs to Redis stream
+- Consume messages for Redis stream and send accounting usage records when transfers are finished
+- Upgrade to latest Quarkus version
+
+## [1.1.101]
+- Fixed telemetry and Grafana dashboard
+
 ## [1.1.100]
 - Dynamic log filename in configuration now includes instance id
 - Simplified image name/tag
 - Automatic telemetry resource attributes `service.namespace`, `service.name`, and `service.instance.id`
-- SSL terminator telemetry now uses hostname as service.instance.id attribute
+- SSL terminator telemetry now uses hostname as `service.instance.id` attribute
 - Upgrade to latest Quarkus version
 
 ## [1.1.98]

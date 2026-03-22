@@ -1,6 +1,7 @@
 package eosc.eu;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithName;
 
 import java.util.Optional;
 
@@ -47,5 +48,8 @@ public interface ServiceConfig {
         Optional<String> metric();
 
         Optional<String> group();
+
+        @WithName("check-transfer-status")
+        int pollInterval();
     }
 }

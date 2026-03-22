@@ -18,6 +18,8 @@ import io.smallrye.mutiny.tuples.Tuple2;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.redis.datasource.ReactiveRedisDataSource;
 import io.quarkus.redis.datasource.stream.ReactiveStreamCommands;
+import io.quarkus.security.Authenticated;
+import io.quarkus.security.identity.SecurityIdentity;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,6 +29,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import egi.checkin.model.CheckinUser;
 
 import eosc.eu.model.*;
 import eosc.eu.model.Transfer.Destination;
@@ -43,10 +47,11 @@ public class DataTransfer extends DataTransferBase {
 
     private static final Logger log = Logger.getLogger(DataTransfer.class);
 
-    public static final String JOBSTORE_STREAM = "transfer:jobs";
-
     @Inject
     MeterRegistry registry;
+
+    @Inject
+    SecurityIdentity identity;
 
     ReactiveStreamCommands<String, String, String> stream;
 
@@ -72,6 +77,7 @@ public class DataTransfer extends DataTransferBase {
     @POST
     @Path("/transfers")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "startTransfer",  summary = "Initiate new transfer of multiple sets of files")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
@@ -109,6 +115,7 @@ public class DataTransfer extends DataTransferBase {
             return Uni.createFrom().item(ae.setStatus(Response.Status.BAD_REQUEST).toResponse());
         }
 
+        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
         MDC.put("dest", destination);
 
         log.info("Starting new data transfer");
@@ -144,7 +151,7 @@ public class DataTransfer extends DataTransferBase {
             .chain(unused -> {
                 // Pick transfer service and create REST client for it
                 var params = new ActionParameters(destination);
-                if (!getTransferService(params)) {
+                if(!getTransferService(params)) {
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
                 }
@@ -166,11 +173,11 @@ public class DataTransfer extends DataTransferBase {
                 // then collect accounting information for it
                 if(null != this.stream) {
                     var jobCheckInfo = new HashMap<String, String>();
-                    jobCheckInfo.put("jobId", transferInfo.jobId);
                     jobCheckInfo.put("destination", destination);
-                    jobCheckInfo.put("lastChecked", null);
+                    jobCheckInfo.put("jobId", transferInfo.jobId);
+                    jobCheckInfo.put("userId", identity.getAttribute(CheckinUser.ATTR_USERID));
 
-                    return stream.xadd(JOBSTORE_STREAM, jobCheckInfo);
+                    return stream.xadd(AccountingCollector.JOBSTORE_STREAM, jobCheckInfo);
                 }
 
                 return Uni.createFrom().item("");
@@ -220,6 +227,7 @@ public class DataTransfer extends DataTransferBase {
     @GET
     @Path("/transfers")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "findTransfers",  summary = "Find transfers matching search criteria",
                description = "To prevent heavy queries, only non-terminal (active) jobs are returned.\n" +
                              "If the _state_in_ filter is used, make sure to also provide either _limit_ " +
@@ -283,6 +291,7 @@ public class DataTransfer extends DataTransferBase {
                                                   description = DESTINATION_STORAGE)
                                        String destination) {
 
+        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
         MDC.put("dest", destination);
         MDC.put("limit", limit);
 
@@ -367,6 +376,7 @@ public class DataTransfer extends DataTransferBase {
     @GET
     @Path("/transfer/{jobId}")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "getTransferInfo",  summary = "Retrieve information about a transfer")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK",
@@ -401,6 +411,7 @@ public class DataTransfer extends DataTransferBase {
                                                     description = FILE_INFO_FOR)
                                          String fileInfo) {
 
+        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
         MDC.put("jobId", jobId);
         MDC.put("dest", destination);
         MDC.put("fileInfo", fileInfo);
@@ -450,6 +461,7 @@ public class DataTransfer extends DataTransferBase {
     @GET
     @Path("/transfer/{jobId}/{fieldName}")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "getTransferInfoField",
                summary = "Retrieve specific field from information about a transfer")
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
@@ -480,6 +492,7 @@ public class DataTransfer extends DataTransferBase {
                                                          description = DESTINATION_STORAGE)
                                               String destination) {
 
+        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
         MDC.put("jobId", jobId);
         MDC.put("fieldName", fieldName);
         MDC.put("dest", destination);
@@ -528,6 +541,7 @@ public class DataTransfer extends DataTransferBase {
     @DELETE
     @Path("/transfer/{jobId}")
     @SecurityRequirement(name = "OIDC")
+    @Authenticated
     @Operation(operationId = "cancelTransfer",  summary = "Cancel a transfer",
                description = "Returns the canceled transfer with its current status " +
                              "(canceled or any other final status).")
@@ -560,6 +574,7 @@ public class DataTransfer extends DataTransferBase {
                                                    description = DESTINATION_STORAGE)
                                         String destination) {
 
+        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
         MDC.put("jobId", jobId);
         MDC.put("dest", destination);
 

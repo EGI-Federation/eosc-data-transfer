@@ -30,9 +30,6 @@ public class DataTransferBase {
     @Inject
     protected TransferConfig config;
 
-    @Inject
-    protected ServiceConfig serviceConfig;
-
 
     /***
      * Construct with logger
@@ -44,28 +41,24 @@ public class DataTransferBase {
 
 
     /**
-     * Prepare REST client for the appropriate data transfer service, based on the destination
-     * configured in "eosc.transfer.destination".
-     * @param params dictates which transfer service we pick, mapping is in the configuration file
-     * @return true on success, updates fields "destination" and "ts"
+     * Prepare REST client for the appropriate data transfer engine, based on the destination
+     * Mapping is in the configuration file under `eosc.transfer.destination`
+     * @param destination dictates which transfer engine we pick
+     * @param config is a configuration object mapping `eosc.transfer`
+     * @param log is the logger to use
+     * @param logInit is true to log the success of the initializing the picked transfer engine
+     * @return an initialized TransferService for the specified destination, or null on error
      */
-    protected boolean getTransferService(ActionParameters params) {
+    public static TransferService getTransferService(String destination, TransferConfig config,
+                                                     Logger log, boolean logInit) {
 
-        log.debug("Selecting transfer service");
+        MDC.put("dest", destination);
 
-        if (null != params.ts)
-            return true;
-
-        if (null == params.destination || params.destination.isEmpty()) {
-            log.error("No destination specified");
-            return false;
-        }
-
-        var destinationConfig = config.destinations().get(params.destination);
-        if (null == destinationConfig) {
+        var destinationConfig = config.destinations().get(destination);
+        if(null == destinationConfig) {
             // Unsupported destination
-            log.error("No configuration for this destination");
-            return false;
+            log.errorf("No configuration found for destination <%s>", destination);
+            return null;
         }
 
         var tsID = destinationConfig.serviceId();
@@ -74,41 +67,55 @@ public class DataTransferBase {
         var serviceConfig = config.services().get(tsID);
         if (null == serviceConfig) {
             // Unsupported transfer service
-            log.error("No configuration found for transfer service");
-            return false;
+            log.errorf("No configuration found for transfer service <%s>", tsID);
+            return null;
         }
 
         // Get the class of the transfer service we should use
+        TransferService ts = null;
         try {
             var classType = Class.forName(serviceConfig.className());
-            params.ts = (TransferService)classType.getDeclaredConstructor().newInstance();
-            if(params.ts.initService(serviceConfig)) {
-                var tsName = params.ts.getServiceName();
-                MDC.put("serviceName", tsName);
-                log.infof("Transfer handled by %s", tsName);
-                return true;
+            ts = (TransferService)classType.getDeclaredConstructor().newInstance();
+            if(ts.initService(serviceConfig)) {
+                if(logInit) {
+                    var tsName = ts.getServiceName();
+                    MDC.put("serviceName", tsName);
+                    log.infof("Transfer handled by %s", tsName);
+                }
+            }
+            else {
+                // Init failed, cleanup
+                ts = null;
             }
         }
-        catch (ClassNotFoundException e) {
-            log.error(e.getMessage());
-        }
-        catch (NoSuchMethodException e) {
-            log.error(e.getMessage());
-        }
-        catch (InstantiationException e) {
-            log.error(e.getMessage());
-        }
-        catch (InvocationTargetException e) {
-            log.error(e.getMessage());
-        }
-        catch (IllegalAccessException e) {
-            log.error(e.getMessage());
-        }
-        catch (IllegalArgumentException e) {
+        catch (ClassNotFoundException | NoSuchMethodException | InstantiationException |
+               InvocationTargetException | IllegalAccessException | IllegalArgumentException e) {
             log.error(e.getMessage());
         }
 
-        return false;
+        return ts;
+    }
+
+    /**
+     * Prepare REST client for the appropriate data transfer service, based on the destination
+     * configured in "eosc.transfer.destination".
+     * @param params dictates which transfer service we pick, mapping is in the configuration file
+     * @return true on success, updates fields "destination" and "ts"
+     */
+    protected boolean getTransferService(ActionParameters params) {
+
+        if (null != params.ts)
+            return true;
+
+        log.debug("Selecting transfer service");
+
+        if (null == params.destination || params.destination.isEmpty()) {
+            log.error("No destination specified");
+            return false;
+        }
+
+        params.ts = getTransferService(params.destination, this.config, this.log, true);
+        return null != params.ts;
     }
 
     /**

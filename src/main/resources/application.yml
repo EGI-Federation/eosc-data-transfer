@@ -12,6 +12,7 @@ eosc:
       installation: my-installation-id
       metric: my-metric-id
       group:
+      check-transfer-status: 60 # seconds
     qos:
       quantiles: [ 0.90, 0.95, 0.98 ]
       slos: [ 500 ] # SLOs expressed in milliseconds

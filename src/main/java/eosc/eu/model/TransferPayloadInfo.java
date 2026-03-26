@@ -42,13 +42,13 @@ public class TransferPayloadInfo {
     public Optional<Long> size;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    @Schema(description="Date and time when transfer of the file started", example = "2022-10-15T20:14:22")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
+    @Schema(description="Date and time when transfer of the file started", example = "2022-10-15T20:14:22Z+2")
     public Date startedAt;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    @Schema(description="Date and time when transfer of the file finished", example = "2022-10-15T20:25:32")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
+    @Schema(description="Date and time when transfer of the file finished", example = "2022-10-15T20:25:32Z+2")
     public Date finishedAt;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

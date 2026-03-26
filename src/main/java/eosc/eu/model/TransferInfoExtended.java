@@ -43,11 +43,11 @@ public class TransferInfoExtended extends TransferInfo {
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description="Source storage system")
-    public String source_ss;
+    public String sourceSS;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description="Destination storage system")
-    public String destination_ss;
+    public String destinationSS;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public boolean verifyChecksum;
@@ -73,31 +73,31 @@ public class TransferInfoExtended extends TransferInfo {
     public Optional<Boolean> cancel;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    @Schema(description="Date and time when transfer was submitted", example = "2022-10-15T20:14:22")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
+    @Schema(description="Date and time when transfer was submitted", example = "2022-10-15T20:14:22Z+2")
     public Date submittedAt;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String submittedTo;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    @Schema(description="Date and time when transfer ended", example = "2022-10-15T20:14:22")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
+    @Schema(description="Date and time when transfer ended", example = "2022-10-15T20:14:22Z+2")
     public Date finishedAt;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String vo_name;
+    public String voName;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String user_dn;
+    public String userId;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String cred_id;
+    public String credId;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description="Detailed status of each transfer payload in this job "+
                         "(if the used transfer engine can supply it)")
-    public Optional<List<TransferPayloadInfo>> payload_info;
+    public Optional<List<TransferPayloadInfo>> payload;
 
 
     /***
@@ -127,8 +127,8 @@ public class TransferInfoExtended extends TransferInfo {
         if(null != jie.job_metadata && !jie.job_metadata.isEmpty())
             this.jobMetadata.putAll(jie.job_metadata);
 
-        this.source_ss = jie.source_se;
-        this.destination_ss = jie.destination_se;
+        this.sourceSS = jie.source_se;
+        this.destinationSS = jie.destination_se;
         this.verifyChecksum = null != jie.verify_checksum && jie.verify_checksum.equalsIgnoreCase("Y");
 
         this.overwrite = jie.job_finished.isPresent() ?
@@ -145,9 +145,9 @@ public class TransferInfoExtended extends TransferInfo {
         this.finishedAt = jie.job_finished.orElse(null);
         this.reason = jie.reason;
 
-        this.vo_name = jie.vo_name;
-        this.user_dn = jie.user_dn;
-        this.cred_id = jie.cred_id;
+        this.voName = jie.vo_name;
+        this.userId = jie.user_dn;
+        this.credId = jie.cred_id;
 
         if(FileDetails.none != fileInfo && jie.file_info.isPresent()) {
             List<JobFileInfo> jfl = jie.file_info.get();
@@ -158,10 +158,10 @@ public class TransferInfoExtended extends TransferInfo {
                 if(allFiles || FileState.failed == FileState.fromString(jf.file_state))
                     tpl.add(new TransferPayloadInfo(jf));
 
-            this.payload_info = Optional.of(tpl);
+            this.payload = Optional.of(tpl);
         }
         else
-            this.payload_info = Optional.empty();
+            this.payload = Optional.empty();
     }
 
 

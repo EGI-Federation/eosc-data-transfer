@@ -26,18 +26,18 @@ public class StorageElement extends StorageElementBase {
     public long size;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    @Schema(description="Date and time when element was created", example = "2022-10-15T20:14:22")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
+    @Schema(description="Date and time when element was created", example = "2022-10-15T20:14:22Z+1")
     public Date createdAt;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    @Schema(description="Date and time when element was last accessed", example = "2022-10-15T20:14:22")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
+    @Schema(description="Date and time when element was last accessed", example = "2022-10-15T20:14:22Z+1")
     public Date accessedAt;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    @Schema(description="Date and time when element was last modified", example = "2022-10-15T20:14:22")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
+    @Schema(description="Date and time when element was last modified", example = "2022-10-15T20:14:22Z+1")
     public Date modifiedAt;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

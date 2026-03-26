@@ -29,9 +29,6 @@ public interface ServiceConfig {
         // OIDC server
         String server();
 
-        // Client credentials
-        String client();
-        String secret();
     }
 
     /***

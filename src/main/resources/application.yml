@@ -4,11 +4,9 @@ eosc:
     # Set to unique instance ID (machine hostname) in class DynamicConfiguration
     instance: default
     checkin:
-      server: https://aai-demo.egi.eu
-      client: username
-      secret: password
+      server: my-keycloack.server.org
     accounting:
-      server: my-accounting-server
+      server: my-accounting.server.org
       installation: my-installation-id
       metric: my-metric-id
       group:
@@ -84,18 +82,26 @@ quarkus:
   application:
     name: data-transfer
   oidc:
-    auth-server-url: ${eosc.service.checkin.server}/auth/realms/egi
-    client-id: ${eosc.service.checkin.client}
+    auth-server-url: https://${eosc.service.checkin.server}/auth/realms/egi
+    introspection-path: /protocol/openid-connect/token/introspect
+    user-info-path: /protocol/openid-connect/userinfo
+    discovery-enabled: false
+    client-id: api-client
     credentials:
-      secret: ${eosc.service.checkin.secret}
-    #discovery-enabled: false
-    #introspection-path: /protocol/openid-connect/token/introspect
+      secret: api-secret
     roles:
       source: userinfo
+    token:
+      require-jwt-introspection-only: true
     token-cache:
       max-size: 1000              # Set to > 0 to enable cache
       time-to-live: 5M            # How long a cache entry can be valid
       clean-up-timer-interval: 1M # Enable cleanup timer
+  oidc-client:
+    auth-server-url: https://${eosc.service.checkin.server}/auth/realms/egi
+    client-id: fts-client
+    credentials:
+      secret: fts-secret
   redis:
     hosts: redis://localhost:6379
   log:
@@ -170,5 +176,7 @@ quarkus:
       log-to-file: true
       base-file-name: data-transfer
       log-directory: logs/http
+  rest-client:
+    alpn: true
   tls:
     trust-all: false

@@ -153,11 +153,12 @@ public class ZenodoParser implements ParserService {
 
     /**
      * Parse the DOI and return a set of files in the data set.
+     * @param tsAuth Optional access token needed to call the service.
      * @param doi   The DOI for a data set.
      * @param level Unused.
      * @return List of files in the data set.
      */
-    public Uni<StorageContent> parseDOI(String doi, int level) {
+    public Uni<StorageContent> parseDOI(String tsAuth, String doi, int level) {
 
         log.debug("Parse Zenodo DOI");
 

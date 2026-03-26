@@ -10,6 +10,7 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
+import org.jboss.resteasy.reactive.RestPath;
 import org.jboss.resteasy.reactive.RestQuery;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -110,12 +111,15 @@ public class DataTransfer extends DataTransferBase {
             ObjectMapper objectMapper = new ObjectMapper();
             MDC.put("transfer", objectMapper.writeValueAsString(transfer));
         }
-        catch (JsonProcessingException e) {
+        catch(JsonProcessingException e) {
             var ae = new ActionError(e, Tuple2.of("destination", destination));
             return Uni.createFrom().item(ae.setStatus(Response.Status.BAD_REQUEST).toResponse());
         }
 
-        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
+        final String callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
         MDC.put("dest", destination);
 
         log.info("Starting new data transfer");
@@ -171,11 +175,11 @@ public class DataTransfer extends DataTransferBase {
                 // Remember this transfer job by adding it to the job store
                 // This allows us to poll the transfer engine until the transfer finishes,
                 // then collect accounting information for it
-                if(null != this.stream) {
+                if(null != this.stream && null != callerId) {
                     var jobCheckInfo = new HashMap<String, String>();
                     jobCheckInfo.put("destination", destination);
                     jobCheckInfo.put("jobId", transferInfo.jobId);
-                    jobCheckInfo.put("userId", identity.getAttribute(CheckinUser.ATTR_USERID));
+                    jobCheckInfo.put("userId", callerId);
 
                     return stream.xadd(AccountingCollector.JOBSTORE_STREAM, jobCheckInfo);
                 }
@@ -218,7 +222,6 @@ public class DataTransfer extends DataTransferBase {
      * @param stateIn Comma separated list of job states to match, by default returns 'ACTIVE' only
      * @param srcStorageElement Source storage element
      * @param dstStorageElement Destination storage element
-     * @param delegationId Filter by delegation ID of user who started the transfer
      * @param voName Filter by VO of user who started the transfer
      * @param userDN Filter by user who started the transfer
      * @param destination The type of destination storage (selects transfer service to call).
@@ -275,10 +278,6 @@ public class DataTransfer extends DataTransferBase {
                                        @RestQuery("dest_se")
                                        @Parameter(description = "Destination storage element")
                                        String dstStorageElement,
-                                       @RestQuery("dlg_id")
-                                       @Parameter(description =
-                                               "Filter by delegation ID of user who started the transfer")
-                                       String delegationId,
                                        @RestQuery("vo_name")
                                        @Parameter(description =
                                                "Filter by virtual organization of user who started the transfer")
@@ -291,7 +290,10 @@ public class DataTransfer extends DataTransferBase {
                                                   description = DESTINATION_STORAGE)
                                        String destination) {
 
-        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
+        final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
         MDC.put("dest", destination);
         MDC.put("limit", limit);
 
@@ -305,8 +307,6 @@ public class DataTransfer extends DataTransferBase {
             MDC.put("filter.source_se", srcStorageElement);
         if(null != dstStorageElement && !dstStorageElement.isEmpty())
             MDC.put("filter.dest_se", dstStorageElement);
-        if(null != delegationId && !delegationId.isEmpty())
-            MDC.put("filter.dlg_id", delegationId);
         if(null != voName && !voName.isEmpty())
             MDC.put("filter.vo_name", voName);
         if(null != userDN && !userDN.isEmpty())
@@ -330,7 +330,7 @@ public class DataTransfer extends DataTransferBase {
                 // Find transfers
                 return params.ts.findTransfers(auth, fields, limit, timeWindow, stateIn,
                                                srcStorageElement, dstStorageElement,
-                                               delegationId, voName, userDN);
+                                               voName, userDN);
             })
             .chain(matches -> {
                 // Found transfers, success
@@ -353,8 +353,6 @@ public class DataTransfer extends DataTransferBase {
                     details.add(Tuple2.of("filter.source_se", srcStorageElement));
                 if(null != dstStorageElement && !dstStorageElement.isEmpty())
                     details.add(Tuple2.of("filter.dest_se", dstStorageElement));
-                if(null != delegationId && !delegationId.isEmpty())
-                    details.add(Tuple2.of("filter.dlg_id", delegationId));
                 if(null != voName && !voName.isEmpty())
                     details.add(Tuple2.of("filter.vo_name", voName));
                 if(null != userDN && !userDN.isEmpty())
@@ -401,7 +399,8 @@ public class DataTransfer extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> getTransferInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, String jobId,
+    public Uni<Response> getTransferInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
+                                         @RestPath("jobId") String jobId,
                                          @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                          @Parameter(schema = @Schema(implementation = Destination.class),
                                                     description = DESTINATION_STORAGE)
@@ -411,10 +410,15 @@ public class DataTransfer extends DataTransferBase {
                                                     description = FILE_INFO_FOR)
                                          String fileInfo) {
 
-        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
+        final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
         MDC.put("jobId", jobId);
         MDC.put("dest", destination);
         MDC.put("fileInfo", fileInfo);
+
+        var test = identity.getAttributes();
 
         log.info("Retrieving details of transfer");
 
@@ -486,13 +490,17 @@ public class DataTransfer extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getTransferInfoField(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                              String jobId, String fieldName,
+                                              @RestPath("jobId") String jobId,
+                                              @RestPath("fieldName") String fieldName,
                                               @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                               @Parameter(schema = @Schema(implementation = Destination.class),
                                                          description = DESTINATION_STORAGE)
                                               String destination) {
 
-        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
+        final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
         MDC.put("jobId", jobId);
         MDC.put("fieldName", fieldName);
         MDC.put("dest", destination);
@@ -568,13 +576,17 @@ public class DataTransfer extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> cancelTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, String jobId,
+    public Uni<Response> cancelTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
+                                        @RestPath("jobId") String jobId,
                                         @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                         @Parameter(schema = @Schema(implementation = Destination.class),
                                                    description = DESTINATION_STORAGE)
                                         String destination) {
 
-        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
+        final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
         MDC.put("jobId", jobId);
         MDC.put("dest", destination);
 

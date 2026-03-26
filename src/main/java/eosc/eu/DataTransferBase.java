@@ -126,8 +126,8 @@ public class DataTransferBase {
      * @param storageElementUrl is the fully qualified URL to a storage element (file or folder), which
      *                          is used to create a REST client for this particular storage system, or
      *                          null to not attempt creation of a REST client
-     * @param auth Credentials for the storage system (if it uses access tokens)
-     * @param storageAuth Alternative credentials for the storage system, Base-64 encoded "key:value"
+     * @param auth Optional credentials for the storage system (if it uses access tokens)
+     * @param storageAuth Optional credentials for the storage system, Base-64 encoded "key:value"
      * @return true on success, updates fields "destination" and "ss"
      */
     protected boolean getStorageSystem(ActionParameters params, String storageElementUrl,
@@ -176,7 +176,7 @@ public class DataTransferBase {
                 var authType = storageConfig.authType();
                 var authorization = (null != authType &&
                                      authType.equalsIgnoreCase(Transfer.AuthorizeWith.keys.toString())) ?
-                                     storageAuth :auth;
+                                     storageAuth : auth;
 
                 if (params.ss.initService(storageConfig, storageElementUrl, authorization)) {
                     var ssName = params.ss.getServiceName();
@@ -187,22 +187,8 @@ public class DataTransferBase {
 
             return true;
         }
-        catch (ClassNotFoundException e) {
-            log.error(e.getMessage());
-        }
-        catch (NoSuchMethodException e) {
-            log.error(e.getMessage());
-        }
-        catch (InstantiationException e) {
-            log.error(e.getMessage());
-        }
-        catch (InvocationTargetException e) {
-            log.error(e.getMessage());
-        }
-        catch (IllegalAccessException e) {
-            log.error(e.getMessage());
-        }
-        catch (IllegalArgumentException e) {
+        catch (ClassNotFoundException | NoSuchMethodException | InstantiationException |
+               InvocationTargetException | IllegalAccessException | IllegalArgumentException e) {
             log.error(e.getMessage());
         }
 

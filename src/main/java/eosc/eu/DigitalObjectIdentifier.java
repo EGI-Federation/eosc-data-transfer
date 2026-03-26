@@ -217,7 +217,7 @@ public class DigitalObjectIdentifier {
                 }
 
                 // Parse DOI and get source files
-                return params.parser.parseDOI(doi, depth);
+                return params.parser.parseDOI(auth, doi, depth);
             })
             .chain(sourceFiles -> {
                 // Got list of source files, success

@@ -252,7 +252,10 @@ public class DataStorage extends DataTransferBase {
                                                       description = STORAGE_AUTH)
                                            String storageAuth) {
 
-        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
+        final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
         MDC.put("seUri", folderUri);
         MDC.put("dest", destination);
 
@@ -348,7 +351,10 @@ public class DataStorage extends DataTransferBase {
                                      @Parameter(required = false, description = STORAGE_AUTH)
                                      String storageAuth) {
 
-        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
+        final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
         MDC.put("seUri", seUri);
         MDC.put("dest", destination);
 
@@ -493,7 +499,10 @@ public class DataStorage extends DataTransferBase {
                                       @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
 
-        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
+        final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
         MDC.put("seUri", seUri);
         MDC.put("dest", destination);
 
@@ -590,7 +599,10 @@ public class DataStorage extends DataTransferBase {
                                       @Parameter(required = false, description = STORAGE_AUTH)
                                       String storageAuth) {
 
-        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
+        final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
         MDC.put("seUri", seUri);
         MDC.put("dest", destination);
 
@@ -687,7 +699,10 @@ public class DataStorage extends DataTransferBase {
                                     @Parameter(required = false, description = STORAGE_AUTH)
                                     String storageAuth) {
 
-        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
+        final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
         MDC.put("seUri", seUri);
         MDC.put("dest", destination);
 
@@ -781,7 +796,10 @@ public class DataStorage extends DataTransferBase {
                                     @Parameter(required = false, description = STORAGE_AUTH)
                                     String storageAuth) {
 
-        MDC.put("callerId", identity.getAttribute(CheckinUser.ATTR_USERID));
+        final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
         MDC.put("dest", destination);
 
         if(null != operation && null != operation.seUriOld && null != operation.seUriNew) {

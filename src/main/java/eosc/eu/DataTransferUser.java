@@ -84,7 +84,9 @@ public class DataTransferUser extends DataTransferBase {
     public Uni<Response> getUserInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth) {
 
         final var oidcAttributes = identity.getAttributes();
-        MDC.put("callerId", oidcAttributes.get(CheckinUser.ATTR_USERID));
+        final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
 
         log.info("Getting current user info");
 

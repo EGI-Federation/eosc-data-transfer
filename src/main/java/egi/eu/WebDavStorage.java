@@ -111,10 +111,9 @@ public class WebDavStorage implements StorageService {
 
     /**
      * Retrieve information about current user.
-     * @param auth The access token that authorizes calling the service.
      * @return User information.
      */
-    public Uni<eosc.eu.model.UserInfo> getUserInfo(String auth) {
+    public Uni<eosc.eu.model.UserInfo> getUserInfo() {
         if(null == minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
@@ -159,7 +158,7 @@ public class WebDavStorage implements StorageService {
 
     /**
      * List all buckets or all objects in a bucket.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth Optional access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param folderUri The link to the bucket to list content of. If the URI has no path (or just /),
      *                  it will list all the buckets. If the path contains the bucket (with or without
@@ -167,7 +166,7 @@ public class WebDavStorage implements StorageService {
      *                  bucket. To list content of virtual folders, the folderUri must end in a slash (/).
      * @return List of folder content.
      */
-    public Uni<StorageContent> listFolderContent(String auth, String storageAuth, String folderUri) {
+    public Uni<StorageContent> listFolderContent(String tsAuth, String storageAuth, String folderUri) {
         if(null == minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
@@ -282,12 +281,12 @@ public class WebDavStorage implements StorageService {
 
     /**
      * Get the details of an object. Fails if called for a bucket.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth Optional access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param seUri The link to the file or folder to det details of.
      * @return Details about the object.
      */
-    public Uni<StorageElement> getStorageElementInfo(String auth, String storageAuth, String seUri) {
+    public Uni<StorageElement> getStorageElementInfo(String tsAuth, String storageAuth, String seUri) {
         if(null == minio || null == this.baseUri)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
@@ -340,12 +339,12 @@ public class WebDavStorage implements StorageService {
 
     /**
      * Create new bucket.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth Optional access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param folderUri The link to the bucket to create. The bucket name must be unique.
      * @return Confirmation message.
      */
-    public Uni<String> createFolder(String auth, String storageAuth, String folderUri) {
+    public Uni<String> createFolder(String tsAUth, String storageAuth, String folderUri) {
         if(null == minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
@@ -404,12 +403,12 @@ public class WebDavStorage implements StorageService {
     /**
      * Delete existing bucket or virtual folder. If deleting a bucket, the bucket must be empty.
      * If deleting a virtual folder, it will delete all objects in that virtual folder (and deeper).
-     * @param auth The access token needed to call the service.
+     * @param tsAuth Optional access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param folderUri The link to the bucket or virtual folder to delete.
      * @return Confirmation message.
      */
-    public Uni<String> deleteFolder(String auth, String storageAuth, String folderUri) {
+    public Uni<String> deleteFolder(String tsAuth, String storageAuth, String folderUri) {
         if(null == minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
@@ -576,12 +575,12 @@ public class WebDavStorage implements StorageService {
 
     /**
      * Delete existing object.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth Optional access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param fileUri The link to the object to delete.
      * @return Confirmation message.
      */
-    public Uni<String> deleteFile(String auth, String storageAuth, String fileUri) {
+    public Uni<String> deleteFile(String tsAuth, String storageAuth, String fileUri) {
         if(null == minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
@@ -635,13 +634,13 @@ public class WebDavStorage implements StorageService {
      * Rename an object. Attempts to rename a bucket or a virtual folder will fail.
      * Note: Rename is not supported even for objects. Instead, the object is copied to
      *       the new location with the new name, then the old one will be deleted.
-     * @param auth The access token needed to call the service.
+     * @param tsAuth Optional access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param seOld The link to the storage element to rename.
      * @param seNew The link to the new name/location of the storage element.
      * @return Confirmation message.
      */
-    public Uni<String> renameStorageElement(String auth, String storageAuth, String seOld, String seNew) {
+    public Uni<String> renameStorageElement(String tsAuth, String storageAuth, String seOld, String seNew) {
         if(null == minio)
             throw new TransferServiceException("configInvalid");
 

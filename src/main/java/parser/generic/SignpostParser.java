@@ -154,12 +154,13 @@ public class SignpostParser implements ParserService {
 
     /**
      * Parse the DOI and return a set of files in the data set.
+     * @param tsAuth Optional access token needed to call the service.
      * @param doi   The DOI for a data set.
      * @param level The level of recursion. If we have to call ourselves, this gets increased
      *              each time, providing for a mechanism to avoid infinite recursion.
      * @return List of files in the data set.
      */
-    public Uni<StorageContent> parseDOI(String doi, int level) {
+    public Uni<StorageContent> parseDOI(String tsAuth, String doi, int level) {
 
         log.debug("Parse Signposting DOI");
 
@@ -226,7 +227,7 @@ public class SignpostParser implements ParserService {
                         // Content with a DOI
                         if(!doi.equalsIgnoreCase(link.url) && level <= MAX_RECURSION) {
                             log.debug("Signposting relation 'identifier' to be tried");
-                            return parser.parseDOIAsync(link.url, level + 1);
+                            return parser.parseDOIAsync(tsAuth, link.url, level + 1);
                         }
 
                         log.error("Signposting relation 'identifier' max recursion depth reached");

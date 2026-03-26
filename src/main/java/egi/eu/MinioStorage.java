@@ -51,9 +51,9 @@ public class MinioStorage implements StorageService {
 
     /***
      * Initialize the client for the S3 storage system.
-     * @param serviceConfig Configuration loaded from the config file
-     * @param storageElementUrl the URL to a folder or file on the target storage system
-     * @param storageAuth Credentials for the storage system, Base-64 encoded "accesskey:secretkey"
+     * @param serviceConfig Configuration loaded from the config file.
+     * @param storageElementUrl the URL to a folder or file on the target storage system.
+     * @param storageAuth Optional credentials for the storage system, Base-64 encoded "accesskey:secretkey"
      * @return true on success
      */
     @PostConstruct
@@ -67,6 +67,11 @@ public class MinioStorage implements StorageService {
 
         MDC.put("storageElement", storageElementUrl);
         log.debug("Obtaining client for S3 compatible object storage");
+
+        if(null == storageAuth) {
+            log.error("No credentials for storage system");
+            return false;
+        }
 
         // Get the base URL for the S3 storage system
         try {
@@ -96,20 +101,20 @@ public class MinioStorage implements StorageService {
 
     /***
      * Get the human-readable name of the service.
-     * @return Name of the transfer service.
+     * @return Name of the transfer service
      */
     public String getServiceName() { return this.name; }
 
     /***
      * Get the base URL of the service.
-     * @return Base URL.
+     * @return Base URL
      */
     public String getServiceBaseUrl() { return this.baseUri; }
 
     /**
      * Retrieve information about current user.
      * @param auth The access token that authorizes calling the service.
-     * @return User information.
+     * @return User information
      */
     public Uni<eosc.eu.model.UserInfo> getUserInfo(String auth) {
         if(null == minio)
@@ -121,7 +126,7 @@ public class MinioStorage implements StorageService {
     /***
      * Extract the bucket and object name from an URI.
      * @param seUri is the fully qualified URI to the object
-     * @return Uni containing Tuple with (bucketName, objectName), failure Uni on error.
+     * @return Uni containing Tuple with (bucketName, objectName), failure Uni on error
      */
     private Uni<Tuple2<String, String>> getBucketObjectFromUri(String seUri) {
         // Split the storage element URI into a bucket and an object name
@@ -156,13 +161,13 @@ public class MinioStorage implements StorageService {
 
     /**
      * List all buckets or all objects in a bucket.
-     * @param auth The access token needed to call the service.
+     * @param auth Optional access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param folderUri The link to the bucket to list content of. If the URI has no path (or just /),
      *                  it will list all the buckets. If the path contains the bucket (with or without
      *                  a terminating /), it will return the objects and virtual folders directly in the
      *                  bucket. To list content of virtual folders, the folderUri must end in a slash (/).
-     * @return List of folder content.
+     * @return List of folder content
      */
     public Uni<StorageContent> listFolderContent(String auth, String storageAuth, String folderUri) {
         if(null == minio)
@@ -263,7 +268,7 @@ public class MinioStorage implements StorageService {
                             else if(type.equals(ServerException.class))
                                 code = ((ServerException)e).statusCode();
                             return Uni.createFrom().failure(new TransferServiceException("listObjects", code,
-                                                                        e.getMessage().replaceAll("\\.$", "")));
+                                                             e.getMessage().replaceAll("\\.$", "")));
                         }
                 }
 
@@ -279,10 +284,10 @@ public class MinioStorage implements StorageService {
 
     /**
      * Get the details of an object. Fails if called for a bucket.
-     * @param auth The access token needed to call the service.
+     * @param auth Optional access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param seUri The link to the file or folder to det details of.
-     * @return Details about the object.
+     * @return Details about the object
      */
     public Uni<StorageElement> getStorageElementInfo(String auth, String storageAuth, String seUri) {
         if(null == minio || null == this.baseUri)
@@ -307,9 +312,9 @@ public class MinioStorage implements StorageService {
 
                 // Prepare to get object statistics
                 return Uni.createFrom().item(StatObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(objectName)
-                        .build());
+                                        .bucket(bucketName)
+                                        .object(objectName)
+                                        .build());
             })
             .chain(statArgs -> {
                 CompletableFuture<StatObjectResponse> stats = null;
@@ -337,10 +342,10 @@ public class MinioStorage implements StorageService {
 
     /**
      * Create new bucket.
-     * @param auth The access token needed to call the service.
+     * @param auth Optional access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param folderUri The link to the bucket to create. The bucket name must be unique.
-     * @return Confirmation message.
+     * @return Confirmation message
      */
     public Uni<String> createFolder(String auth, String storageAuth, String folderUri) {
         if(null == minio)
@@ -369,8 +374,8 @@ public class MinioStorage implements StorageService {
 
                 // Prepare to make bucket
                 return Uni.createFrom().item(MakeBucketArgs.builder()
-                        .bucket(bucketName)
-                        .build());
+                                        .bucket(bucketName)
+                                        .build());
             })
             .chain(makeArgs -> {
                 if(null == makeArgs)
@@ -401,10 +406,10 @@ public class MinioStorage implements StorageService {
     /**
      * Delete existing bucket or virtual folder. If deleting a bucket, the bucket must be empty.
      * If deleting a virtual folder, it will delete all objects in that virtual folder (and deeper).
-     * @param auth The access token needed to call the service.
+     * @param auth Optional access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param folderUri The link to the bucket or virtual folder to delete.
-     * @return Confirmation message.
+     * @return Confirmation message
      */
     public Uni<String> deleteFolder(String auth, String storageAuth, String folderUri) {
         if(null == minio)
@@ -438,9 +443,9 @@ public class MinioStorage implements StorageService {
 
                 // For virtual folders prepare to list objects
                 return Uni.createFrom().item(ListObjectsArgs.builder()
-                        .bucket(bucketName)
-                        .prefix(objectName)
-                        .build());
+                                        .bucket(bucketName)
+                                        .prefix(objectName)
+                                        .build());
             })
             .chain(listArgs -> {
                 if(null != listArgs) {
@@ -473,7 +478,7 @@ public class MinioStorage implements StorageService {
                             else if(type.equals(ServerException.class))
                                 code = ((ServerException)e).statusCode();
                             return Uni.createFrom().failure(new TransferServiceException("deleteObject", code,
-                                                                                e.getMessage().replaceAll("\\.$", "")));
+                                                             e.getMessage().replaceAll("\\.$", "")));
                         }
 
                     MDC.put("objectCount", objects.size());
@@ -517,7 +522,7 @@ public class MinioStorage implements StorageService {
                             else if(type.equals(ServerException.class))
                                 code = ((ServerException)e).statusCode();
                             return Uni.createFrom().failure(new TransferServiceException("deleteError", code,
-                                                                                    e.getMessage().replaceAll("\\.$", "")));
+                                                             e.getMessage().replaceAll("\\.$", "")));
                         }
                     }
 
@@ -573,10 +578,10 @@ public class MinioStorage implements StorageService {
 
     /**
      * Delete existing object.
-     * @param auth The access token needed to call the service.
+     * @param auth Optional access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param fileUri The link to the object to delete.
-     * @return Confirmation message.
+     * @return Confirmation message
      */
     public Uni<String> deleteFile(String auth, String storageAuth, String fileUri) {
         if(null == minio)
@@ -601,9 +606,9 @@ public class MinioStorage implements StorageService {
 
                 // Prepare to delete object
                 return Uni.createFrom().item(RemoveObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(objectName)
-                        .build());
+                                        .bucket(bucketName)
+                                        .object(objectName)
+                                        .build());
             })
             .chain(removeArgs -> {
                 CompletableFuture<Void> nope = null;
@@ -632,11 +637,11 @@ public class MinioStorage implements StorageService {
      * Rename an object. Attempts to rename a bucket or a virtual folder will fail.
      * Note: Rename is not supported even for objects. Instead, the object is copied to
      *       the new location with the new name, then the old one will be deleted.
-     * @param auth The access token needed to call the service.
+     * @param auth Optional access token needed to call the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
      * @param seOld The link to the storage element to rename.
      * @param seNew The link to the new name/location of the storage element.
-     * @return Confirmation message.
+     * @return Confirmation message
      */
     public Uni<String> renameStorageElement(String auth, String storageAuth, String seOld, String seNew) {
         if(null == minio)
@@ -694,13 +699,13 @@ public class MinioStorage implements StorageService {
 
                 // Prepare to copy object
                 return Uni.createFrom().item(CopyObjectArgs.builder()
-                                .bucket(bucketNameNew)
-                                .object(objectNameNew)
-                                .source(CopySource.builder()
-                                    .bucket(bucketName)
-                                    .object(objectName)
-                                    .build())
-                                .build());
+                                        .bucket(bucketNameNew)
+                                        .object(objectNameNew)
+                                        .source(CopySource.builder()
+                                            .bucket(bucketName)
+                                            .object(objectName)
+                                            .build())
+                                        .build());
             })
             .chain(copyArgs -> {
                 CompletableFuture<ObjectWriteResponse> copied = null;
@@ -723,9 +728,9 @@ public class MinioStorage implements StorageService {
 
                 // Prepare to delete original object
                 return Uni.createFrom().item(RemoveObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(objectName)
-                        .build());
+                                        .bucket(bucketName)
+                                        .object(objectName)
+                                        .build());
             })
             .chain(removeArgs -> {
                 CompletableFuture<Void> removed = null;

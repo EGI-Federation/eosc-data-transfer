@@ -65,6 +65,9 @@ public interface TransferConfig {
      * The configuration of a storage system type for which storage element manipulation is supported
      */
     interface StorageSystemConfig {
+        String AUTH_TYPE_TOKEN = "token";
+        String AUTH_TYPE_KEYS = "keys";
+
         String name();
         String protocol();
 

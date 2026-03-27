@@ -30,8 +30,8 @@ public class FileTransferServiceException extends WebApplicationException {
         } catch(JsonProcessingException e) {}
     }
 
-    String responseBody() { return responseBody; }
-    String errorDetail() { return null != error ? error.http_message : super.getMessage(); }
+    public String responseBody() { return responseBody; }
+    public String errorDetail() { return null != error ? error.http_message : super.getMessage(); }
 
 
     /***

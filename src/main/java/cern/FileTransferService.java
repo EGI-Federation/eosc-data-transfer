@@ -22,10 +22,6 @@ import cern.model.*;
 @Produces(MediaType.APPLICATION_JSON)
 public interface FileTransferService {
 
-    @GET
-    @Path("/whoami")
-    Uni<UserInfo> getUserInfoAsync(@RestHeader(HttpHeaders.AUTHORIZATION) String auth);
-
     @POST
     @Path("/jobs")
     @Consumes(MediaType.APPLICATION_JSON)

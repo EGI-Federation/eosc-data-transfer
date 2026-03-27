@@ -47,19 +47,6 @@ public class UserInfo {
     public UserInfo() {}
 
     /**
-     * Construct from FTS user info, makes deep copy
-     */
-    public UserInfo(cern.model.UserInfo ui) {
-        this.userId = ui.base_id;
-
-        if(null != ui.vos) {
-            this.vos = new ArrayList<>();
-            for(var vo : ui.vos)
-                this.vos.add(new VirtualOrganization(vo));
-        }
-    }
-
-    /**
      * Construct from OIDC attributes
      * @param attributes Contains the OIDC attributes after introspection
      * See also {@link RolesCustomization#build(SecurityIdentity)} for more details

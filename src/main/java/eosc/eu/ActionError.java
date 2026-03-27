@@ -166,13 +166,7 @@ public class ActionError {
         else
             this.description = Optional.empty();
 
-        var type = t.getClass();
-        if(type.equals(ZenodoException.class) ||
-            type.equals(B2ShareException.class) ||
-            type.equals(EsrfException.class) ||
-            type.equals(FileTransferServiceException.class) ||
-            type.equals(ClientWebApplicationException.class) ||
-            type.equals(WebApplicationException.class) ) {
+        if(t instanceof WebApplicationException) {
             // Build from web exception
             var we = (WebApplicationException)t;
             this.status = Status.fromStatusCode(we.getResponse().getStatus());
@@ -180,7 +174,7 @@ public class ActionError {
             if(this.id.equals("exception")) {
                 switch (this.status) {
                     case UNAUTHORIZED:
-                        this.id = "notAuthenticated";
+                        this.id = "notAuthorized";
                         break;
                     case FORBIDDEN:
                         this.id = "noAccess";
@@ -200,7 +194,7 @@ public class ActionError {
                     this.description = Optional.of(reason);
             }
         }
-        else if(type.equals(ProcessingException.class)) {
+        else if(t instanceof ProcessingException) {
             // Build from processing exception
             var pe = (ProcessingException)t;
             this.id = "processingError";
@@ -213,7 +207,7 @@ public class ActionError {
             }
         }
 
-        if(type.equals(TransferServiceException.class)) {
+        if(t instanceof TransferServiceException) {
             TransferServiceException tse = (TransferServiceException)t;
             this.id = tse.getId();
             if(this.id.equals("noOp"))
@@ -275,9 +269,7 @@ public class ActionError {
         this.details = Optional.of(combinedDetails);
 
         // Adjust id for some statuses
-        var type = t.getClass();
-        if (type.equals(ClientWebApplicationException.class) ||
-            type.equals(WebApplicationException.class) ) {
+        if(t instanceof WebApplicationException) {
             // Refine the id for NOT_FOUND errors
             switch(this.status) {
                 case NOT_FOUND:

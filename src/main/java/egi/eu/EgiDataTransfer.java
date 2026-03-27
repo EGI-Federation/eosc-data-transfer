@@ -1,16 +1,14 @@
 package egi.eu;
 
+import cern.FileTransferServiceException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.quarkus.oidc.common.runtime.OidcConstants;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
-import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import io.quarkus.oidc.client.OidcClient;
 import io.quarkus.oidc.client.runtime.TokensHelper;
 
@@ -29,18 +27,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import static jakarta.ws.rs.core.HttpHeaders.*;
 
-import cern.model.UserInfo;
 import cern.model.*;
 import cern.FileTransferService;
 
 import eosc.eu.model.*;
-import eosc.eu.BooleanAccumulator;
 import eosc.eu.TransferService;
 import eosc.eu.TransferServiceException;
 import eosc.eu.DataStorageCredentials;
@@ -69,8 +63,6 @@ public class EgiDataTransfer implements TransferService {
 
     private final ObjectMapper objectMapper;
 
-
-    // TODO: Use FileTransferServiceException to get actual error message from FTS
 
     /***
      * Constructor
@@ -269,7 +261,10 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(new TransferInfo(jobInfo));
             })
             .onFailure().invoke(e -> {
-                log.error(e);
+                if(e instanceof FileTransferServiceException)
+                    log.error(((FileTransferServiceException)e).errorDetail());
+                else
+                    log.error(e.getMessage());
             });
 
         return result;
@@ -336,7 +331,10 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(new TransferList(jobs));
             })
             .onFailure().invoke(e -> {
-                log.error(e);
+                if(e instanceof FileTransferServiceException)
+                    log.error(((FileTransferServiceException)e).errorDetail());
+                else
+                    log.error(e.getMessage());
             });
 
         return result;
@@ -382,7 +380,10 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(new TransferInfoExtended(jobInfo, fileInfo));
             })
             .onFailure().invoke(e -> {
-                log.error(e);
+                if(e instanceof FileTransferServiceException)
+                    log.error(((FileTransferServiceException)e).errorDetail());
+                else
+                    log.error(e.getMessage());
             });
 
         return result;
@@ -439,7 +440,10 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(response);
             })
             .onFailure().invoke(e -> {
-                log.error(e);
+                if(e instanceof FileTransferServiceException)
+                    log.error(((FileTransferServiceException)e).errorDetail());
+                else
+                    log.error(e.getMessage());
             });
 
         return result;
@@ -469,7 +473,10 @@ public class EgiDataTransfer implements TransferService {
                 return Uni.createFrom().item(new TransferInfoExtended(jobInfoExt));
             })
             .onFailure().invoke(e -> {
-                log.error(e);
+                if(e instanceof FileTransferServiceException)
+                    log.error(((FileTransferServiceException)e).errorDetail());
+                else
+                    log.error(e.getMessage());
             });
 
         return result;

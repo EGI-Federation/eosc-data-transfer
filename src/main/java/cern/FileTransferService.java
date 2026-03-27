@@ -63,18 +63,4 @@ public interface FileTransferService {
     @Path("/jobs/{jobId}")
     Uni<JobInfoExtended> cancelTransferAsync(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                              @RestPath("jobId") String jobId);
-
-    // NOTE: The methods below should return S3Info, but auto deserialization fails for return type Uni<S3Info>
-    // However, manually deserializing the returned JSON string using ObjectMapper works fine!
-
-    @POST
-    @Path("/config/cloud_storage")
-    @Consumes(MediaType.APPLICATION_JSON)
-    Uni<String> registerS3HostAsync(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, S3Info s3Info);
-
-    @POST
-    @Path("/config/cloud_storage/{s3Host}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    Uni<String> configureS3HostAsync(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                     @RestPath("s3Host") String s3Host, S3Info s3Info);
 }

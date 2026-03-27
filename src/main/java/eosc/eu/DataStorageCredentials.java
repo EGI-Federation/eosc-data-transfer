@@ -54,9 +54,17 @@ public class DataStorageCredentials {
             return null;
         }
 
-        // Remove Base64 encoding
-        byte[] userInfoBytes = Base64.getDecoder().decode(storageAuth);
-        String userInfo = new String(userInfoBytes, StandardCharsets.UTF_8);
+        String userInfo = null;
+
+        try {
+            // Remove Base64 encoding
+            byte[] userInfoBytes = Base64.getDecoder().decode(storageAuth);
+            userInfo = new String(userInfoBytes, StandardCharsets.UTF_8);
+        }
+        catch(IllegalArgumentException e) {
+            log.warn("Storage credentials not Base64 encoded");
+            return null;
+        }
 
         // Now we should have a string of the form "username:password"
         // Split it into parts

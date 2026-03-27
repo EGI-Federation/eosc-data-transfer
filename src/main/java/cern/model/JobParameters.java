@@ -25,6 +25,9 @@ public class JobParameters {
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int priority = 0;
 
+    @Schema(title="Credentials for S3 destination storage system, Base-64 encoded \"accesskey:secretkey\"")
+    public String s3_credentials;
+
 
     /**
      * Constructor

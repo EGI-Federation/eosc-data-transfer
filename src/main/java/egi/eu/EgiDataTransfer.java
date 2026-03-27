@@ -2,6 +2,7 @@ package egi.eu;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.oidc.common.runtime.OidcConstants;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.tuples.Tuple2;
@@ -10,6 +11,8 @@ import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
+import io.quarkus.oidc.client.OidcClient;
+import io.quarkus.oidc.client.runtime.TokensHelper;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -25,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -55,9 +59,13 @@ public class EgiDataTransfer implements TransferService {
     private static Map<String, String> infoFieldsRenamed;
 
     private String name;
-    private URL url;
-    private static FileTransferService fts;        // REST client (used for transfers)
+    private String url;
+    private FileTransferService fts; // REST client used for transfers
     private int timeout;
+
+    @Inject
+    OidcClient client;
+    TokensHelper tokenHelper;
 
     private final ObjectMapper objectMapper;
 
@@ -67,7 +75,10 @@ public class EgiDataTransfer implements TransferService {
     /***
      * Constructor
      */
-    public EgiDataTransfer() { this.objectMapper = new ObjectMapper(); }
+    public EgiDataTransfer() {
+        this.tokenHelper = new TokensHelper();
+        this.objectMapper = new ObjectMapper();
+    }
 
     /***
      * Load a certificate store from a resource file.
@@ -105,18 +116,22 @@ public class EgiDataTransfer implements TransferService {
         this.name = serviceConfig.name();
         this.timeout = serviceConfig.timeout();
 
-        if (null != fts)
+        if(null != fts)
             return true;
 
+        MDC.put("serviceUrl", serviceConfig.url());
         log.debug("Obtaining REST client for File Transfer Service");
 
         // Check if transfer service base URL is valid
+        URL serviceUrl = null;
         try {
-            this.url = new URL(serviceConfig.url());
+            serviceUrl = new URL(serviceConfig.url());
         } catch (MalformedURLException e) {
             log.error(e.getMessage());
             return false;
         }
+
+        this.url = serviceUrl.getProtocol() + "://" + serviceUrl.getHost();
 
         try {
             // Create the REST client for the transfer service
@@ -124,7 +139,7 @@ public class EgiDataTransfer implements TransferService {
             var tsPass = serviceConfig.trustStorePassword().isPresent() ? serviceConfig.trustStorePassword().get() : "";
             var ots = loadKeyStore(tsFile, tsPass);
 
-            var rcb = RestClientBuilder.newBuilder().baseUrl(this.url);
+            var rcb = RestClientBuilder.newBuilder().baseUrl(serviceUrl);
 
             if(ots.isPresent())
                 rcb.trustStore(ots.get());
@@ -150,7 +165,7 @@ public class EgiDataTransfer implements TransferService {
      * Get the base URL of the service.
      * @return URL to the transfer service.
      */
-    public String getServiceUrl() { return this.url.getProtocol() + "://" + this.url.getHost(); }
+    public String getServiceUrl() { return this.url; }
 
     /***
      * Convert a generic transfer state to a service specific state.
@@ -224,166 +239,6 @@ public class EgiDataTransfer implements TransferService {
     }
 
     /**
-     * Register S3 storage system with FTS.
-     * @param auth The access token that authorizes calling the service.
-     * @param storageHost Destination S3 system.
-     * @return true on success
-     */
-    private Uni<Boolean> registerStorage(String auth, String storageHost) {
-
-        MDC.put("storageHost", storageHost);
-        log.info("Registering S3 destination");
-
-        if (null == fts)
-            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
-
-        Uni<Boolean> result = Uni.createFrom().nullItem()
-
-            .chain(unused -> {
-                // Register S3 destination
-                S3Info s3info = new S3Info(storageHost);
-                return fts.registerS3HostAsync(auth, s3info);
-            })
-            .ifNoItem()
-                .after(Duration.ofMillis(this.timeout))
-                .recoverWithItem(() -> {
-                    // Hack: Treat this as "S3 host registered successfully"
-                    // See also https://github.com/cern-fts/fts-rest-flask/issues/4
-                    return new S3Info(storageHost).toString();
-                })
-            .chain(unused -> {
-                // Success
-                MDC.remove("storageHost");
-                return Uni.createFrom().item(true);
-            })
-            .onFailure().recoverWithUni(e -> {
-                var type = e.getClass();
-                if (type.equals(ClientWebApplicationException.class) ||
-                    type.equals(WebApplicationException.class) ) {
-                    // Extract status code
-                    var we = (WebApplicationException) e;
-                    var status = Status.fromStatusCode(we.getResponse().getStatus());
-                    if(status == Status.INTERNAL_SERVER_ERROR) {
-                        // Hack: Treat this as "S3 host already registered"
-                        // See also https://github.com/cern-fts/fts-rest-flask/issues/4
-                        return Uni.createFrom().item(true);
-                    }
-                }
-
-                log.error(e);
-                log.error("Failed to register S3 destination");
-                return Uni.createFrom().failure(e);
-            });
-
-        return result;
-    }
-
-    /**
-     * Prepare S3 storage system for transfer.
-     * @param auth The access token that authorizes calling the service.
-     * @param accessKey Access key for the destination storage.
-     * @param secretKey Secret key for the destination storage.
-     * @param storageHost Destination S3 system.
-     * @param ui Optional user information
-     * @return true on success
-     */
-    private Uni<Boolean> prepareStorage(String auth, String accessKey, String secretKey,
-                                        String storageHost, UserInfo ui) {
-
-        MDC.put("storageHost", storageHost);
-
-        // Make sure we have storage credentials
-        if (null == accessKey || accessKey.isBlank() || null == secretKey || secretKey.isBlank())
-            return Uni.createFrom().failure(new TransferServiceException("missingStorageAuth"));
-
-        if (null == fts)
-            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
-
-        Uni<Boolean> result = Uni.createFrom().nullItem()
-
-            .ifNoItem()
-                .after(Duration.ofMillis(this.timeout))
-                .failWith(new TransferServiceException("prepareStorageTimeout"))
-            .chain(unused -> {
-                // Register S3 destination
-                return registerStorage(auth, storageHost);
-            })
-            .chain(s3info -> {
-                // Get user info from auth token, if not supplied
-                return (null != ui) ?
-                        Uni.createFrom().item(ui) :
-                        fts.getUserInfoAsync(auth);
-            })
-            .chain(userInfo -> {
-                // Configure S3 destination with provided credentials
-                MDC.put("userDN", userInfo.user_dn);
-                log.info("Configuring S3 destination");
-
-                var voName = (null == userInfo.vos || userInfo.vos.isEmpty()) ? null : userInfo.vos.get(0);
-                var s3info = new S3Info(userInfo.user_dn, voName, accessKey, secretKey);
-                return fts.configureS3HostAsync(auth,"s3:" + storageHost, s3info);
-            })
-            .chain(unused -> {
-                // Success
-                MDC.remove("storageHost");
-                return Uni.createFrom().item(true);
-            })
-            .onFailure().invoke(e -> {
-                log.error(e);
-                log.error("Failed to configure S3 destination");
-            });
-
-        return result;
-    }
-
-    /**
-     * Prepare S3 storage systems for transfer.
-     * @param auth The access token that authorizes calling the service.
-     * @param storageAuth Credentials for the destination storage, Base-64 encoded "key:value"
-     * @param destinations List of destination S3 hostnames.
-     * @return true on success
-     */
-    private Uni<Boolean> prepareStorages(String auth, String storageAuth, List<String> destinations) {
-        // Make sure we have storage credentials
-        var storageCreds = new DataStorageCredentials(storageAuth);
-        if(!storageCreds.isValid())
-            return Uni.createFrom().failure(new TransferServiceException("missingStorageAuth"));
-
-        UserInfo userInfo = new UserInfo();
-        Uni<Boolean> result = Uni.createFrom().nullItem()
-
-            .ifNoItem()
-                .after(Duration.ofMillis(this.timeout))
-                .failWith(new TransferServiceException("prepareStoragesTimeout"))
-            .chain(unused -> {
-                // Get user info from auth token
-                return fts.getUserInfoAsync(auth);
-            })
-            .onItem().transformToMulti(ui -> {
-                // Got user info, save DN
-                userInfo.user_dn = ui.user_dn;
-                return Multi.createFrom().iterable(destinations);
-            })
-            .onItem().transformToUniAndConcatenate(dest -> {
-                // Prepare this storage
-                return prepareStorage(auth,
-                                      storageCreds.getAccessKey(),
-                                      storageCreds.getSecretKey(),
-                                      dest, userInfo);
-            })
-            .onFailure().invoke(e -> {
-                log.error("Failed to configure S3 destinations");
-            })
-            .collect()
-            .in(BooleanAccumulator::new, (acc, supported) -> {
-                acc.accumulateAll(supported);
-            })
-            .onItem().transform(BooleanAccumulator::get);
-
-        return result;
-    }
-
-    /**
      * Initiate new transfer of multiple sets of files.
      * @param auth The access token that authorizes calling the service.
      * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
@@ -399,34 +254,14 @@ public class EgiDataTransfer implements TransferService {
             .ifNoItem()
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("startTransferTimeout"))
-            .chain(unused -> {
-                // If storage authentication is provided, configure every S3 destination
-                if(null != storageAuth && !storageAuth.isBlank()) {
-                    // Get a list of all S3 destination storage hostnames
-                    var destinations = transfer.allDestinationStorages(Transfer.Destination.s3.toString());
-                    var destinationsHttps = transfer.allDestinationStorages(Transfer.Destination.s3s.toString());
-                    if(null != destinations) {
-                        if(null != destinationsHttps)
-                            destinations.addAll(destinationsHttps);
-                    }
-                    else if(null != destinationsHttps)
-                        destinations = destinationsHttps;
-
-                    if(null == destinations)
-                        // Some destination URL is invalid, abort
-                        return Uni.createFrom().failure(new TransferServiceException("uriInvalid",
-                                                                 Tuple2.of("uri", (String)MDC.get("invalidUri"))));
-
-                    if(!destinations.isEmpty())
-                        // Configure FTS for all S3 destinations
-                        return prepareStorages(auth, storageAuth, destinations);
-                }
-
-                return Uni.createFrom().item(true);
-            })
             .chain(s3ConfigResult -> {
                 // Start new transfer
-                return fts.startTransferAsync(auth, new Job(transfer));
+                Job job = new Job(transfer);
+                if(null != storageAuth) {
+                    DataStorageCredentials credentials = new DataStorageCredentials(storageAuth);
+                    job.params.s3_credentials = storageAuth;
+                }
+                return fts.startTransferAsync(auth, job);
             })
             .chain(jobInfo -> {
                 // Transfer started

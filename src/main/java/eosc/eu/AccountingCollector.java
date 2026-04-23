@@ -1,14 +1,15 @@
 package eosc.eu;
 
-import eosc.eu.model.TransferInfo;
-import grnet.model.DataTransferUsageRecord;
+import io.quarkus.oidc.client.OidcClient;
+import io.quarkus.oidc.client.runtime.TokensHelper;
+import io.quarkus.oidc.common.runtime.OidcConstants;
+import org.eclipse.microprofile.rest.client.RestClientBuilder;
+import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.subscription.Cancellable;
-import org.eclipse.microprofile.rest.client.RestClientBuilder;
-import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import io.quarkus.redis.datasource.stream.StreamMessage;
 import io.quarkus.redis.datasource.stream.XReadGroupArgs;
 import io.quarkus.redis.datasource.ReactiveRedisDataSource;
@@ -27,12 +28,13 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.emptyList;
-
-import grnet.AccountingService;
+import static eosc.eu.Utils.loadKeyStore;
 
 import eosc.eu.model.TransferPayloadInfo.FileDetails;
 import eosc.eu.model.TransferInfoExtended.TransferState;
 import eosc.eu.model.TransferPayloadInfo.FileState;
+import grnet.AccountingService;
+import grnet.model.DataTransferUsageRecord;
 
 
 @Startup
@@ -47,12 +49,15 @@ public class AccountingCollector {
     public static final String JOBSTORE_STREAM = String.format("%s:%s", CHANNEL, STREAM);
 
     @Inject
-    protected ServiceConfig srvConfig;
+    protected ServiceConfig service;
 
     @Inject
-    protected PortConfig portConfig;
+    protected TransferConfig transfer;
 
-    private static DataTransferSelf self;
+    @Inject
+    OidcClient client;
+    TokensHelper tokenHelper;
+
     private static AccountingService accounting;
 
     private final String instance;
@@ -65,6 +70,7 @@ public class AccountingCollector {
      * @param ds is the injected Redis data source
      */
     public AccountingCollector(ReactiveRedisDataSource ds) {
+        this.tokenHelper = new TokensHelper();
         this.stream = null != ds ? ds.stream(String.class) : null;
 
         // Get a unique consumer name
@@ -76,40 +82,49 @@ public class AccountingCollector {
      */
     @PostConstruct
     void onStart() {
-        // Prepare to call ourselves to retrieve transfer info
-        MDC.put("consumerId", this.instance);
-        log.debug("Obtaining REST client for ourselves");
 
-        URL urlParserService;
+        // Create REST client for the accounting service
+        if(service.accounting().url().isEmpty() ||
+           service.accounting().installation().isEmpty() ||
+           service.accounting().metric().isEmpty())
+            // No accounting server, nothing to do
+            return;
+
+        MDC.put("consumerId", this.instance);
+        log.info("Accounting collector is starting...");
+
+        MDC.put("accountingUrl", service.accounting().url().get());
+        log.debug("Obtaining REST client for accounting server");
+
+        // Check if accounting server base URL is valid
+        URL accountingUrl = null;
         try {
-            var urlSelf = String.format("http://localhost:%d", portConfig.port());
-            urlParserService = new URL(urlSelf);
+            accountingUrl = new URL(service.accounting().url().get());
         } catch (MalformedURLException e) {
             log.error(e.getMessage());
             return;
         }
 
         try {
-            // Create the REST client for ourselves
-            self = RestClientBuilder.newBuilder()
-                    .baseUrl(urlParserService)
-                    .build(DataTransferSelf.class);
-        }
-        catch(RestClientDefinitionException e) {
-            log.errorf("Failed to create REST client for ourselves (%s)", e.getMessage());
-        }
+            // Create the REST client for the accounting server
+            var tsFile = service.accounting().trustStoreFile().isPresent() ?
+                         service.accounting().trustStoreFile().get() : "";
+            var tsPass = service.accounting().trustStorePassword().isPresent() ?
+                         service.accounting().trustStorePassword().get() : "";
+            var ots = loadKeyStore(tsFile, tsPass, log);
+            var rcb = RestClientBuilder.newBuilder().baseUrl(accountingUrl);
 
-        if(null == self) {
-            log.error("No REST client to call ourselves");
+            if(ots.isPresent())
+                rcb.trustStore(ots.get());
+
+            accounting = rcb.build(AccountingService.class);
+        }
+        catch(RestClientDefinitionException | IllegalStateException e) {
+            log.error(e.getMessage());
             return;
         }
 
-        // Prepare to call the accounting server
-
-
         // Subscribe to job stream in Redis
-        log.info("Accounting collector is starting...");
-
         this.consumer = this.stream.xgroupCreate(JOBSTORE_STREAM, GROUP, "0-0")
 
             .onFailure().recoverWithNull()
@@ -128,6 +143,7 @@ public class AccountingCollector {
         MDC.put("consumerId", this.instance);
         log.info("Accounting collector is stopping...");
         this.consumer.cancel();
+        log.info("Canceled stream listener");
         this.stream.xgroupDelConsumer(JOBSTORE_STREAM, GROUP, this.instance)
 
             .subscribe()
@@ -193,67 +209,131 @@ public class AccountingCollector {
      */
     Uni<Boolean> processMessage(StreamMessage<String, String, String> message) {
 
-        final String destination = message.payload().get("destination");
-        final String jobId = message.payload().get("jobId");
+        var badMessage = new AtomicReference<String>(null);
+        var destination = new AtomicReference<String>(null);
+        var jobId = new AtomicReference<String>(null);
+        var userId = new AtomicReference<String>(null);
+
+        try {
+            var dest = message.payload().get("dest");
+            if(null != dest)
+                destination.set(dest);
+            else
+                badMessage.set("Empty destination");
+        }
+        catch(Exception e) {
+            badMessage.set("No destination");
+        }
+
+        try {
+            if(null == badMessage.get()) {
+                var jid = message.payload().get("jobId");
+                if (null != jid)
+                    jobId.set(jid);
+                else
+                    badMessage.set("Empty jobId");
+            }
+        }
+        catch(Exception e) {
+            badMessage.set("No jobId");
+        }
+
+        try {
+            if(null == badMessage.get()) {
+                var uid = message.payload().get("userId");
+                if(null != uid)
+                    userId.set(uid);
+                else
+                    badMessage.set("Empty userId");
+            }
+        }
+        catch(Exception e) {
+            badMessage.set("No userId");
+        }
+
+        if(null != badMessage.get()) {
+            // Remove malformed message from stream
+            return this.stream.xdel(JOBSTORE_STREAM, message.id())
+                              .chain(delCount -> {
+                                  MDC.put("payload", message.payload().toString());
+                                  log.errorf("Removed malformed stream message %s (%s)",
+                                             message.id(), badMessage.get());
+                                  return Uni.createFrom().item(false);
+                              });
+        }
 
         MDC.put("consumerId", this.instance);
         MDC.put("messageId", message.id());
-        MDC.put("jobId", jobId);
-        MDC.put("dest", destination);
-        log.infof("Checking status of transfer %s", jobId);
+        MDC.put("jobId", jobId.get());
+        MDC.put("dest", destination.get());
+        log.infof("Checking status of transfer %s", jobId.get());
+
+        // Pick transfer service and create REST client for it
+        final var ts = DataTransferBase.getTransferService(destination.get(), this.transfer, this.log, false);
+        if(null == ts)
+            // Could not the transfer engine used for this destination
+            return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
 
         var done = new AtomicReference<Boolean>(false);
+        var token = new AtomicReference<String>(null);
 
-        return Uni.createFrom().nullItem()
+        var props = new HashMap<String, String>();
+        props.put(OidcConstants.TOKEN_SCOPE, "openid entitlements");
+        props.put(OidcConstants.TOKEN_AUDIENCE_GRANT_PROPERTY, ts.getServiceUrl());
 
-            .chain(unused -> {
+        return tokenHelper.getTokens(client, props, true)
+
+            .chain(tokens -> {
                 // Get transfer details
-                return self.getTransferInfo(jobId, destination, FileDetails.all);
+                var at = tokens.getAccessToken();
+                token.set("Bearer " + at);
+                return ts.getTransferInfo(token.get(), jobId.get(), FileDetails.all);
             })
             .onFailure().recoverWithItem(e -> {
-                log.errorf("Failed to get status of transfer %s (%s)", jobId, e.getMessage());
+                log.errorf("Failed to get status of transfer %s (%s)", jobId.get(), e.getMessage());
                 return null;
             })
             .chain(transferInfo -> {
                 if(null != transferInfo) {
                     // Got transfer details
+                    MDC.put("jobState", transferInfo.jobState);
+                    log.infof("Transfer %s is %s", jobId.get(), transferInfo.jobState.toString());
+
                     done.set(transferInfo.jobState == TransferState.failed ||
-                            transferInfo.jobState == TransferState.partial ||
-                            transferInfo.jobState == TransferState.canceled ||
-                            transferInfo.jobState == TransferState.succeeded);
+                             transferInfo.jobState == TransferState.partial ||
+                             transferInfo.jobState == TransferState.canceled ||
+                             transferInfo.jobState == TransferState.succeeded);
 
-                    if(done.get()) {
-                        MDC.put("jobState", transferInfo.jobState);
-                        log.infof("Transfer %s is %s", jobId, transferInfo.jobState);
-
-                        if(transferInfo.payload_info.isPresent()) {
-                            // Compute amount of data that was transferred
-                            int filesTransferred = 0;
-                            long bytesTransferred = 0;
-                            var pi = transferInfo.payload_info.get();
-                            for(var fileInfo : pi) {
-                                if(fileInfo.fileState == FileState.succeeded) {
-                                    filesTransferred++;
-                                    if(fileInfo.size.isPresent())
-                                        // TODO: Update after CERN returns total size for all destinations of a file
-                                        bytesTransferred += fileInfo.size.get();
-                                }
+                    if(done.get() && transferInfo.payload.isPresent()) {
+                        // Compute amount of data that was transferred
+                        int filesTransferred = 0;
+                        long bytesTransferred = 0;
+                        var pi = transferInfo.payload.get();
+                        for(var fileInfo : pi) {
+                            if(fileInfo.fileState == FileState.succeeded) {
+                                filesTransferred++;
+                                if(fileInfo.size.isPresent())
+                                    bytesTransferred += (fileInfo.size.get() * fileInfo.destinations);
                             }
+                        }
 
-                            if(null != accounting &&
-                               srvConfig.accounting().installation().isPresent() &&
-                               srvConfig.accounting().metric().isPresent()) {
-                                // Send accounting record for this transfer
-                                var installation = srvConfig.accounting().installation().get();
-                                var usageRecord = new DataTransferUsageRecord();
-                                usageRecord.metricId = srvConfig.accounting().metric().get();
-                                usageRecord.bytesTransferred = bytesTransferred;
-                                usageRecord.userId = Optional.of(message.payload().get("userId"));
-                                usageRecord.periodStart = transferInfo.submittedAt;
-                                usageRecord.periodEnd = transferInfo.finishedAt;
+                        if(null != accounting &&
+                           service.accounting().installation().isPresent() &&
+                           service.accounting().metric().isPresent()) {
+                            // Send accounting record for this transfer
+                            var installation = service.accounting().installation().get();
+                            var usageRecord = new DataTransferUsageRecord();
+                            usageRecord.metricId = service.accounting().metric().get();
+                            usageRecord.bytesTransferred = bytesTransferred;
+                            usageRecord.periodStart = transferInfo.submittedAt;
+                            usageRecord.periodEnd = transferInfo.finishedAt;
 
-                                return accounting.sendUsageRecord(installation, usageRecord);
-                            }
+                            if(null == userId.get())
+                                userId.set(transferInfo.userId);
+
+                            usageRecord.userId = Optional.of(userId.get());
+
+                            return accounting.sendUsageRecord(token.get(), installation, usageRecord);
                         }
                     }
                 }
@@ -261,12 +341,12 @@ public class AccountingCollector {
                 return Uni.createFrom().nullItem();
             })
             .onFailure().recoverWithItem(e -> {
-                log.errorf("Failed to send accounting record for transfer %s (%s)", jobId, e.getMessage());
+                log.errorf("Failed to send accounting record for transfer %s (%s)", jobId.get(), e.getMessage());
                 return null;
             })
             .chain(usageRecord -> {
                 if(null != usageRecord)
-                    log.infof("Sent accounting record for transfer %s", jobId);
+                    log.infof("Sent accounting record for transfer %s", jobId.get());
 
                 if(done.get()) {
                     // Transfer has finished, acknowledge message
@@ -279,7 +359,7 @@ public class AccountingCollector {
             .chain(ackCount -> {
                 if(ackCount > 0)
                     // Remove acknowledged message from stream
-                    return this.stream.xdel(JOBSTORE_STREAM, GROUP, message.id());
+                    return this.stream.xdel(JOBSTORE_STREAM, message.id());
 
                 return Uni.createFrom().item(0);
             })

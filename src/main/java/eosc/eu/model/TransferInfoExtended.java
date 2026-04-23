@@ -32,13 +32,6 @@ public class TransferInfoExtended extends TransferInfo {
     public TransferState jobState;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Schema(description="Job state as reported by the transfer service")
-    public String jobStateTS;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String jobType;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> jobMetadata;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -119,9 +112,7 @@ public class TransferInfoExtended extends TransferInfo {
 
         this.kind = "TransferInfoExtended";
         this.jobId = jie.job_id;
-        this.jobStateTS = jie.job_state;
         this.jobState = TransferState.fromString(jie.job_state);
-        this.jobType = jie.job_type;
 
         this.jobMetadata = new HashMap<>();
         if(null != jie.job_metadata && !jie.job_metadata.isEmpty())

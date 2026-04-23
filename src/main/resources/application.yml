@@ -6,11 +6,14 @@ eosc:
     checkin:
       server: my-keycloack.server.org
     accounting:
-      server: my-accounting.server.org
+      url:
       installation: my-installation-id
       metric: my-metric-id
       group:
       check-transfer-status: 60 # seconds
+      trust-store-file: grnet-truststore.jks
+      trust-store-password: password
+      timeout: 3000 # milliseconds
     qos:
       quantiles: [ 0.90, 0.95, 0.98 ]
       slos: [ 500 ] # SLOs expressed in milliseconds
@@ -19,7 +22,7 @@ eosc:
       name: Zenodo
       class: parser.zenodo.ZenodoParser
       url: https://zenodo.org
-      timeout: 5000
+      timeout: 5000 # milliseconds
     esrf:
       name: ESRF
       class: parser.esrf.EsrfParser
@@ -56,7 +59,7 @@ eosc:
         name: EGI Data Transfer
         class: egi.eu.EgiDataTransfer
         url: https://fts-egi.cern.ch:8446
-        timeout: 3000
+        timeout: 3000 # milliseconds
         trust-store-file: cern-truststore.jks
         trust-store-password: password
     storage:
@@ -65,18 +68,17 @@ eosc:
         class: egi.eu.MinioStorage
         auth: keys
         protocol: s3
-        timeout: 3000
       minios:
         name: Min.io object storage
         class: egi.eu.MinioStorage
         auth: keys
-        protocol: https
-        timeout: 3000
+        protocol: s3s
       webdav:
         name: WebDAV storage
         class: egi.eu.WebDavStorage
         auth: token
         protocol: https
+        timeout: 5000 # milliseconds
 
 quarkus:
   application:

@@ -27,19 +27,18 @@ public class TransferPayloadInfo {
     public FileState fileState;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Schema(description="File state as reported by the transfer service")
-    public String fileStateTS;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description="Source storage element")
-    public String source_se;
+    public String sourceSE;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description="Destination storage element")
-    public String destination_se;
+    public String destinationSE;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Optional<Long> size;
+
+    @Schema(description="Number of destinations where the file was successfully transferred")
+    public int destinations;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
@@ -73,13 +72,13 @@ public class TransferPayloadInfo {
      * @param jfi The concrete file info to construct from
      */
     public TransferPayloadInfo(JobFileInfo jfi) {
-        this.fileStateTS = jfi.file_state;
         this.fileState = FileState.fromString(jfi.file_state);
 
-        this.source_se = jfi.source_surl;
-        this.destination_se = jfi.destination_surl;
+        this.sourceSE = jfi.source_surl;
+        this.destinationSE = jfi.dest_surl;
 
-        this.size = jfi.file_size;
+        this.size = jfi.filesize;
+        this.destinations = jfi.filecountsuccess;
         this.startedAt = jfi.start_time.orElse(null);
         this.finishedAt = jfi.finish_time.orElse(null);
         this.reason = jfi.reason;
@@ -101,10 +100,10 @@ public class TransferPayloadInfo {
     {
         submitted("submitted"),
         active("active"),
-        unused("unused"),
         succeeded("succeeded"),
         failed("failed"),
-        canceled("canceled");
+        canceled("canceled"),
+        unknown("unknown");
 
         private final String status;
 
@@ -131,7 +130,7 @@ public class TransferPayloadInfo {
             else if(statusLo.contains("cancel"))
                 return canceled;
             else if(statusLo.contains("not_used"))
-                return unused;
+                return unknown;
 
             return submitted;
         }

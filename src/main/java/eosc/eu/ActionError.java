@@ -172,7 +172,7 @@ public class ActionError {
             this.status = Status.fromStatusCode(we.getResponse().getStatus());
 
             if(this.id.equals("exception")) {
-                switch (this.status) {
+                switch(this.status) {
                     case UNAUTHORIZED:
                         this.id = "notAuthorized";
                         break;
@@ -185,12 +185,15 @@ public class ActionError {
                     case NOT_FOUND:
                         this.id = "notFound";
                         break;
+                    case INTERNAL_SERVER_ERROR:
+                        this.id = "configInvalid";
+                        break;
                 }
             }
 
             if(this.description.isEmpty()) {
                 String reason = we.getResponse().getStatusInfo().getReasonPhrase();
-                if (null != reason && !reason.isEmpty())
+                if(null != reason && !reason.isEmpty())
                     this.description = Optional.of(reason);
             }
         }
@@ -212,16 +215,18 @@ public class ActionError {
             this.id = tse.getId();
             if(this.id.equals("noOp"))
                 this.status = Status.OK;
-            if(this.id.equals("fieldNotSupported") ||
-               this.id.equals("doiNotSupported") ||
-               this.id.equals("doiInvalid") ||
-               this.id.equals("uriInvalid") ||
-               this.id.equals("uriMismatch") ||
-               this.id.equals("seInvalid") ||
-               this.id.equals("notFile") ||
-               this.id.equals("notFolder") ||
-               this.id.equals("noArgs") ||
-               this.id.equals("noFilesLink"))
+            else if(this.id.equals("configInvalid"))
+                this.status = Status.INTERNAL_SERVER_ERROR;
+            else if(this.id.equals("fieldNotSupported") ||
+                    this.id.equals("doiNotSupported") ||
+                    this.id.equals("doiInvalid") ||
+                    this.id.equals("uriInvalid") ||
+                    this.id.equals("uriMismatch") ||
+                    this.id.equals("seInvalid") ||
+                    this.id.equals("notFile") ||
+                    this.id.equals("notFolder") ||
+                    this.id.equals("noArgs") ||
+                    this.id.equals("noFilesLink"))
                 // Return BAD_REQUEST instead of INTERNAL_ERROR
                 this.status = Status.BAD_REQUEST;
             else if(tse.hasCode())

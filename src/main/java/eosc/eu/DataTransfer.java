@@ -36,6 +36,7 @@ import egi.checkin.model.CheckinUser;
 import eosc.eu.model.*;
 import eosc.eu.model.Transfer.Destination;
 import eosc.eu.model.TransferPayloadInfo.FileDetails;
+import eosc.eu.model.TransferInfoExtended.TransferState;
 
 
 /***
@@ -53,6 +54,9 @@ public class DataTransfer extends DataTransferBase {
 
     @Inject
     SecurityIdentity identity;
+
+    @Inject
+    protected ServiceConfig service;
 
     ReactiveStreamCommands<String, String, String> stream;
 
@@ -175,9 +179,13 @@ public class DataTransfer extends DataTransferBase {
                 // Remember this transfer job by adding it to the job store
                 // This allows us to poll the transfer engine until the transfer finishes,
                 // then collect accounting information for it
-                if(null != this.stream && null != callerId) {
+                if(null != this.stream && null != callerId &&
+                   service.accounting().url().isPresent() &&
+                   service.accounting().installation().isPresent() &&
+                   service.accounting().metric().isPresent()) {
+                    // We have everything we need to send accounting records
                     var jobCheckInfo = new HashMap<String, String>();
-                    jobCheckInfo.put("destination", destination);
+                    jobCheckInfo.put("dest", destination);
                     jobCheckInfo.put("jobId", transferInfo.jobId);
                     jobCheckInfo.put("userId", callerId);
 
@@ -223,7 +231,7 @@ public class DataTransfer extends DataTransferBase {
      * @param srcStorageElement Source storage element
      * @param dstStorageElement Destination storage element
      * @param voName Filter by VO of user who started the transfer
-     * @param userDN Filter by user who started the transfer
+     * @param userId Filter by user who started the transfer
      * @param destination The type of destination storage (selects transfer service to call).
      * @return API Response, wraps an ActionSuccess(TransferList) or an ActionError entity
      */
@@ -263,28 +271,28 @@ public class DataTransfer extends DataTransferBase {
                                        @RestQuery("limit") @DefaultValue("100")
                                        @Parameter(description = "Maximum number of transfers to return")
                                        int limit,
-                                       @RestQuery("time_window")
+                                       @RestQuery("timeWindow")
                                        @Parameter(description =
                                                "For terminal states, limit results to 'hours[:minutes]' into the past")
                                        String timeWindow,
-                                       @RestQuery("state_in")
+                                       @RestQuery("state")
                                        @Parameter(description =
                                                "Comma separated list of job states to match, " +
                                                "by default only finds active transfers")
-                                       String stateIn,
-                                       @RestQuery("source_se")
+                                       TransferState stateIn,
+                                       @RestQuery("sourceSE")
                                        @Parameter(description = "Source storage element")
                                        String srcStorageElement,
-                                       @RestQuery("dest_se")
+                                       @RestQuery("destSE")
                                        @Parameter(description = "Destination storage element")
                                        String dstStorageElement,
-                                       @RestQuery("vo_name")
+                                       @RestQuery("voName")
                                        @Parameter(description =
                                                "Filter by virtual organization of user who started the transfer")
                                        String voName,
-                                       @RestQuery("user_dn")
+                                       @RestQuery("userId")
                                        @Parameter(description = "Filter by user who started the transfer")
-                                       String userDN,
+                                       String userId,
                                        @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                        @Parameter(schema = @Schema(implementation = Destination.class),
                                                   description = DESTINATION_STORAGE)
@@ -300,17 +308,17 @@ public class DataTransfer extends DataTransferBase {
         if(null != fields && !fields.isEmpty())
             MDC.put("fields", fields);
         if(null != timeWindow && !timeWindow.isEmpty())
-            MDC.put("filter.time_window", timeWindow);
-        if(null != stateIn && !stateIn.isEmpty())
-            MDC.put("filter.state_in", stateIn);
+            MDC.put("filter.timeWindow", timeWindow);
+        if(null != stateIn)
+            MDC.put("filter.state", stateIn.toString());
         if(null != srcStorageElement && !srcStorageElement.isEmpty())
-            MDC.put("filter.source_se", srcStorageElement);
+            MDC.put("filter.sourceSE", srcStorageElement);
         if(null != dstStorageElement && !dstStorageElement.isEmpty())
-            MDC.put("filter.dest_se", dstStorageElement);
+            MDC.put("filter.destSE", dstStorageElement);
         if(null != voName && !voName.isEmpty())
-            MDC.put("filter.vo_name", voName);
-        if(null != userDN && !userDN.isEmpty())
-            MDC.put("filter.user_dn", userDN);
+            MDC.put("filter.voName", voName);
+        if(null != userId && !userId.isEmpty())
+            MDC.put("filter.userId", userId);
 
         log.info("Finding data transfers matching criteria");
 
@@ -330,7 +338,7 @@ public class DataTransfer extends DataTransferBase {
                 // Find transfers
                 return params.ts.findTransfers(auth, fields, limit, timeWindow, stateIn,
                                                srcStorageElement, dstStorageElement,
-                                               voName, userDN);
+                                               voName, userId);
             })
             .chain(matches -> {
                 // Found transfers, success
@@ -346,17 +354,17 @@ public class DataTransfer extends DataTransferBase {
                 if(null != fields && !fields.isEmpty())
                     details.add(Tuple2.of("fields", fields));
                 if(null != timeWindow && !timeWindow.isEmpty())
-                    details.add(Tuple2.of("filter.time_window", timeWindow));
-                if(null != stateIn && !stateIn.isEmpty())
-                    details.add(Tuple2.of("filter.state_in", stateIn));
+                    details.add(Tuple2.of("filter.timeWindow", timeWindow));
+                if(null != stateIn)
+                    details.add(Tuple2.of("filter.state", stateIn.toString()));
                 if(null != srcStorageElement && !srcStorageElement.isEmpty())
-                    details.add(Tuple2.of("filter.source_se", srcStorageElement));
+                    details.add(Tuple2.of("filter.sourceSE", srcStorageElement));
                 if(null != dstStorageElement && !dstStorageElement.isEmpty())
-                    details.add(Tuple2.of("filter.dest_se", dstStorageElement));
+                    details.add(Tuple2.of("filter.destSE", dstStorageElement));
                 if(null != voName && !voName.isEmpty())
-                    details.add(Tuple2.of("filter.vo_name", voName));
-                if(null != userDN && !userDN.isEmpty())
-                    details.add(Tuple2.of("filter.user_dn", userDN));
+                    details.add(Tuple2.of("filter.voName", voName));
+                if(null != userId && !userId.isEmpty())
+                    details.add(Tuple2.of("filter.userId", userId));
 
                 return new ActionError(e, details).toResponse();
             });

@@ -1,6 +1,5 @@
 package egi.eu;
 
-import cern.FileTransferServiceException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.smallrye.mutiny.Uni;
@@ -12,14 +11,8 @@ import org.jboss.logging.MDC;
 import io.quarkus.oidc.client.OidcClient;
 import io.quarkus.oidc.client.runtime.TokensHelper;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.Security;
-import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -29,11 +22,14 @@ import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import static jakarta.ws.rs.core.HttpHeaders.*;
 
 import cern.model.*;
 import cern.FileTransferService;
 
+import static jakarta.ws.rs.core.HttpHeaders.*;
+import static eosc.eu.Utils.loadKeyStore;
+
+import cern.FileTransferServiceException;
 import eosc.eu.model.*;
 import eosc.eu.TransferService;
 import eosc.eu.TransferServiceException;
@@ -73,31 +69,6 @@ public class EgiDataTransfer implements TransferService {
     }
 
     /***
-     * Load a certificate store from a resource file.
-     * @param filePath File path relative to the "src/main/resource" folder
-     * @param password The password for the certificate store
-     * @return Loaded key store, empty optional on error
-     */
-    private Optional<KeyStore> loadKeyStore(String filePath, String password) {
-
-        Optional<KeyStore> oks = Optional.empty();
-        try {
-            var providers = Security.getProviders();
-
-            var classLoader = getClass().getClassLoader();
-            var ksf = classLoader.getResourceAsStream(filePath);
-            var ks = KeyStore.getInstance(KeyStore.getDefaultType());
-            ks.load(ksf, password.toCharArray());
-            oks = Optional.of(ks);
-        }
-        catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
-            log.error(e);
-        }
-
-        return oks;
-    }
-
-    /***
      * Initialize the REST client for the File Transfer Service that powers EGI Data Transfer
      * @param serviceConfig Configuration loaded from the config file
      * @return true on success
@@ -127,10 +98,11 @@ public class EgiDataTransfer implements TransferService {
 
         try {
             // Create the REST client for the transfer service
-            var tsFile = serviceConfig.trustStoreFile().isPresent() ? serviceConfig.trustStoreFile().get() : "";
-            var tsPass = serviceConfig.trustStorePassword().isPresent() ? serviceConfig.trustStorePassword().get() : "";
-            var ots = loadKeyStore(tsFile, tsPass);
-
+            var tsFile = serviceConfig.trustStoreFile().isPresent() ?
+                         serviceConfig.trustStoreFile().get() : "";
+            var tsPass = serviceConfig.trustStorePassword().isPresent() ?
+                         serviceConfig.trustStorePassword().get() : "";
+            var ots = loadKeyStore(tsFile, tsPass, log);
             var rcb = RestClientBuilder.newBuilder().baseUrl(serviceUrl);
 
             if(ots.isPresent())
@@ -251,6 +223,9 @@ public class EgiDataTransfer implements TransferService {
                 Job job = new Job(transfer);
                 if(null != storageAuth) {
                     DataStorageCredentials credentials = new DataStorageCredentials(storageAuth);
+                    if(!credentials.isValid())
+                        return Uni.createFrom().failure(new TransferServiceException("badRequest"));
+
                     job.params.s3_credentials = storageAuth;
                 }
                 return fts.startTransferAsync(auth, job);

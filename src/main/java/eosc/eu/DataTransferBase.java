@@ -4,9 +4,16 @@ import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Security;
+import java.security.cert.CertificateException;
+import java.util.Optional;
 
 import eosc.eu.model.Transfer;
 
@@ -38,7 +45,6 @@ public class DataTransferBase {
     public DataTransferBase(Logger log) {
         this.log = log;
     }
-
 
     /**
      * Prepare REST client for the appropriate data transfer engine, based on the destination
@@ -135,23 +141,23 @@ public class DataTransferBase {
 
         log.debug("Selecting storage system");
 
-        if (null != params.ss)
+        if(null != params.ss)
             return true;
 
-        if (null == params.destination || params.destination.isEmpty()) {
+        if(null == params.destination || params.destination.isEmpty()) {
             log.error("No destination specified");
             return false;
         }
 
         var destinationConfig = config.destinations().get(params.destination);
-        if (null == destinationConfig) {
+        if(null == destinationConfig) {
             // Unsupported destination
             log.error("No configuration for this destination");
             return false;
         }
 
         var ssID = destinationConfig.storageId().isEmpty() ? null : destinationConfig.storageId().get();
-        if (null == ssID || ssID.isBlank()) {
+        if(null == ssID || ssID.isBlank()) {
             // Manipulation of storage elements not supported in this destination
             log.error("Storage element manipulation not supported in this destination");
             return false;
@@ -160,7 +166,7 @@ public class DataTransferBase {
         MDC.put("storageId", ssID);
 
         var storageConfig = config.storages().get(ssID);
-        if (null == storageConfig) {
+        if(null == storageConfig) {
             // Unsupported storage system
             log.error("No configuration found for storage system");
             return false;
@@ -172,13 +178,13 @@ public class DataTransferBase {
             params.ss = (StorageService) classType.getDeclaredConstructor().newInstance();
 
             // If we got a URL to a storage element, also create a REST client pointed to that particular storage system
-            if (null != storageElementUrl) {
+            if(null != storageElementUrl) {
                 var authType = storageConfig.authType();
                 var authorization = (null != authType &&
                                      authType.equalsIgnoreCase(Transfer.AuthorizeWith.keys.toString())) ?
                                      storageAuth : auth;
 
-                if (params.ss.initService(storageConfig, storageElementUrl, authorization)) {
+                if(params.ss.initService(storageConfig, storageElementUrl, authorization)) {
                     var ssName = params.ss.getServiceName();
                     MDC.put("storageName", ssName);
                     log.infof("Storage elements handled by %s", ssName);
@@ -187,8 +193,8 @@ public class DataTransferBase {
 
             return true;
         }
-        catch (ClassNotFoundException | NoSuchMethodException | InstantiationException |
-               InvocationTargetException | IllegalAccessException | IllegalArgumentException e) {
+        catch(ClassNotFoundException | NoSuchMethodException | InstantiationException |
+              InvocationTargetException | IllegalAccessException | IllegalArgumentException e) {
             log.error(e.getMessage());
         }
 

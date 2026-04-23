@@ -8,8 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.102]
 - Added integration with EGI Check-in
 - Added Redis container to Docker compose deployment
-- Record started transfer jobs to Redis stream
-- Consume messages for Redis stream and send accounting usage records when transfers are finished
+- Record all started transfer jobs to Redis stream
+- Consume messages from Redis stream and send accounting usage records when transfers have finished
+- Remove calls to FTS to register and configure S3 hostnames
+- Dropped filter parameter `delegationId` from endpoint `GET /transfers`
 - Upgrade to latest Quarkus version
 
 ## [1.1.101]

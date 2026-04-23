@@ -24,13 +24,16 @@ public class JobFileInfo {
     public String source_surl;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String destination_se;
+    public String dest_se;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String destination_surl;
+    public String dest_surl;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Optional<Long>  file_size;
+    public Optional<Long> filesize;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public int filecountsuccess;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Optional<Date> start_time;
@@ -64,7 +67,8 @@ public class JobFileInfo {
      * Constructor
      */
     public JobFileInfo() {
-        this.file_size = Optional.empty();
+        this.filecountsuccess = 0;
+        this.filesize = Optional.empty();
         this.start_time = Optional.empty();
         this.finish_time = Optional.empty();
         this.priority = Optional.empty();

@@ -1,6 +1,7 @@
 package eosc.eu;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 
 import java.util.Optional;
@@ -37,7 +38,7 @@ public interface ServiceConfig {
     interface AccountingConfig {
 
         // Accounting server to send accounting records to
-        Optional<String> server();
+        Optional<String> url();
 
         Optional<String> installation();
 
@@ -47,6 +48,16 @@ public interface ServiceConfig {
         Optional<String> group();
 
         @WithName("check-transfer-status")
+        @WithDefault("60") // seconds
         int pollInterval();
+
+        @WithName("trust-store-file")
+        Optional<String> trustStoreFile();
+
+        @WithName("trust-store-password")
+        Optional<String> trustStorePassword();
+
+        @WithDefault("5000")
+        int timeout(); // milliseconds
     }
 }

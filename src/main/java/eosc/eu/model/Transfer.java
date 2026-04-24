@@ -84,7 +84,7 @@ public class Transfer {
         s3s("s3s"),
         ftp("ftp");
 
-        // TODO: Keep in sync with supported destinations in configuration file
+        // Note: Keep in sync with supported destinations in configuration file
 
         private final String destination;
 

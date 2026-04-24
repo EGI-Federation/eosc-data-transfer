@@ -33,9 +33,6 @@ public class JobFileInfo {
     public Optional<Long> filesize;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public int filecountsuccess;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Optional<Date> start_time;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -67,7 +64,6 @@ public class JobFileInfo {
      * Constructor
      */
     public JobFileInfo() {
-        this.filecountsuccess = 0;
         this.filesize = Optional.empty();
         this.start_time = Optional.empty();
         this.finish_time = Optional.empty();

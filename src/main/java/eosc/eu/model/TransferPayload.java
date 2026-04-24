@@ -11,13 +11,13 @@ import java.util.List;
  * A file to transfer, includes multiple sources for the same file, and multiple destinations where to transfer it.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(description="Describes one file to be transferred (any source to all destinations)")
+@Schema(description="Describes one file to be transferred (any source to any destination)")
 public class TransferPayload {
 
     @Schema(description="Multiple sources for the file to be transferred, will try them all until one is available")
     public List<String> sources;
 
-    @Schema(description="Multiple destinations where to transfer the file")
+    @Schema(description="Multiple destinations where to transfer the file, will try them all until one succeeds")
     public List<String> destinations;
 
     @Schema(description="User defined checksum in the form 'algorithm:value'")

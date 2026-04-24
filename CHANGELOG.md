@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.102]
+
 - Added integration with EGI Check-in
 - Added Redis container to Docker compose deployment
 - Record all started transfer jobs to Redis stream
@@ -15,9 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade to latest Quarkus version
 
 ## [1.1.101]
+
 - Fixed telemetry and Grafana dashboard
 
 ## [1.1.100]
+
 - Dynamic log filename in configuration now includes instance id
 - Simplified image name/tag
 - Automatic telemetry resource attributes `service.namespace`, `service.name`, and `service.instance.id`
@@ -25,83 +28,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade to latest Quarkus version
 
 ## [1.1.98]
+
 - Added dynamic config property initialized with the machine hostname
 - Made local server in Swagger UI configurable
 - Use Jaeger as the open telemetry collector
 - Updated architecture diagram
 
 ## [1.1.95]
+
 - Fixed exception while parsing byte array returned by REST client calls
 - Added server in Swagger UI to access locally run API
 - Corrected deprecated configuration params
 
 ## [1.1.92]
+
 - Upgrade to latest Quarkus version
 
 ## [1.1.90]
+
 - Removed 2nd REST client for FTS, called using a certificate to configure S3 hosts
 - Removed the keystore file settings from the configuration file
 - Removed env vars from Docker Compose deployment passing keystore file settings to the Java app
 
 ## [1.1.86]
+
 - Added parameter to endpoint `GET /transfer/{jobId}` to control for which files to fetch transfer status
 
 ## [1.1.85]
+
 - Endpoint `GET /transfer/{jobId}` now also returns status of each file in the job
 
 ## [1.1.80]
+
 - Implemented S3 storage support based on Min.io
 - Upgrade to latest Quarkus version
 
 ## [1.1.75]
+
 - Added stubs for S3 storage elements (needs implementation)
 - Upgrade to latest Quarkus version
 
 ## [1.1.73]
+
 - Update logo to EOSC Beyond
 - Upgrade to latest Quarkus version
 
 ## [1.1.72]
+
 - Added automated Docker image building
 - Refactor to separate transfer and storage system interfaces
 - Fix `GET /transfer` endpoint handling in FTS wrapper
 
 ## [1.1.70]
+
 - Fix `POST /transfers` endpoint handling in FTS wrapper
 - Remove params from `GET /version` endpoint
 - Improve SQAaS score
 - Upgrade to latest Quarkus version
 
 ## [1.1.66]
+
 - Upgrade to latest Quarkus version
 
 ## [1.1.65]
+
 - Workaround for Zenodo redirecting to invalid relative URL
 
 ## [1.1.63]
+
 - Added support for S3S
 - Moved Swagger-UI to the root, path is now `/swagger-ui`
 
 ## [1.1.58]
+
 - Fix authentication schemes in Swagger-UI
 
 ## [1.1.53]
+
 - API now accepts DOIs in correct canonical format
 - Missing downloadUrl field for files in ESRF data records
 
 ## [1.1.52]
+
 - Zenodo parser does not return checksum algorithm
 - ESRF parser only returns first dataset in record
 
 ## [1.1.51]
+
 - Add support for transfers to grid storage StoRM
 - Implement trace sampling
 
 ## [1.1.50]
+
 - Implement structured logging
 - Upgrade to Quarkus 3
 
 ## [1.1.46]
+
 - Parsers can now return file checksums in the form algorithm:checksum
 - Parsers can mark returned files as not available, it's up to clients to decide whether or not to attempt to
   transfer these
@@ -110,39 +133,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documented Java17 dependency and fixed some typos
 
 ## [1.1.44]
+
 - Endpoint `GET /parser` should accept canonical DOI format
 - Added valid example DOI for endpoint `GET /parser`
 - Fix accessUrl of parsed ESRF files
 - Create/modified date times of parsed ESRF files incorrect
 
 ## [1.1.41]
+
 - Implemented ESRF parsing
 
 ## [1.1.40]
+
 - Handle (and hide) timeouts and 500 errors when registering new S3 hosts with FTS
 
 ## [1.0.18]
+
 - Added truststore for EGI Data Transfer
 - Updated documentation
 
 ## [1.0.17]
+
 - Fixed misconfiguration causing endpoint `GET /storage/types` to fail
 
 ## [1.0.16]
+
 - Added support to parse any PID that implements Signposting
 - Added "Authorization-Storage" header param for passing Base-64 encoded storage credentials
 
 ## [1.0.15]
+
 - Extended Zenodo support to parse any PID that redirects to a Zenodo record
 - Added support to parse any PID that redirects to a B2Share record
 
 ## [1.0.12]
+
 - Added endpoint to list all supported destination storages
 - Added endpoint to query details of a supported destination storage
 - Parsing now loads all configured parsers in order, queries them if they can parse DOI
 - Switched SSL to check validity of all certificates
 
 ## [1.0.8]
+
 - Implemented endpoints to start, cancel, query, search transfers
 - Implemented endpoints to create, rename, delete, query folders
 - Implemented endpoints to rename, delete, query files

@@ -63,6 +63,7 @@ public class DataTransfer extends DataTransferBase {
 
     /***
      * Constructor
+     * @param ds Injected Redis data source
      */
     public DataTransfer(ReactiveRedisDataSource ds) {
         super(log);
@@ -377,6 +378,7 @@ public class DataTransfer extends DataTransferBase {
      * @param auth The access token needed to call the service.
      * @param jobId The ID of the transfer to request info about.
      * @param destination The type of destination storage (selects transfer service to call).
+     * @param fileInfo For which files to return detailed transfer outcome.
      * @return API Response, wraps an ActionSuccess(TransferInfoExtended) or an ActionError entity
      */
     @GET

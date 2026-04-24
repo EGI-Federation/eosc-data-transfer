@@ -37,9 +37,6 @@ public class TransferPayloadInfo {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Optional<Long> size;
 
-    @Schema(description="Number of destinations where the file was successfully transferred")
-    public int destinations;
-
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
     @Schema(description="Date and time when transfer of the file started", example = "2022-10-15T20:14:22Z+2")
@@ -78,7 +75,6 @@ public class TransferPayloadInfo {
         this.destinationSE = jfi.dest_surl;
 
         this.size = jfi.filesize;
-        this.destinations = jfi.filecountsuccess;
         this.startedAt = jfi.start_time.orElse(null);
         this.finishedAt = jfi.finish_time.orElse(null);
         this.reason = jfi.reason;

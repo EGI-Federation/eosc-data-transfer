@@ -313,11 +313,11 @@ public class AccountingCollector {
                             if(fileInfo.fileState == FileState.succeeded) {
                                 filesTransferred++;
                                 if(fileInfo.size.isPresent())
-                                    bytesTransferred += (fileInfo.size.get() * fileInfo.destinations);
+                                    bytesTransferred += fileInfo.size.get();
                             }
                         }
 
-                        if(null != accounting &&
+                        if(bytesTransferred > 0 && null != accounting &&
                            service.accounting().installation().isPresent() &&
                            service.accounting().metric().isPresent()) {
                             // Send accounting record for this transfer

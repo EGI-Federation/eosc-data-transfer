@@ -132,20 +132,21 @@ public class EgiDataTransfer implements TransferService {
     public String getServiceUrl() { return this.url; }
 
     /***
-     * Convert a generic transfer state to a service specific state.
+     * Convert and store a generic transfer state to a service specific state.
+     * @param state New state
      * @return Transfer state the service understands
      */
     private String transferStateToString(TransferState state) {
         String status = state.toString();
 
         switch(state) {
-            case submitted ->   status = "SUBMITTED";
-            case active ->   status = "ACTIVE";
-            case canceled ->   status = "CANCELED";
-            case failed ->  status = "FAILED";
-            case succeeded ->   status = "FINISHED";
-            case partial ->  status = "FINISHEDDIRTY";
-            default -> status = status.toUpperCase();
+            case submitted ->  { status = "SUBMITTED"; }
+            case active -> { status = "ACTIVE"; }
+            case canceled -> { status = "CANCELED"; }
+            case failed -> { status = "FAILED"; }
+            case succeeded -> { status = "FINISHED"; }
+            case partial -> { status = "FINISHEDDIRTY"; }
+            default -> { status = status.toUpperCase(); }
         }
 
         return status;

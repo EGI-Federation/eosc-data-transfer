@@ -6,17 +6,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-
-import parser.b2share.B2ShareException;
-import parser.esrf.EsrfException;
-import parser.zenodo.ZenodoException;
-import cern.FileTransferServiceException;
 
 
 /**

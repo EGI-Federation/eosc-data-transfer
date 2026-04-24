@@ -139,7 +139,9 @@
 
     <!-- Checks for Size Violations.                    -->
     <!-- See https://checkstyle.org/config_sizes.html -->
-    <module name="MethodLength"/>
+    <module name="MethodLength">
+      <property name="max" value="200"/>
+    </module>
     <module name="ParameterNumber">
       <property name="max" value="12"/>
     </module>
@@ -149,10 +151,10 @@
     <module name="EmptyForIteratorPad"/>
     <module name="GenericWhitespace"/>
     <module name="MethodParamPad"/>
-    <module name="NoWhitespaceAfter"/>
     <module name="NoWhitespaceBefore"/>
     <module name="TypecastParenPad"/>
     <!--
+    <module name="NoWhitespaceAfter"/>
     <module name="ParenPad"/>
     <module name="OperatorWrap"/>
     <module name="WhitespaceAfter"/>

@@ -16,6 +16,11 @@ import java.util.Optional;
 public class Utils {
 
     /***
+     * Prevent construction
+     */
+    private Utils() {}
+
+    /***
      * Load a certificate store from a resource file.
      * @param filePath File path relative to the "src/main/resource" folder
      * @param password The password for the certificate store

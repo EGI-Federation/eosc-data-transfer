@@ -13,7 +13,7 @@ import java.util.Optional;
 /***
  * Utility functions
  */
-public class Utils {
+public final class Utils {
 
     /***
      * Prevent construction

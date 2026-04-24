@@ -262,12 +262,6 @@ public class AccountingCollector {
                               });
         }
 
-        MDC.put("consumerId", this.instance);
-        MDC.put("messageId", message.id());
-        MDC.put("jobId", jobId.get());
-        MDC.put("dest", destination.get());
-        log.infof("Checking status of transfer %s", jobId.get());
-
         // Pick transfer service and create REST client for it
         final var ts = DataTransferBase.getTransferService(destination.get(), this.transfer, this.log, false);
         if(null == ts)
@@ -290,12 +284,20 @@ public class AccountingCollector {
                 return ts.getTransferInfo(token.get(), jobId.get(), FileDetails.all);
             })
             .onFailure().recoverWithItem(e -> {
+                MDC.put("consumerId", this.instance);
+                MDC.put("messageId", message.id());
+                MDC.put("dest", destination.get());
+                MDC.put("jobId", jobId.get());
                 log.errorf("Failed to get status of transfer %s (%s)", jobId.get(), e.getMessage());
                 return null;
             })
             .chain(transferInfo -> {
                 if(null != transferInfo) {
                     // Got transfer details
+                    MDC.put("consumerId", this.instance);
+                    MDC.put("messageId", message.id());
+                    MDC.put("dest", destination.get());
+                    MDC.put("jobId", jobId.get());
                     MDC.put("jobState", transferInfo.jobState);
                     log.infof("Transfer %s is %s", jobId.get(), transferInfo.jobState.toString());
 
@@ -341,12 +343,20 @@ public class AccountingCollector {
                 return Uni.createFrom().nullItem();
             })
             .onFailure().recoverWithItem(e -> {
+                MDC.put("consumerId", this.instance);
+                MDC.put("messageId", message.id());
+                MDC.put("jobId", jobId.get());
                 log.errorf("Failed to send accounting record for transfer %s (%s)", jobId.get(), e.getMessage());
                 return null;
             })
             .chain(usageRecord -> {
-                if(null != usageRecord)
+                if(null != usageRecord) {
+                    MDC.put("consumerId", this.instance);
+                    MDC.put("messageId", message.id());
+                    MDC.put("jobId", jobId.get());
+                    MDC.put("userId", userId.get());
                     log.infof("Sent accounting record for transfer %s", jobId.get());
+                }
 
                 if(done.get()) {
                     // Transfer has finished, acknowledge message

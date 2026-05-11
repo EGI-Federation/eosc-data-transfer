@@ -166,7 +166,7 @@ public class AccountingCollector {
 
         XReadGroupArgs args = new XReadGroupArgs()
                                     .block(Duration.ofSeconds(60))
-                                    //.claim(Duration.ofSeconds(srvConfig.accounting().pollInterval()))
+                                    .claim(Duration.ofSeconds(service.accounting().pollInterval()))
                                     .count(1);
 
         return Multi.createBy()

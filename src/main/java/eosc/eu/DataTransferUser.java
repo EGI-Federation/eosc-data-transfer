@@ -12,7 +12,6 @@ import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.NoCache;
 import io.smallrye.mutiny.Uni;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.Authenticated;
 
@@ -34,12 +33,6 @@ import eosc.eu.model.*;
 public class DataTransferUser extends DataTransferBase {
 
     private static final Logger log = Logger.getLogger(DataTransferUser.class);
-
-    @Inject
-    TransferConfig config;
-
-    @Inject
-    MeterRegistry registry;
 
     @Inject
     SecurityIdentity identity;

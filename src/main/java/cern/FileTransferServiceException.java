@@ -23,11 +23,13 @@ public class FileTransferServiceException extends WebApplicationException {
         super(resp);
         this.responseBody = body;
 
-        var mapper = new ObjectMapper();
+        if(null != this.responseBody) {
+            var mapper = new ObjectMapper();
 
-        try {
-            error = mapper.readValue(body, FileTransferServiceError.class);
-        } catch(JsonProcessingException e) {}
+            try {
+                this.error = mapper.readValue(body, FileTransferServiceError.class);
+            } catch(JsonProcessingException e) {}
+        }
     }
 
     public String responseBody() { return responseBody; }
@@ -37,7 +39,7 @@ public class FileTransferServiceException extends WebApplicationException {
     /***
      * Class to map the error returned by FTS
      */
-    class FileTransferServiceError {
+    static class FileTransferServiceError {
         public String job_id;
         public String http_status;
         public String http_message;

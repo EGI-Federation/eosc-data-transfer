@@ -3,7 +3,6 @@ package grnet.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.smallrye.config.WithName;
 
 import java.util.Date;
 import java.util.Optional;
@@ -15,54 +14,52 @@ import java.util.Optional;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DataTransferUsageRecord {
 
-    @WithName("metric_definition_id")
-    public String metricId;
+    public String metric_definition_id;
 
-    @WithName("time_period_start")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
-    public Date periodStart;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssX")
+    public Date time_period_start;
 
-    @WithName("time_period_end")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
-    public Date periodEnd;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssX")
+    public Date time_period_end;
 
-    @WithName("value")
-    public long bytesTransferred;
+    public long value;
 
-    @WithName("group_id")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Optional<String> groupId;
+    public Optional<String> group_id;
 
-    @WithName("user_id")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Optional<String> userId;
+    public Optional<String> user_id;
 
 
     /***
      * Constructor
      */
     public DataTransferUsageRecord() {
-        this.groupId = Optional.empty();
-        this.userId = Optional.empty();
+        this.group_id = Optional.empty();
+        this.user_id = Optional.empty();
     }
 
     /**
      * Construct from metric id and data amount
      */
-    public DataTransferUsageRecord(String metricId, long bytes) {
-        this.metricId = metricId;
-        this.bytesTransferred = bytes;
-        this.groupId = Optional.empty();
-        this.userId = Optional.empty();
+    public DataTransferUsageRecord(String metricId, long bytes, Date startAt, Date endAt) {
+        this.metric_definition_id = metricId;
+        this.value = bytes;
+        this.group_id = Optional.empty();
+        this.user_id = Optional.empty();
+        this.time_period_start = startAt;
+        this.time_period_end = endAt;
     }
 
     /**
      * Construct from metric id, data amount, and user id
      */
-    public DataTransferUsageRecord(String metricId, long bytes, String voPersonId) {
-        this.metricId = metricId;
-        this.bytesTransferred = bytes;
-        this.groupId = Optional.empty();
-        this.userId = Optional.of(voPersonId);
+    public DataTransferUsageRecord(String metricId, long bytes, Date startAt, Date endAt, String voPersonId) {
+        this.metric_definition_id = metricId;
+        this.value = bytes;
+        this.group_id = Optional.empty();
+        this.user_id = Optional.of(voPersonId);
+        this.time_period_start = startAt;
+        this.time_period_end = endAt;
     }
 }

@@ -1,5 +1,6 @@
 package eosc.eu;
 
+import grnet.AccountingServiceException;
 import io.quarkus.oidc.client.OidcClient;
 import io.quarkus.oidc.client.runtime.TokensHelper;
 import io.quarkus.oidc.common.runtime.OidcConstants;
@@ -323,17 +324,15 @@ public class AccountingCollector {
                            service.accounting().installation().isPresent() &&
                            service.accounting().metric().isPresent()) {
                             // Send accounting record for this transfer
-                            var installation = service.accounting().installation().get();
-                            var usageRecord = new DataTransferUsageRecord();
-                            usageRecord.metricId = service.accounting().metric().get();
-                            usageRecord.bytesTransferred = bytesTransferred;
-                            usageRecord.periodStart = transferInfo.submittedAt;
-                            usageRecord.periodEnd = transferInfo.finishedAt;
-
                             if(null == userId.get())
                                 userId.set(transferInfo.userId);
 
-                            usageRecord.userId = Optional.of(userId.get());
+                            var installation = service.accounting().installation().get();
+                            var usageRecord = new DataTransferUsageRecord(service.accounting().metric().get(),
+                                    bytesTransferred,
+                                    transferInfo.submittedAt,
+                                    transferInfo.finishedAt,
+                                    userId.get());
 
                             return accounting.sendUsageRecord(token.get(), installation, usageRecord);
                         }
@@ -346,7 +345,15 @@ public class AccountingCollector {
                 MDC.put("consumerId", this.instance);
                 MDC.put("messageId", message.id());
                 MDC.put("jobId", jobId.get());
-                log.errorf("Failed to send accounting record for transfer %s (%s)", jobId.get(), e.getMessage());
+
+                String error = null;
+                if(e instanceof AccountingServiceException)
+                    error = ((AccountingServiceException)e).errorDetail();
+                else
+                    error  = e.getMessage();
+
+                MDC.put("error", error);
+                log.errorf("Failed to send accounting record for transfer %s (%s)", jobId.get(), error);
                 return null;
             })
             .chain(usageRecord -> {

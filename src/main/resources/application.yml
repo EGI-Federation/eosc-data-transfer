@@ -62,6 +62,7 @@ eosc:
         timeout: 3000 # milliseconds
         trust-store-file: cern-truststore.jks
         trust-store-password: password
+        bytes-per-credit: 2147483648 # 2 GB
     storage:
       minio:
         name: Min.io object storage
@@ -151,7 +152,7 @@ quarkus:
     urls-primary-name: default
   smallrye-openapi:
     path: /openapi
-    info-version: 1.1.105
+    info-version: 1.1.106
     security-scheme-name: OIDC
     security-scheme-description: OpenID Connect access token issued by EGI Check-In
     security-scheme: jwt

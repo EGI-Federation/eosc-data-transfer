@@ -59,6 +59,10 @@ public interface TransferConfig {
 
         @WithName("trust-store-password")
         Optional<String> trustStorePassword();
+
+        @WithName("bytes-per-credit")
+        @WithDefault("-1")
+        long bytesPerCredit();
     }
 
     /***

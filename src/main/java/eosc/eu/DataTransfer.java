@@ -73,7 +73,65 @@ public class DataTransfer extends DataTransferBase {
     }
 
     /**
-     * Initiate new transfer of multiple sets of files.
+     * Estimate the cost (in credits) of transferring multiple files.
+     * @param auth The access token needed to call the service.
+     * @param transfer The details of the transfer (source files with sizes).
+     * @param destination The type of destination storage (selects transfer service to call).
+     * @return API Response, wraps an ActionSuccess(TransferInfo) or an ActionError entity
+     */
+    @POST
+    @Path("/transfers/estimate")
+    @SecurityRequirement(name = "OIDC")
+    @Authenticated
+    @Operation(operationId = "estimateTransfer",  summary = "Estimate cost of a data transfer")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+            @APIResponse(responseCode = "202", description = "Accepted",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = TransferInfo.class))),
+            @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "401", description="Authorization required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "403", description="Permission denied",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "419", description="Re-delegate credentials",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ActionError.class)))
+    })
+    public Uni<Response> estimateTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
+                                          List<TransferPayloadEstimation> files,
+                                          @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
+                                          @Parameter(schema = @Schema(implementation = Destination.class),
+                                                     description = DESTINATION_STORAGE)
+                                          String destination) {
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            MDC.put("files", objectMapper.writeValueAsString(files));
+        } catch(JsonProcessingException e) {
+            var ae = new ActionError(e, Tuple2.of("destination", destination));
+            return Uni.createFrom().item(ae.setStatus(Response.Status.BAD_REQUEST).toResponse());
+        }
+
+        final String callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
+        MDC.put("dest", destination);
+
+        log.info("Estimating data transfer");
+
+        Uni<Response> result = Uni.createFrom().nullItem();
+
+        return result;
+    }
+
+    /**
+     * Initiate new transfer of multiple files.
      * @param auth The access token needed to call the service.
      * @param transfer The details of the transfer (source and destination files, parameters).
      * @param destination The type of destination storage (selects transfer service to call).
@@ -84,7 +142,7 @@ public class DataTransfer extends DataTransferBase {
     @Path("/transfers")
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "startTransfer",  summary = "Initiate new transfer of multiple sets of files")
+    @Operation(operationId = "startTransfer",  summary = "Initiate new data transfer")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
             @APIResponse(responseCode = "202", description = "Accepted",

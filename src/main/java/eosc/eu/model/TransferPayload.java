@@ -33,11 +33,11 @@ public class TransferPayload {
     }
 
     /**
-     * Check if valid (any files to transfer, source and destination the same size)
+     * Check if valid (at least one source and one destination)
      */
     public boolean isValid() {
         if(null == this.sources || null == this.destinations ||
-           this.sources.isEmpty() || this.sources.size() != this.destinations.size())
+           this.sources.isEmpty() || this.destinations.isEmpty())
             // Something is wrong
             return false;
 

@@ -3,6 +3,7 @@ package eosc.eu;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import egi.checkin.model.CheckinUser;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -21,6 +22,9 @@ import io.quarkus.security.identity.SecurityIdentity;
 
 import jakarta.annotation.security.PermitAll;
 import java.util.Arrays;
+import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicReference;
+
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -78,40 +82,47 @@ public class DataStorage extends DataTransferBase {
 
         log.info("List supported destinations");
 
-        Uni<Response> result = Uni.createFrom().nullItem()
+        var subscription = new AtomicReference<Flow.Subscription>(null);
 
-            .chain(unused -> {
-                // Iterate all configured destinations
-                var destinations = new Destinations();
-                for(var destination : this.config.destinations().keySet()) {
-                    var destinationConfig = this.config.destinations().get(destination);
-                    var description = destinationConfig.description().isPresent() ?
-                                      destinationConfig.description().get() : "";
+        // Iterate all configured destinations
+        Uni<Response> result = Multi.createFrom().iterable(this.config.destinations().keySet())
+            .onSubscription().invoke(sub -> {
+                // Save the subscription, so we can cancel
+                log.info("Subscribed");
+                subscription.set(sub);
+            })
+            .onItem().transformToUniAndConcatenate(destination -> {
+                // Get a transfer service for this destination
+                return getTransferService(destination);
+            })
+            .onItem().transformToUniAndConcatenate(tsInfo -> {
+                // Got transfer service
+                // Check if a storage system is configured, create dummy REST client for it
+                return getStorageSystem(tsInfo,"https://a.b.org/folder/file", "abc", "YTpi");
+            })
+            .onItem().transformToUniAndConcatenate(tsssInfo -> {
+                // Got storage service, if any configured
+                var destinationConfig = this.config.destinations().get(tsssInfo.destination);
+                var description = destinationConfig.description().isPresent() ?
+                                  destinationConfig.description().get() : "";
 
-                    MDC.put("destination", destination);
-                    var params = new ActionParameters(destination);
-                    if (!getTransferService(params))
-                        // Destination handled by unsupported transfer service
-                        return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
+                var ssID = destinationConfig.storageId().isEmpty() ? null : destinationConfig.storageId().get();
+                var storageConfig = null != ssID ? config.storages().get(ssID) : null;
 
-                    var ssID = destinationConfig.storageId().isEmpty() ? null : destinationConfig.storageId().get();
-                    var storageConfig = null != ssID ? config.storages().get(ssID) : null;
+                var destinationInfo = new DestinationInfo(tsssInfo.destination,
+                        null != storageConfig ? storageConfig.authType() : null,
+                        null != storageConfig ? storageConfig.protocol() : null,
+                        tsssInfo.ts.getServiceName(),
+                        null != tsssInfo.ss ? tsssInfo.ss.getServiceName() : null,
+                        description);
 
-                    // Check if a storage system is configured, create dummy REST client for it
-                    getStorageSystem(params, "https://a.b.org/folder/file", "abc", "YTpi");
-
-                    var destinationInfo = new DestinationInfo(destination,
-                            null != storageConfig ? storageConfig.authType() : null,
-                            null != storageConfig ? storageConfig.protocol() : null,
-                            params.ts.getServiceName(),
-                            null != params.ss ? params.ss.getServiceName() : null,
-                            description);
-
-                    destinations.add(destinationInfo);
-                }
-
-                MDC.remove("destination");
-                return Uni.createFrom().item(destinations.toResponse());
+                return Uni.createFrom().item(destinationInfo);
+            })
+            .collect().asList()
+            .chain(destinations -> {
+                // Got details of all configured destinations
+                log.info("Got details of all destinations");
+                return Uni.createFrom().item(Response.ok(destinations).build());
             })
             .onFailure().recoverWithItem(e -> {
                 log.error("Failed to list supported destinations");
@@ -144,50 +155,79 @@ public class DataStorage extends DataTransferBase {
                                                        description = DESTINATION_STORAGE)
                                             String destination) {
 
-        MDC.put("dest", destination);
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        MDC.put("destination", destination);
 
         log.info("Retrieve information about a destination");
+
+        var ts = new AtomicReference<TransferService>(null);
+        var destDesc = new AtomicReference<String>(null);
+        var storageAuth = new AtomicReference<String>(null);
+        var storageProtocol = new AtomicReference<String>(null);
 
         Uni<Response> result = Uni.createFrom().nullItem()
 
             .chain(unused -> {
                 // Pick transfer service and create REST client for it
-                var params = new ActionParameters(destination);
-                if (!getTransferService(params)) {
-                    // Could not get REST client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
-                }
-
-                // Check if a storage system is configured, but do not create REST client for it
-                getStorageSystem(params, "https://a.b.org/folder/file", "abc", "YTpi");
-
-                return Uni.createFrom().item(params);
+                return getTransferService(destination);
             })
             .chain(params -> {
-                // Retrieve the authentication type of the destination storage
-                var destinationConfig = config.destinations().get(params.destination);
-                if (null == destinationConfig)
+                // Save the transfer service instance
+                ts.set(params.ts);
+
+                // Get configuration for the specified destination
+                var destinationConfig = getDestinationConfig(config, destination, log);
+                if(null == destinationConfig) {
                     // Unsupported destination
-                    return Uni.createFrom().failure(new TransferServiceException("invalidDestination"));
+                    log.errorf("No configuration found for destination <%s>", destination);
+                    return Uni.createFrom().failure(new TransferServiceException("destInvalid"));
+                }
+
+                destDesc.set(destinationConfig.description().isPresent() ?
+                             destinationConfig.description().get() : "");
 
                 var ssID = destinationConfig.storageId().isEmpty() ? null : destinationConfig.storageId().get();
-                var storageConfig = null != ssID ? config.storages().get(ssID) : null;
+                if(null == ssID || ssID.isBlank())
+                    // Manipulation of storage elements not supported in this destination
+                    log.error("Storage element manipulation not supported in this destination");
+                else {
+                    // Get configuration of the storage system configured for the specified destination
+                    MDC.put("storageId", ssID);
+                    var storageConfig = config.storages().get(ssID);
+                    if(null == storageConfig) {
+                        // Unsupported storage system
+                        log.error("No configuration found for storage system");
+                        return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
+                    }
 
-                // Check if browsing storage is supported
-                var description = destinationConfig.description().isPresent() ?
-                                  destinationConfig.description().get() : "";
+                    storageAuth.set(storageConfig.authType());
+                    storageProtocol.set(storageConfig.protocol());
+                }
+
+                return getStorageSystem(destination, null, null, null);
+            })
+            .chain(params -> {
+                // Use the saved transfer service instance
+                params.ts = ts.get();
+
+                // Return info about destination
                 var destinationInfo = new DestinationInfo(destination,
-                                                  null != storageConfig ? storageConfig.authType() : null,
-                                                  null != storageConfig ? storageConfig.protocol() : null,
-                                                  params.ts.getServiceName(),
+                                                  storageAuth.get(), storageProtocol.get(),
+                                                  null != params.ts ? params.ts.getServiceName() : null,
                                                   null != params.ss ? params.ss.getServiceName() : null,
-                                                  description);
+                                                  destDesc.get());
 
                 try {
                     ObjectMapper objectMapper = new ObjectMapper();
                     MDC.put("destInfo", objectMapper.writeValueAsString(destinationInfo));
                 }
-                catch (JsonProcessingException e) {}
+                catch(JsonProcessingException unused) {}
 
                 log.info("Got details of the destination");
                 return Uni.createFrom().item(destinationInfo.toResponse());
@@ -256,8 +296,22 @@ public class DataStorage extends DataTransferBase {
         if(null != callerId)
             MDC.put("callerId", callerId);
 
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        if(null == folderUri || folderUri.isEmpty()) {
+            log.error("No folder provided");
+            return Uni.createFrom().item(new ActionError("seInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
         MDC.put("seUri", folderUri);
-        MDC.put("dest", destination);
+        MDC.put("destination", destination);
 
         log.info("List folder content");
 
@@ -270,20 +324,12 @@ public class DataStorage extends DataTransferBase {
                     return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
                 // Pick storage system and create a client for it
-                var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, folderUri, auth, storageAuth)) {
-                    // Could not get storage system client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
-                }
-
-                if (null == params.ss) {
-                    // Storage element manipulation not supported for this destination
-                    return Uni.createFrom().failure(new TransferServiceException("browsingNotSupported"));
-                }
-
-                return Uni.createFrom().item(params);
+                return getStorageSystem(destination, folderUri, auth, storageAuth);
             })
             .chain(params -> {
+                if(null == params || null == params.ss)
+                    return Uni.createFrom().failure(new TransferServiceException("seNotSupported"));
+
                 // List folder content
                 return params.ss.listFolderContent(auth, storageAuth, folderUriWithAuth);
             })
@@ -355,8 +401,22 @@ public class DataStorage extends DataTransferBase {
         if(null != callerId)
             MDC.put("callerId", callerId);
 
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        if(null == seUri || seUri.isEmpty()) {
+            log.error("No storage element provided");
+            return Uni.createFrom().item(new ActionError("seInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
         MDC.put("seUri", seUri);
-        MDC.put("dest", destination);
+        MDC.put("destination", destination);
 
         log.info("Get details of storage element");
 
@@ -369,20 +429,12 @@ public class DataStorage extends DataTransferBase {
                     return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
                 // Pick storage system and create a client for it
-                var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, seUri, auth, storageAuth)) {
-                    // Could not get storage system client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
-                }
-
-                if (null == params.ss) {
-                    // Storage element manipulation not supported for this destination
-                    return Uni.createFrom().failure(new TransferServiceException("browsingNotSupported"));
-                }
-
-                return Uni.createFrom().item(params);
+                return getStorageSystem(destination, seUri, auth, storageAuth);
             })
             .chain(params -> {
+                if(null == params || null == params.ss)
+                    return Uni.createFrom().failure(new TransferServiceException("seNotSupported"));
+
                 // Get storage element info
                 return params.ss.getStorageElementInfo(auth, storageAuth, seUriWithAuth);
             })
@@ -503,8 +555,22 @@ public class DataStorage extends DataTransferBase {
         if(null != callerId)
             MDC.put("callerId", callerId);
 
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        if(null == seUri || seUri.isEmpty()) {
+            log.error("No folder provided");
+            return Uni.createFrom().item(new ActionError("seInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
         MDC.put("seUri", seUri);
-        MDC.put("dest", destination);
+        MDC.put("destination", destination);
 
         log.info("Creating folder");
 
@@ -517,20 +583,12 @@ public class DataStorage extends DataTransferBase {
                     return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
                 // Pick storage system and create a client for it
-                var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, seUri, auth, storageAuth)) {
-                    // Could not get storage system client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
-                }
-
-                if (null == params.ss) {
-                    // Storage element manipulation not supported for this destination
-                    return Uni.createFrom().failure(new TransferServiceException("browsingNotSupported"));
-                }
-
-                return Uni.createFrom().item(params);
+                return getStorageSystem(destination, seUri, auth, storageAuth);
             })
             .chain(params -> {
+                if(null == params || null == params.ss)
+                    return Uni.createFrom().failure(new TransferServiceException("seNotSupported"));
+
                 // Create folder
                 return params.ss.createFolder(auth, storageAuth, seUriWithAuth);
             })
@@ -603,8 +661,22 @@ public class DataStorage extends DataTransferBase {
         if(null != callerId)
             MDC.put("callerId", callerId);
 
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        if(null == seUri || seUri.isEmpty()) {
+            log.error("No folder provided");
+            return Uni.createFrom().item(new ActionError("seInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
         MDC.put("seUri", seUri);
-        MDC.put("dest", destination);
+        MDC.put("destination", destination);
 
         log.info("Deleting folder");
 
@@ -617,20 +689,12 @@ public class DataStorage extends DataTransferBase {
                     return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
                 // Pick storage system and create a client for it
-                var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, seUri, auth, storageAuth)) {
-                    // Could not get storage system client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
-                }
-
-                if (null == params.ss) {
-                    // Storage element manipulation not supported for this destination
-                    return Uni.createFrom().failure(new TransferServiceException("browsingNotSupported"));
-                }
-
-                return Uni.createFrom().item(params);
+                return getStorageSystem(destination, seUri, auth, storageAuth);
             })
             .chain(params -> {
+                if(null == params || null == params.ss)
+                    return Uni.createFrom().failure(new TransferServiceException("seNotSupported"));
+
                 // Delete folder
                 return params.ss.deleteFolder(auth, storageAuth, seUriWithAuth);
             })
@@ -703,8 +767,22 @@ public class DataStorage extends DataTransferBase {
         if(null != callerId)
             MDC.put("callerId", callerId);
 
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        if(null == seUri || seUri.isEmpty()) {
+            log.error("No storage element provided");
+            return Uni.createFrom().item(new ActionError("seInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
         MDC.put("seUri", seUri);
-        MDC.put("dest", destination);
+        MDC.put("destination", destination);
 
         log.info("Deleting file");
 
@@ -717,20 +795,12 @@ public class DataStorage extends DataTransferBase {
                     return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
                 // Pick storage system and create a client for it
-                var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, seUri, auth, storageAuth)) {
-                    // Could not get storage system client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
-                }
-
-                if (null == params.ss) {
-                    // Storage element manipulation not supported for this destination
-                    return Uni.createFrom().failure(new TransferServiceException("browsingNotSupported"));
-                }
-
-                return Uni.createFrom().item(params);
+                return getStorageSystem(destination, seUri, auth, storageAuth);
             })
             .chain(params -> {
+                if(null == params || null == params.ss)
+                    return Uni.createFrom().failure(new TransferServiceException("seNotSupported"));
+
                 // Delete file
                 return params.ss.deleteFile(auth, storageAuth, seUriWithAuth);
             })
@@ -800,7 +870,14 @@ public class DataStorage extends DataTransferBase {
         if(null != callerId)
             MDC.put("callerId", callerId);
 
-        MDC.put("dest", destination);
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        MDC.put("destination", destination);
 
         if(null != operation && null != operation.seUriOld && null != operation.seUriNew) {
             MDC.put("seUriOld", operation.seUriOld);
@@ -827,20 +904,12 @@ public class DataStorage extends DataTransferBase {
                     return Uni.createFrom().failure(new TransferServiceException("uriInvalid"));
 
                 // Pick storage system and create a client for it
-                var params = new ActionParameters(destination);
-                if (!getStorageSystem(params, operation.seUriOld, auth, storageAuth)) {
-                    // Could not get storage system client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidStorageConfig"));
-                }
-
-                if (null == params.ss) {
-                    // Storage element manipulation not supported for this destination
-                    return Uni.createFrom().failure(new TransferServiceException("browsingNotSupported"));
-                }
-
-                return Uni.createFrom().item(params);
+                return getStorageSystem(destination, operation.seUriOld, auth, storageAuth);
             })
             .chain(params -> {
+                if(null == params || null == params.ss)
+                    return Uni.createFrom().failure(new TransferServiceException("seNotSupported"));
+
                 // Rename storage element
                 return params.ss.renameStorageElement(auth, storageAuth, seUriOldWithAuth, seUriNewWithAuth);
             })

@@ -1,6 +1,5 @@
 package eosc.eu;
 
-import grnet.AccountingServiceException;
 import io.quarkus.oidc.client.OidcClient;
 import io.quarkus.oidc.client.runtime.TokensHelper;
 import io.quarkus.oidc.common.runtime.OidcConstants;
@@ -35,6 +34,7 @@ import eosc.eu.model.TransferPayloadInfo.FileDetails;
 import eosc.eu.model.TransferInfoExtended.TransferState;
 import eosc.eu.model.TransferPayloadInfo.FileState;
 import grnet.AccountingService;
+import grnet.AccountingServiceException;
 import grnet.model.DataTransferUsageRecord;
 
 
@@ -264,10 +264,17 @@ public class AccountingCollector {
         }
 
         // Pick transfer service and create REST client for it
-        final var ts = DataTransferBase.getTransferService(destination.get(), this.transfer, this.log, false);
+        var destinationConfig = DataTransferBase.getDestinationConfig(transfer, destination.get(), log);
+        if(null == destinationConfig) {
+            // Unsupported destination
+            log.errorf("No configuration found for destination <%s>", destination);
+            return Uni.createFrom().failure(new TransferServiceException("destInvalid"));
+        }
+
+        final var ts = DataTransferBase.getTransferService(transfer, destinationConfig.serviceId(), log, false);
         if(null == ts)
             // Could not the transfer engine used for this destination
-            return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
+            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         var done = new AtomicReference<Boolean>(false);
         var token = new AtomicReference<String>(null);

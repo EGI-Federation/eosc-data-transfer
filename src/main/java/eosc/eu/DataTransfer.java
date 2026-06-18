@@ -75,7 +75,7 @@ public class DataTransfer extends DataTransferBase {
     /**
      * Estimate the cost (in credits) of transferring multiple files.
      * @param auth The access token needed to call the service.
-     * @param transfer The details of the transfer (source files with sizes).
+     * @param files The details of the transfer (source files with sizes).
      * @param destination The type of destination storage (selects transfer service to call).
      * @return API Response, wraps an ActionSuccess(TransferInfo) or an ActionError entity
      */
@@ -86,9 +86,9 @@ public class DataTransfer extends DataTransferBase {
     @Operation(operationId = "estimateTransfer",  summary = "Estimate cost of a data transfer")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
-            @APIResponse(responseCode = "202", description = "Accepted",
+            @APIResponse(responseCode = "200", description = "Accepted",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                            schema = @Schema(implementation = TransferInfo.class))),
+                            schema = @Schema(implementation = TransferEstimationInfo.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                             schema = @Schema(implementation = ActionError.class))),
@@ -103,29 +103,79 @@ public class DataTransfer extends DataTransferBase {
                             schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> estimateTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                          List<TransferPayloadEstimation> files,
                                           @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                           @Parameter(schema = @Schema(implementation = Destination.class),
                                                      description = DESTINATION_STORAGE)
-                                          String destination) {
+                                          String destination,
+                                          TransferEstimation transfer) {
+
+        final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
+        if(null == transfer || null == transfer.files || transfer.files.isEmpty()) {
+            log.error("No file list provided");
+            return Uni.createFrom().item(new ActionError("noFiles")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        MDC.put("destination", destination);
 
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            MDC.put("files", objectMapper.writeValueAsString(files));
+            MDC.put("files", objectMapper.writeValueAsString(transfer.files));
         } catch(JsonProcessingException e) {
             var ae = new ActionError(e, Tuple2.of("destination", destination));
             return Uni.createFrom().item(ae.setStatus(Response.Status.BAD_REQUEST).toResponse());
         }
 
-        final String callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
-        if(null != callerId)
-            MDC.put("callerId", callerId);
-
-        MDC.put("dest", destination);
-
         log.info("Estimating data transfer");
 
-        Uni<Response> result = Uni.createFrom().nullItem();
+        Uni<Response> result = Uni.createFrom().nullItem()
+
+            .chain(unused -> {
+                // Get configuration of the transfer service for specified destination
+                var destinationConfig = getDestinationConfig(config, destination, log);
+                if(null == destinationConfig) {
+                    // Unsupported destination
+                    log.errorf("No configuration found for destination <%s>", destination);
+                    return Uni.createFrom().failure(new TransferServiceException("destInvalid"));
+                }
+
+                var tsID = destinationConfig.serviceId();
+                MDC.put("serviceId", tsID);
+
+                var serviceConfig = config.services().get(tsID);
+                if (null == serviceConfig) {
+                    // Unsupported transfer service
+                    log.errorf("No configuration found for transfer service <%s>", tsID);
+                    return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
+                }
+
+                // Estimate transfer cost
+                var cost = new TransferEstimationInfo();
+                for(var file : transfer.files)
+                    if(null != file && file.size > 0)
+                        cost.addFile(file.size);
+
+                if(!cost.calculateCost(serviceConfig.bytesPerCredit()))
+                    return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
+
+                return Uni.createFrom().item(Response.accepted(cost).build());
+            })
+            .onFailure().recoverWithItem(e -> {
+                // On error return empty estimation
+                log.error("Failed to estimate transfer");
+                return new ActionError(e, Tuple2.of("destination", destination)).toResponse();
+            });
 
         return result;
     }
@@ -170,6 +220,26 @@ public class DataTransfer extends DataTransferBase {
                                        @Parameter(required = false, description = STORAGE_AUTH)
                                        String storageAuth) {
 
+        final String callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
+        if(null != callerId)
+            MDC.put("callerId", callerId);
+
+        if(null == transfer) {
+            log.error("No transfer details provided");
+            return Uni.createFrom().item(new ActionError("noTransfer")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        MDC.put("destination", destination);
+
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             MDC.put("transfer", objectMapper.writeValueAsString(transfer));
@@ -178,12 +248,6 @@ public class DataTransfer extends DataTransferBase {
             var ae = new ActionError(e, Tuple2.of("destination", destination));
             return Uni.createFrom().item(ae.setStatus(Response.Status.BAD_REQUEST).toResponse());
         }
-
-        final String callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
-        if(null != callerId)
-            MDC.put("callerId", callerId);
-
-        MDC.put("dest", destination);
 
         log.info("Starting new data transfer");
 
@@ -217,13 +281,7 @@ public class DataTransfer extends DataTransferBase {
 
             .chain(unused -> {
                 // Pick transfer service and create REST client for it
-                var params = new ActionParameters(destination);
-                if(!getTransferService(params)) {
-                    // Could not get REST client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
-                }
-
-                return Uni.createFrom().item(params);
+                return getTransferService(destination);
             })
             .chain(params -> {
                 // Start transfer
@@ -361,7 +419,14 @@ public class DataTransfer extends DataTransferBase {
         if(null != callerId)
             MDC.put("callerId", callerId);
 
-        MDC.put("dest", destination);
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        MDC.put("destination", destination);
         MDC.put("limit", limit);
 
         if(null != fields && !fields.isEmpty())
@@ -385,13 +450,7 @@ public class DataTransfer extends DataTransferBase {
 
             .chain(unused -> {
                 // Pick transfer service and create REST client for it
-                var params = new ActionParameters(destination);
-                if (!getTransferService(params)) {
-                    // Could not get REST client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
-                }
-
-                return Uni.createFrom().item(params);
+                return getTransferService(destination);
             })
             .chain(params -> {
                 // Find transfers
@@ -482,11 +541,23 @@ public class DataTransfer extends DataTransferBase {
         if(null != callerId)
             MDC.put("callerId", callerId);
 
-        MDC.put("jobId", jobId);
-        MDC.put("dest", destination);
-        MDC.put("fileInfo", fileInfo);
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
 
-        var test = identity.getAttributes();
+        if(null == jobId || jobId.isEmpty()) {
+            log.error("No job ID provided");
+            return Uni.createFrom().item(new ActionError("noJob")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        MDC.put("jobId", jobId);
+        MDC.put("destination", destination);
+        MDC.put("fileInfo", fileInfo);
 
         log.info("Retrieving details of transfer");
 
@@ -494,13 +565,7 @@ public class DataTransfer extends DataTransferBase {
 
             .chain(unused -> {
                 // Pick transfer service and create REST client for it
-                var params = new ActionParameters(destination);
-                if (!getTransferService(params)) {
-                    // Could not get REST client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
-                }
-
-                return Uni.createFrom().item(params);
+                return getTransferService(destination);
             })
             .chain(params -> {
                 // Get transfer details
@@ -569,9 +634,30 @@ public class DataTransfer extends DataTransferBase {
         if(null != callerId)
             MDC.put("callerId", callerId);
 
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        if(null == jobId || jobId.isEmpty()) {
+            log.error("No job ID provided");
+            return Uni.createFrom().item(new ActionError("noJob")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        if(null == fieldName || fieldName.isEmpty()) {
+            log.error("No field name provided");
+            return Uni.createFrom().item(new ActionError("noField")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
         MDC.put("jobId", jobId);
         MDC.put("fieldName", fieldName);
-        MDC.put("dest", destination);
+        MDC.put("destination", destination);
 
         log.info("Retrieving field from transfer details");
 
@@ -579,13 +665,7 @@ public class DataTransfer extends DataTransferBase {
 
             .chain(unused -> {
                 // Pick transfer service and create REST client for it
-                var params = new ActionParameters(destination);
-                if (!getTransferService(params)) {
-                    // Could not get REST client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
-                }
-
-                return Uni.createFrom().item(params);
+                return getTransferService(destination);
             })
             .chain(params -> {
                 // Get transfer info field
@@ -655,8 +735,22 @@ public class DataTransfer extends DataTransferBase {
         if(null != callerId)
             MDC.put("callerId", callerId);
 
+        if(null == destination || destination.isEmpty()) {
+            log.error("No destination provided");
+            return Uni.createFrom().item(new ActionError("destInvalid")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
+        if(null == jobId || jobId.isEmpty()) {
+            log.error("No job ID provided");
+            return Uni.createFrom().item(new ActionError("noJob")
+                    .setStatus(Response.Status.BAD_REQUEST)
+                    .toResponse());
+        }
+
         MDC.put("jobId", jobId);
-        MDC.put("dest", destination);
+        MDC.put("destination", destination);
 
         log.info("Canceling transfer");
 
@@ -664,13 +758,7 @@ public class DataTransfer extends DataTransferBase {
 
             .chain(unused -> {
                 // Pick transfer service and create REST client for it
-                var params = new ActionParameters(destination);
-                if (!getTransferService(params)) {
-                    // Could not get REST client
-                    return Uni.createFrom().failure(new TransferServiceException("invalidServiceConfig"));
-                }
-
-                return Uni.createFrom().item(params);
+                return getTransferService(destination);
             })
             .chain(params -> {
                 // Cancel transfer

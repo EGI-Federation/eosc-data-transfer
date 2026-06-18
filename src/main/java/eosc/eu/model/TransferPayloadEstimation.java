@@ -11,13 +11,13 @@ import java.util.List;
  * A file to transfer, includes multiple sources and the size of the file.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(description="Describes one file to be transferred (any source)")
+@Schema(description="Allows estimation of transfer cost for one file (any source)")
 public class TransferPayloadEstimation {
 
     @Schema(description="Multiple sources for the file to be transferred, will try them all until one is available")
     public List<String> sources;
 
-    @Schema(description="The size of the file, used to estimate cost of transferring this file'")
+    @Schema(description="The size of the file'")
     public long size;
 
 

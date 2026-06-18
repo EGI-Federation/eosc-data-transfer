@@ -217,10 +217,12 @@ public class ActionError {
                     this.id.equals("uriInvalid") ||
                     this.id.equals("uriMismatch") ||
                     this.id.equals("seInvalid") ||
+                    this.id.equals("seNotSupported") ||
                     this.id.equals("notFile") ||
                     this.id.equals("notFolder") ||
                     this.id.equals("noArgs") ||
-                    this.id.equals("noFilesLink"))
+                    this.id.equals("noFilesLink") ||
+                    this.id.equals("destInvalid"))
                 // Return BAD_REQUEST instead of INTERNAL_ERROR
                 this.status = Status.BAD_REQUEST;
             else if(tse.hasCode())

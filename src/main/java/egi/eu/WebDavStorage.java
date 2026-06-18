@@ -82,10 +82,10 @@ public class WebDavStorage implements StorageService {
 
         try {
             // Create the WebDAV client for the storage system
-            var userInfo = new DataStorageCredentials(storageAuth);
+            //var userInfo = new DataStorageCredentials(storageAuth);
             minio = MinioAsyncClient.builder()
                         .endpoint(this.baseUri)
-                        .credentials(userInfo.getAccessKey(), userInfo.getSecretKey())
+                        //.credentials(userInfo.getAccessKey(), userInfo.getSecretKey())
                         .build();
 
             return true;

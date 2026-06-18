@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicReference;
 
 import eosc.eu.model.*;
 import parser.ParserHelper;
@@ -36,7 +37,6 @@ public class DigitalObjectIdentifier {
 
     private static final Logger log = Logger.getLogger(DigitalObjectIdentifier.class);
     private static WebClient client;
-    private Flow.Subscription subscription;
 
     @Inject
     MeterRegistry registry;
@@ -76,11 +76,12 @@ public class DigitalObjectIdentifier {
 
         // Now try each parser until we find one that can parse the specified DOI
         ParserHelper helper = new ParserHelper(this.client);
+        var subscription = new AtomicReference<Flow.Subscription>(null);
         Uni<Boolean> result = Multi.createFrom().iterable(this.config.parsers().keySet())
 
             .onSubscription().invoke(sub -> {
                 // Save the subscription, so we can cancel later
-                this.subscription = sub;
+                subscription.set(sub);
             })
             .onItem().transformToUniAndConcatenate(parserId -> {
                 // Instantiate parser
@@ -97,31 +98,17 @@ public class DigitalObjectIdentifier {
                     // Instantiate parser
                     parser = (ParserService)classType.getDeclaredConstructor(String.class).newInstance(parserId);
                 }
-                catch (ClassNotFoundException e) {
-                    log.error(e.getMessage());
-                }
-                catch (NoSuchMethodException e) {
-                    log.error(e.getMessage());
-                }
-                catch (InstantiationException e) {
-                    log.error(e.getMessage());
-                }
-                catch (InvocationTargetException e) {
-                    log.error(e.getMessage());
-                }
-                catch (IllegalAccessException e) {
-                    log.error(e.getMessage());
-                }
-                catch (IllegalArgumentException e) {
+                catch (ClassNotFoundException | NoSuchMethodException | InstantiationException |
+                       InvocationTargetException | IllegalAccessException | IllegalArgumentException e) {
                     log.error(e.getMessage());
                 }
 
                 return null != parser ?
-                                Uni.createFrom().item(parser) :
-                                Uni.createFrom().nullItem(); // Multi discards null items
+                            Uni.createFrom().item(parser) :
+                            Uni.createFrom().nullItem(); // Multi discards null items
             })
             .onItem().transformToUniAndConcatenate(parser -> {
-                // Note: Remove this check once we can cancel the Multi stream
+                // Note: Remove this check once we can cancel the stream
                 // Check if this parser can handle the DOI
                 if(null == params.parser)
                     return parser.canParseDOI(doi, helper);
@@ -141,11 +128,9 @@ public class DigitalObjectIdentifier {
                     var initOK = (null != parserConfig) ? params.parser.init(parserConfig, this.port) : false;
 
                     // Cancel iteration of parsers
-//                    if(null != this.subscription) {
-//                        var sub = this.subscription;
-//                        this.subscription = null;
+//                    var sub = subscription.get();
+//                    if(null != sub)
 //                        sub.cancel();
-//                    }
 
                     log.info("Found parser for DOI");
                     return Uni.createFrom().item(initOK);
@@ -210,7 +195,7 @@ public class DigitalObjectIdentifier {
                 return getParser(auth, params, doi);
             })
             .chain(canParse -> {
-                if (!canParse) {
+                if(!canParse) {
                     // Could not find suitable parser
                     log.error("No parser can handle DOI");
                     return Uni.createFrom().failure(new TransferServiceException("doiNotSupported"));

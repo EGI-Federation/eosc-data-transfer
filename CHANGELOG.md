@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.106]
 
 - Added endpoint to estimate cost of transfer in credits
+- Upgrade to latest Quarkus version
 
 ## [1.1.105]
 

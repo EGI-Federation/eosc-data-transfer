@@ -1,11 +1,11 @@
 package egi.eu;
 
-import io.minio.errors.*;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
+import static org.jboss.resteasy.reactive.RestResponse.StatusCode.*;
 
 import jakarta.annotation.PostConstruct;
 
@@ -17,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.minio.*;
+import io.minio.errors.*;
 import io.minio.messages.Item;
 import io.minio.messages.Bucket;
 import io.minio.messages.DeleteError;
@@ -59,7 +60,7 @@ public class MinioStorage implements StorageService {
     @PostConstruct
     public boolean initService(StorageSystemConfig serviceConfig, String storageElementUrl, String storageAuth) {
 
-        if(null != minio)
+        if(null != this.minio)
             return true;
 
         this.name = serviceConfig.name();
@@ -73,7 +74,7 @@ public class MinioStorage implements StorageService {
             return false;
         }
 
-        // Get the base URL for the S3 storage system
+        // Get the base URL for the storage system
         try {
             URI uriStorageSystem = new URI(storageElementUrl);
             this.baseUri = uriStorageSystem.getScheme() + "://" + uriStorageSystem.getAuthority();
@@ -85,7 +86,7 @@ public class MinioStorage implements StorageService {
         try {
             // Create the Minio client for the storage system
             var userInfo = new DataStorageCredentials(storageAuth);
-            minio = MinioAsyncClient.builder()
+            this.minio = MinioAsyncClient.builder()
                         .endpoint(this.baseUri)
                         .credentials(userInfo.getAccessKey(), userInfo.getSecretKey())
                         .build();
@@ -110,18 +111,6 @@ public class MinioStorage implements StorageService {
      * @return Base URL
      */
     public String getServiceBaseUrl() { return this.baseUri; }
-
-    /**
-     * Retrieve information about current user.
-     * @param auth The access token that authorizes calling the service.
-     * @return User information
-     */
-    public Uni<eosc.eu.model.UserInfo> getUserInfo(String auth) {
-        if(null == minio)
-            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
-
-        return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
-    }
 
     /***
      * Extract the bucket and object name from an URI.
@@ -218,7 +207,8 @@ public class MinioStorage implements StorageService {
                     buckets = minio.listBuckets();
                 } catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("listBuckets", msg));
+                    return Uni.createFrom().failure(new TransferServiceException("listBuckets",
+                                                                                  INTERNAL_SERVER_ERROR, msg));
                 }
 
                 return Uni.createFrom().completionStage(buckets);
@@ -230,7 +220,7 @@ public class MinioStorage implements StorageService {
 
                 // List objects
                 var listArgs = loa.get();
-                var objects = minio.listObjects(listArgs);
+                var objects = this.minio.listObjects(listArgs);
                 return Uni.createFrom().item(Tuple2.of(null, objects));
             })
             .chain(contentLists -> {
@@ -261,7 +251,7 @@ public class MinioStorage implements StorageService {
                             content.add(objInfo);
                         }
                         catch(Exception e) {
-                            var code = 0;
+                            var code = INTERNAL_SERVER_ERROR;
                             var type = e.getClass();
                             if(type.equals(ErrorResponseException.class))
                                 code = ((ErrorResponseException)e).response().code();
@@ -320,11 +310,12 @@ public class MinioStorage implements StorageService {
                 CompletableFuture<StatObjectResponse> stats = null;
                 try {
                     // Get storage element stats
-                    stats = minio.statObject(statArgs);
+                    stats = this.minio.statObject(statArgs);
                 }
                 catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("statObject", msg));
+                    return Uni.createFrom().failure(new TransferServiceException("statObject",
+                                                                                  INTERNAL_SERVER_ERROR, msg));
                 }
                 return Uni.createFrom().completionStage(stats);
             })
@@ -384,11 +375,12 @@ public class MinioStorage implements StorageService {
                 CompletableFuture<Void> nope = null;
                 try {
                     // Create bucket
-                    nope = minio.makeBucket(makeArgs);
+                    nope = this.minio.makeBucket(makeArgs);
                 }
                 catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("makeBucket", msg));
+                    return Uni.createFrom().failure(new TransferServiceException("makeBucket",
+                                                                                  INTERNAL_SERVER_ERROR, msg));
                 }
                 return Uni.createFrom().completionStage(nope);
             })
@@ -450,7 +442,7 @@ public class MinioStorage implements StorageService {
             .chain(listArgs -> {
                 if(null != listArgs) {
                     // If we have arguments for listing objects, use it
-                    Iterable<Result<Item>> objects = minio.listObjects(listArgs);
+                    Iterable<Result<Item>> objects = this.minio.listObjects(listArgs);
                     return Uni.createFrom().item(objects);
                 }
 
@@ -471,7 +463,7 @@ public class MinioStorage implements StorageService {
                             objects.add(new DeleteObject(objInfo.getName()));
                         }
                         catch(Exception e) {
-                            var code = 0;
+                            var code = INTERNAL_SERVER_ERROR;
                             var type = e.getClass();
                             if(type.equals(ErrorResponseException.class))
                                 code = ((ErrorResponseException)e).response().code();
@@ -497,7 +489,7 @@ public class MinioStorage implements StorageService {
             .chain(removeArgs -> {
                 if(null != removeArgs) {
                     // If we have arguments for deleting objects, use it
-                    Iterable<Result<DeleteError>> deleted = minio.removeObjects(removeArgs);
+                    Iterable<Result<DeleteError>> deleted = this.minio.removeObjects(removeArgs);
                     return Uni.createFrom().item(deleted);
                 }
 
@@ -515,7 +507,7 @@ public class MinioStorage implements StorageService {
                             var msg = e.message();
                             details.add(Tuple2.of(code, msg));
                         } catch(Exception e) {
-                            var code = 0;
+                            var code = INTERNAL_SERVER_ERROR;
                             var type = e.getClass();
                             if(type.equals(ErrorResponseException.class))
                                 code = ((ErrorResponseException)e).response().code();
@@ -534,7 +526,7 @@ public class MinioStorage implements StorageService {
                     }
                     else {
                         MDC.put("errorCount", details.size());
-                        log.infof("Failed to delete %d prefixed objects", objectCount.get());
+                        log.infof("Failed to delete %d prefixed objects", details.size());
                         return Uni.createFrom().failure(new TransferServiceException("deleteError", details));
                     }
 
@@ -553,11 +545,12 @@ public class MinioStorage implements StorageService {
                     CompletableFuture<Void> deleted = null;
                     try {
                         // Delete bucket
-                        deleted = minio.removeBucket(bucketArgs);
+                        deleted = this.minio.removeBucket(bucketArgs);
 
                     } catch(Exception e) {
                         var msg = e.getMessage().replaceAll("\\.$", "");
-                        return Uni.createFrom().failure(new TransferServiceException("removeBucket", msg));
+                        return Uni.createFrom().failure(new TransferServiceException("removeBucket",
+                                                                                      INTERNAL_SERVER_ERROR, msg));
                     }
                     return Uni.createFrom().completionStage(deleted);
                 }
@@ -614,11 +607,12 @@ public class MinioStorage implements StorageService {
                 CompletableFuture<Void> nope = null;
                 try {
                     // Delete object
-                    nope = minio.removeObject(removeArgs);
+                    nope = this.minio.removeObject(removeArgs);
                 }
                 catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("removeObject", msg));
+                    return Uni.createFrom().failure(new TransferServiceException("removeObject",
+                                                                                  INTERNAL_SERVER_ERROR, msg));
                 }
                 return Uni.createFrom().completionStage(nope);
             })
@@ -711,7 +705,7 @@ public class MinioStorage implements StorageService {
                 CompletableFuture<ObjectWriteResponse> copied = null;
                 try {
                     // Copy object to new location
-                    copied = minio.copyObject(copyArgs);
+                    copied = this.minio.copyObject(copyArgs);
                 } catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
                     return Uni.createFrom().failure(new TransferServiceException("copyObject", msg));
@@ -736,10 +730,11 @@ public class MinioStorage implements StorageService {
                 CompletableFuture<Void> removed = null;
                 try {
                     // Delete object from old location
-                    removed = minio.removeObject(removeArgs);
+                    removed = this.minio.removeObject(removeArgs);
                 } catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("removeObject", msg));
+                    return Uni.createFrom().failure(new TransferServiceException("removeObject",
+                                                                                  INTERNAL_SERVER_ERROR, msg));
                 }
                 return Uni.createFrom().completionStage(removed);
             })

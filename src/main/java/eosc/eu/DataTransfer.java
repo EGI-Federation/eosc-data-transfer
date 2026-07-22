@@ -75,7 +75,7 @@ public class DataTransfer extends DataTransferBase {
     /**
      * Estimate the cost (in credits) of transferring multiple files.
      * @param auth The access token needed to call the service.
-     * @param files The details of the transfer (source files with sizes).
+     * @param transfer The details of the transfer (source files with sizes).
      * @param destination The type of destination storage (selects transfer service to call).
      * @return API Response, wraps an ActionSuccess(TransferInfo) or an ActionError entity
      */
@@ -115,16 +115,12 @@ public class DataTransfer extends DataTransferBase {
 
         if(null == transfer || null == transfer.files || transfer.files.isEmpty()) {
             log.error("No file list provided");
-            return Uni.createFrom().item(new ActionError("noFiles")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("noFiles").toResponse());
         }
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         MDC.put("destination", destination);
@@ -165,6 +161,10 @@ public class DataTransfer extends DataTransferBase {
                 for(var file : transfer.files)
                     if(null != file && file.size > 0)
                         cost.addFile(file.size);
+
+                long bytesPerCredit = (null != transfer.bytesPerCredit && transfer.bytesPerCredit.isPresent()) ?
+                        transfer.bytesPerCredit.get() :
+                        serviceConfig.bytesPerCredit();
 
                 if(!cost.calculateCost(serviceConfig.bytesPerCredit()))
                     return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
@@ -226,16 +226,12 @@ public class DataTransfer extends DataTransferBase {
 
         if(null == transfer) {
             log.error("No transfer details provided");
-            return Uni.createFrom().item(new ActionError("noTransfer")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("noTransfer").toResponse());
         }
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         MDC.put("destination", destination);
@@ -421,9 +417,7 @@ public class DataTransfer extends DataTransferBase {
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         MDC.put("destination", destination);
@@ -543,16 +537,12 @@ public class DataTransfer extends DataTransferBase {
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         if(null == jobId || jobId.isEmpty()) {
             log.error("No job ID provided");
-            return Uni.createFrom().item(new ActionError("noJob")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("noJob").toResponse());
         }
 
         MDC.put("jobId", jobId);
@@ -636,23 +626,17 @@ public class DataTransfer extends DataTransferBase {
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         if(null == jobId || jobId.isEmpty()) {
             log.error("No job ID provided");
-            return Uni.createFrom().item(new ActionError("noJob")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("noJob").toResponse());
         }
 
         if(null == fieldName || fieldName.isEmpty()) {
             log.error("No field name provided");
-            return Uni.createFrom().item(new ActionError("noField")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("noField").toResponse());
         }
 
         MDC.put("jobId", jobId);
@@ -737,16 +721,12 @@ public class DataTransfer extends DataTransferBase {
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         if(null == jobId || jobId.isEmpty()) {
             log.error("No job ID provided");
-            return Uni.createFrom().item(new ActionError("noJob")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("noJob").toResponse());
         }
 
         MDC.put("jobId", jobId);

@@ -211,6 +211,8 @@ public class ActionError {
                 this.status = Status.OK;
             else if(this.id.equals("configInvalid"))
                 this.status = Status.INTERNAL_SERVER_ERROR;
+            else if(this.id.contains("Timeout"))
+                this.status = Status.REQUEST_TIMEOUT;
             else if(this.id.equals("fieldNotSupported") ||
                     this.id.equals("doiNotSupported") ||
                     this.id.equals("doiInvalid") ||
@@ -221,6 +223,8 @@ public class ActionError {
                     this.id.equals("notFile") ||
                     this.id.equals("notFolder") ||
                     this.id.equals("noArgs") ||
+                    this.id.equals("noJob") ||
+                    this.id.equals("noField") ||
                     this.id.equals("noFilesLink") ||
                     this.id.equals("destInvalid"))
                 // Return BAD_REQUEST instead of INTERNAL_ERROR

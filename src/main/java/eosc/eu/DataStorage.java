@@ -157,9 +157,7 @@ public class DataStorage extends DataTransferBase {
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         MDC.put("destination", destination);
@@ -298,16 +296,12 @@ public class DataStorage extends DataTransferBase {
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         if(null == folderUri || folderUri.isEmpty()) {
             log.error("No folder provided");
-            return Uni.createFrom().item(new ActionError("seInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("seInvalid").toResponse());
         }
 
         MDC.put("seUri", folderUri);
@@ -403,16 +397,12 @@ public class DataStorage extends DataTransferBase {
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         if(null == seUri || seUri.isEmpty()) {
             log.error("No storage element provided");
-            return Uni.createFrom().item(new ActionError("seInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("seInvalid").toResponse());
         }
 
         MDC.put("seUri", seUri);
@@ -557,16 +547,12 @@ public class DataStorage extends DataTransferBase {
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         if(null == seUri || seUri.isEmpty()) {
             log.error("No folder provided");
-            return Uni.createFrom().item(new ActionError("seInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("seInvalid").toResponse());
         }
 
         MDC.put("seUri", seUri);
@@ -663,16 +649,12 @@ public class DataStorage extends DataTransferBase {
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         if(null == seUri || seUri.isEmpty()) {
             log.error("No folder provided");
-            return Uni.createFrom().item(new ActionError("seInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("seInvalid").toResponse());
         }
 
         MDC.put("seUri", seUri);
@@ -769,16 +751,12 @@ public class DataStorage extends DataTransferBase {
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         if(null == seUri || seUri.isEmpty()) {
             log.error("No storage element provided");
-            return Uni.createFrom().item(new ActionError("seInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("seInvalid").toResponse());
         }
 
         MDC.put("seUri", seUri);
@@ -872,9 +850,7 @@ public class DataStorage extends DataTransferBase {
 
         if(null == destination || destination.isEmpty()) {
             log.error("No destination provided");
-            return Uni.createFrom().item(new ActionError("destInvalid")
-                    .setStatus(Response.Status.BAD_REQUEST)
-                    .toResponse());
+            return Uni.createFrom().item(new ActionError("destInvalid").toResponse());
         }
 
         MDC.put("destination", destination);

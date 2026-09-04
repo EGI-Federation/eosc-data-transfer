@@ -1,6 +1,7 @@
 package eosc.eu.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import eosc.eu.TransferConfig;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
@@ -99,8 +100,8 @@ public class Transfer {
      */
     public enum AuthorizeWith
     {
-        token("token"),
-        keys("keys");
+        token(TransferConfig.StorageSystemConfig.AUTH_TYPE_TOKEN),
+        keys(TransferConfig.StorageSystemConfig.AUTH_TYPE_KEYS);
 
         private final String auth;
 

@@ -43,3 +43,6 @@ nb-configuration.xml
 
 # Local environment
 .env
+
+# Local Cline (AI assistant) configuration
+.cline/

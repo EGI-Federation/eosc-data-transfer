@@ -8,15 +8,16 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * Estimation of the cost (in credits) of a data transfer
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(description = "Estimated cost of a data transfer, calculated from the total size of the files")
 public class TransferEstimationInfo {
 
-    @Schema(description="Amount of data to be transferred")
+    @Schema(description = "Total amount of data to be transferred, in bytes", example = "1073741824")
     public long bytes;
 
-    @Schema(description="Cost in credits (rounded up)")
+    @Schema(description = "Cost in whole credits, rounded up", example = "1")
     public long credits;
 
-    @Schema(description="Cost in credits")
+    @Schema(description = "Cost in credits before rounding", example = "0.5")
     public double creditsExact;
 
 

@@ -10,9 +10,11 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
@@ -43,6 +45,8 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
  */
 @Path("/storage")
 @Produces(MediaType.APPLICATION_JSON)
+@Tag(name = "Data Storage",
+     description = "List destination types and manage files and folders in a destination storage.")
 public class DataStorage extends DataTransferBase {
 
     private static final Logger log = Logger.getLogger(DataStorage.class);
@@ -68,13 +72,18 @@ public class DataStorage extends DataTransferBase {
     @GET
     @Path("/destinations")
     @PermitAll
-    @Operation(operationId = "listSupportedDestinations",  summary = "List all supported transfer destinations")
+    @Operation(operationId = "listSupportedDestinations",  summary = "List all supported transfer destinations",
+               description = "Lists every destination storage type configured on this instance, with the " +
+                             "transfer engine and the storage service that handle each of them.")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = Destinations.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Transfer service misconfigured or unavailable",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
@@ -140,7 +149,10 @@ public class DataStorage extends DataTransferBase {
     @GET
     @Path("/destination")
     @PermitAll
-    @Operation(operationId = "getDestinationInfo",  summary = "Retrieve information about transfer destination")
+    @Operation(operationId = "getDestinationInfo",  summary = "Retrieve information about transfer destination",
+               description = "Describes one destination storage type. The fields 'authType', 'protocol' and " +
+                             "'browseWith' are absent when the destination does not support browsing and " +
+                             "manipulating storage elements.")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
@@ -148,11 +160,15 @@ public class DataStorage extends DataTransferBase {
                     schema = @Schema(implementation = DestinationInfo.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Transfer service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getDestinationInfo(@RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                             @Parameter(schema = @Schema(implementation = Destination.class),
-                                                       description = DESTINATION_STORAGE)
+                                                       description = DESTINATION_STORAGE,
+                                                       example = DEFAULT_DESTINATION)
                                             String destination) {
 
         if(null == destination || destination.isEmpty()) {
@@ -252,7 +268,9 @@ public class DataStorage extends DataTransferBase {
     @Path("/folder/list")
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "listFolderContent",  summary = "List the content of a folder from a storage system")
+    @Operation(operationId = "listFolderContent",  summary = "List the content of a folder from a storage system",
+               description = "Lists the files and sub-folders of one folder. The folder URI must belong to " +
+                             "the storage system that handles the selected destination.")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -273,6 +291,9 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Storage service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
@@ -281,11 +302,13 @@ public class DataStorage extends DataTransferBase {
                                            @RestQuery("folderUri")
                                            @Parameter(required = true,
                                                       description =
-                                                          "URI to the storage element (folder) to list content of")
+                                                          "URI to the storage element (folder) to list content of",
+                                                      example = "https://dcache.example.org/data/")
                                            String folderUri,
                                            @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                            @Parameter(schema = @Schema(implementation = Destination.class),
-                                                      description = DESTINATION_STORAGE)
+                                                      description = DESTINATION_STORAGE,
+                                                      example = DEFAULT_DESTINATION)
                                            String destination,
                                            @RestHeader(HEADER_STORAGE_AUTH)
                                            @Parameter(required = false,
@@ -360,7 +383,9 @@ public class DataStorage extends DataTransferBase {
     @Path("/file")
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "getFileInfo",  summary = "Retrieve information about a file in a storage system")
+    @Operation(operationId = "getFileInfo",  summary = "Retrieve information about a file in a storage system",
+               description = "Returns the details known to the storage system for one file, such as size, " +
+                             "checksum and modification time.")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -380,6 +405,9 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Storage service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
@@ -387,11 +415,13 @@ public class DataStorage extends DataTransferBase {
     public Uni<Response> getFileInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                      @RestQuery("seUri")
                                      @Parameter(required = true,
-                                                description = "URI to the storage element (file) to get stats for")
+                                                description = "URI to the storage element (file) to get stats for",
+                                                example = "https://dcache.example.org/data/data.zip")
                                      String seUri,
                                      @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                      @Parameter(schema = @Schema(implementation = Destination.class),
-                                                description = DESTINATION_STORAGE)
+                                                description = DESTINATION_STORAGE,
+                                                example = DEFAULT_DESTINATION)
                                      String destination,
                                      @RestHeader(HEADER_STORAGE_AUTH)
                                      @Parameter(required = false, description = STORAGE_AUTH)
@@ -465,7 +495,9 @@ public class DataStorage extends DataTransferBase {
     @Path("/folder")
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "getFolderInfo",  summary = "Retrieve information about a folder in a storage system")
+    @Operation(operationId = "getFolderInfo",  summary = "Retrieve information about a folder in a storage system",
+               description = "Returns the details known to the storage system for one folder. This is handled " +
+                             "by the same code path as GET /storage/file.")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -485,6 +517,9 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Storage service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
@@ -492,11 +527,13 @@ public class DataStorage extends DataTransferBase {
     public Uni<Response> getFolderInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                        @RestQuery("seUri")
                                        @Parameter(required = true,
-                                                  description = "URI to the storage element (folder) to get stats for")
+                                                  description = "URI to the storage element (folder) to get stats for",
+                                                  example = "https://dcache.example.org/data/")
                                        String seUri,
                                        @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                        @Parameter(schema = @Schema(implementation = Destination.class),
-                                                  description = DESTINATION_STORAGE)
+                                                  description = DESTINATION_STORAGE,
+                                                  example = DEFAULT_DESTINATION)
                                        String destination,
                                        @RestHeader(HEADER_STORAGE_AUTH)
                                        @Parameter(required = false, description = STORAGE_AUTH)
@@ -517,7 +554,9 @@ public class DataStorage extends DataTransferBase {
     @Path("/folder")
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "createFolder",  summary = "Create new folder in a storage system")
+    @Operation(operationId = "createFolder",  summary = "Create new folder in a storage system",
+               description = "Creates one folder (or bucket/container) in the destination storage. Parent " +
+                             "folders are not created implicitly.")
     @APIResponses(value = {
             @APIResponse(responseCode = "201", description = "Created",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -534,6 +573,9 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Storage service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
@@ -541,11 +583,13 @@ public class DataStorage extends DataTransferBase {
     public Uni<Response> createFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                       @RestQuery("seUri")
                                       @Parameter(required = true,
-                                                 description = "URI to the storage element (folder) to create")
+                                                 description = "URI to the storage element (folder) to create",
+                                                 example = "https://dcache.example.org/data/new-folder/")
                                       String seUri,
                                       @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                       @Parameter(schema = @Schema(implementation = Destination.class),
-                                                 description = DESTINATION_STORAGE)
+                                                 description = DESTINATION_STORAGE,
+                                                 example = DEFAULT_DESTINATION)
                                       String destination,
                                       @RestHeader(HEADER_STORAGE_AUTH)
                                       @Parameter(required = false, description = STORAGE_AUTH)
@@ -619,7 +663,9 @@ public class DataStorage extends DataTransferBase {
     @Path("/folder")
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "deleteFolder",  summary = "Delete existing folder from a storage system")
+    @Operation(operationId = "deleteFolder",  summary = "Delete existing folder from a storage system",
+               description = "Deletes one folder from the destination storage. The folder must be empty when " +
+                             "the storage system requires it.")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Deleted",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -640,6 +686,9 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Storage service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
@@ -647,11 +696,13 @@ public class DataStorage extends DataTransferBase {
     public Uni<Response> deleteFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                       @RestQuery("seUri")
                                       @Parameter(required = true,
-                                                 description = "URI to the storage element (folder) to delete")
+                                                 description = "URI to the storage element (folder) to delete",
+                                                 example = "https://dcache.example.org/data/old-folder/")
                                       String seUri,
                                       @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                       @Parameter(schema = @Schema(implementation = Destination.class),
-                                                 description = DESTINATION_STORAGE)
+                                                 description = DESTINATION_STORAGE,
+                                                 example = DEFAULT_DESTINATION)
                                       String destination,
                                       @RestHeader(HEADER_STORAGE_AUTH)
                                       @Parameter(required = false, description = STORAGE_AUTH)
@@ -725,7 +776,8 @@ public class DataStorage extends DataTransferBase {
     @Path("/file")
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "deleteFile",  summary = "Delete existing file from a storage system")
+    @Operation(operationId = "deleteFile",  summary = "Delete existing file from a storage system",
+               description = "Deletes one file from the destination storage.")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Deleted",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -746,6 +798,9 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Storage service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
@@ -753,7 +808,8 @@ public class DataStorage extends DataTransferBase {
     public Uni<Response> deleteFile(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                     @RestQuery("seUri")
                                     @Parameter(required = true,
-                                               description = "URI to the storage element (file) to delete")
+                                               description = "URI to the storage element (file) to delete",
+                                               example = "https://dcache.example.org/data/old.zip")
                                     String seUri,
                                     @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                     @Parameter(schema = @Schema(implementation = Destination.class),
@@ -831,7 +887,9 @@ public class DataStorage extends DataTransferBase {
     @Path("/file")
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "renameFile",  summary = "Rename existing file in a storage system")
+    @Operation(operationId = "renameFile",  summary = "Rename existing file in a storage system",
+               description = "Renames or moves one file. When the old and new URIs are the same the call " +
+                             "succeeds with HTTP 200 and error id 'noOp'.")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Renamed",
@@ -852,15 +910,21 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Storage service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> renameFile(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
+                                    @RequestBody(description = "Old and new URI of the file",
+                                                 required = true)
                                     StorageRenameOperation operation,
                                     @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                     @Parameter(schema = @Schema(implementation = Destination.class),
-                                               description = DESTINATION_STORAGE)
+                                               description = DESTINATION_STORAGE,
+                                               example = DEFAULT_DESTINATION)
                                     String destination,
                                     @RestHeader(HEADER_STORAGE_AUTH)
                                     @Parameter(required = false, description = STORAGE_AUTH)
@@ -941,7 +1005,9 @@ public class DataStorage extends DataTransferBase {
     @Path("/folder")
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "renameFolder",  summary = "Rename existing folder in a storage system")
+    @Operation(operationId = "renameFolder",  summary = "Rename existing folder in a storage system",
+               description = "Renames or moves one folder. When the old and new URIs are the same the call " +
+                             "succeeds with HTTP 200 and error id 'noOp'.")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Renamed",
@@ -962,15 +1028,21 @@ public class DataStorage extends DataTransferBase {
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Storage service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> renameFolder(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
+                                      @RequestBody(description = "Old and new URI of the folder",
+                                                   required = true)
                                       StorageRenameOperation operation,
                                       @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                       @Parameter(schema = @Schema(implementation = Destination.class),
-                                              description = DESTINATION_STORAGE)
+                                              description = DESTINATION_STORAGE,
+                                              example = DEFAULT_DESTINATION)
                                       String destination,
                                       @RestHeader(HEADER_STORAGE_AUTH)
                                       @Parameter(required = false, description = STORAGE_AUTH)

@@ -9,7 +9,7 @@
 
 The [European Open Science Cloud](https://eosc-portal.eu) (EOSC) gives European
 researchers access to a wide web of [FAIR data](https://en.wikipedia.org/wiki/FAIR_data)
-and science-related services. It was designed, delivered, and is contiunously improved under the
+and science-related services. It was designed, delivered, and is continuously improved under the
 [Horizon Europe](https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/horizon-europe_en)
 project, funded by the European Commission. EOSC was initially delivered by the
 [EOSC Future](https://eoscfuture.eu), while the
@@ -33,6 +33,15 @@ The API covers three sets of functionalities:
 > This project uses [Quarkus](https://quarkus.io), the Supersonic Subatomic Java Framework.
 > It requires [Java 17](https://openjdk.org/projects/jdk/17/) and
 > Quarkus [tooling](https://quarkus.io/guides/cli-tooling).
+
+
+## Documentation
+
+- [docs/index.md](docs/index.md) - documentation map with a tutorial, architecture and references
+- [Swagger UI](https://data-transfer.service.eosc-beyond.eu/swagger-ui/) - interactive API reference
+- [OpenAPI document](https://data-transfer.service.eosc-beyond.eu/openapi) - machine-readable spec
+- [Endpoint reference](docs/reference/endpoints.md) - routes, parameters and headers at a glance
+- [Error reference](docs/reference/error-ids.md) - error identifiers and the statuses they carry
 
 
 ## Authentication and authorization
@@ -114,13 +123,13 @@ public interface ParserService {
     String getId();
     String getName();
     String sourceId();
-    Uni<Tuple2<Boolean, ParserService>> canParseDOI(String auth, String doi, ParserHelper helper);
-    Uni<StorageContent> parseDOI(String auth, String doi, int level);
+    Uni<Tuple2<Boolean, ParserService>> canParseDOI(String doi, ParserHelper helper);
+    Uni<StorageContent> parseDOI(String tsAuth, String doi, int level);
 }
 ```
 
-> Your class must have a constructor that receives a `String id`, which must be returned
-> by the method `getId()`.
+> Your class must have a public no-argument constructor; parsers are instantiated reflectively.
+> The authoritative interface is [ParserService.java](src/main/java/eosc/eu/ParserService.java).
 
 When the API `GET /parser` is called to parse a DOI, all configured parsers will be tried,
 by calling the method `canParseDOI()`, until one is identified that can parse the DOI. If no
@@ -198,36 +207,29 @@ Implement the Java interface `TransferService` in a class of your choice.
 public interface TransferService {
     boolean initService(TransferServiceConfig config);
     String getServiceName();
+    String getServiceUrl();
     String translateTransferInfoFieldName(String genericFieldName);
-    Uni<UserInfo> getUserInfo(String tsAuth);
 
-    // Methods for data transfers
     Uni<TransferInfo> startTransfer(String tsAuth, String storageAuth, Transfer transfer);
     Uni<TransferList> findTransfers(String tsAuth, String fields, int limit,
-                                    String timeWindow, String stateIn,
+                                    String timeWindow, TransferState stateIn,
                                     String srcStorageElement, String dstStorageElement,
-                                    String delegationId, String voName, String userDN);
-    Uni<TransferInfoExtended> getTransferInfo(String tsAuth, String jobId);
+                                    String voName, String userId);
+    Uni<TransferInfoExtended> getTransferInfo(String tsAuth, String jobId, FileDetails fileInfo);
     Uni<Response> getTransferInfoField(String tsAuth, String jobId, String fieldName);
     Uni<TransferInfoExtended> cancelTransfer(String tsAuth, String jobId);
-
-    // Methods for storage elements
-    Uni<StorageContent> listFolderContent(String tsAuth, String storageAuth, String folderUrl);
-    Uni<StorageElement> getStorageElementInfo(String tsAuth, String storageAuth, String seUrl);
-    Uni<String> createFolder(String tsAuth, String storageAuth, String folderUrl);
-    Uni<String> deleteFolder(String tsAuth, String storageAuth, String folderUrl);
-    Uni<String> deleteFile(String tsAuth, String storageAuth, String fileUrl);
-    Uni<String> renameStorageElement(String tsAuth, String storageAuth, String seOld, String seNew);
 }
 ```
 
-> Your class must have a constructor with no parameters.
+> Your class must have a public no-argument constructor; transfer services are instantiated
+> reflectively. The authoritative interface is
+> [TransferService.java](src/main/java/eosc/eu/TransferService.java).
 
-The methods can be split into two groups:
-
-- The methods for handling data transfers **must** be implemented
-- The methods for storage elements **should** only be implemented for storage types
-  for which the method `canBrowseStorage()` returns `true`.
+All methods in this interface **must** be implemented. Browsing and managing storage elements is a
+separate interface, `StorageService` ([StorageService.java](src/main/java/eosc/eu/StorageService.java)):
+a destination points at a storage system through its optional `storage` key, and only those
+destinations can use the storage endpoints. This lets one transfer service serve destinations with
+and without storage management.
 
 #### 2. Add configuration for the new data transfer service
 
@@ -253,30 +255,34 @@ Add entries in the [configuration file](#configuration) under `eosc/transfer/des
 for each destination storage type you want to support, and map it to one of the registered
 transfer services.
 
-The configuration of each storage type consists of:
+The configuration of each destination consists of:
 
 - `service` is the key of the transfer service that will handle transfers to this storage type.
+- `storage` is the optional key of the storage system used to browse and manage storage elements.
+  Destinations without this key do not offer the [storage endpoints](#managing-storage-elements).
 - `description` is the human-readable name of this storage type.
-- `auth` is the type of authentication required by the storage system, one of these values:
-  - **token** means the storage uses the same OIDC auth token as the transfer service
-  - **password** means the storage needs a username and a password for authentication
-  - **keys** means the storage needs an access key and a secret key for authentication
-- `protocol` is the schema to use in URLs pointing to this storage.
-- `browse` signals whether the storage supports browsing (the endpoints to
-  [list and manage storage elements](#managing-storage-elements) are available).
 
-For storage types that are configured with either `password` or `keys` as the authentication
-type, you will have to supply the HTTP header parameter `Authorization-Storage` when calling
-the API endpoints. See [here](#authentication-and-authorization) for details.
+The referenced storage system is configured under `eosc.transfer.storage`, with these settings:
+
+- `name` is the human-readable name of the storage system.
+- `class` is the canonical Java class name that implements the interface `StorageService`.
+- `auth` is the type of authentication the storage system expects, one of:
+  - **token** means the storage accepts the same OIDC access token as the transfer service
+  - **keys** means the storage needs an access key and a secret key
+- `protocol` is the schema to use in URLs pointing to this storage.
+- `timeout` is the maximum timeout in milliseconds for calls to the storage system.
+
+For destinations whose storage uses `keys`, and for WebDAV or FTP storage that does not accept the
+OIDC token, clients must supply the HTTP header parameter `Authorization-Storage`. See
+[Authentication and authorization](#authentication-and-authorization) for details.
 
 #### 4. Add the new destinations in the enum of possible destination
 
 In the enum `Transfer.Destination` add new values for each of the storage types
 you added in the previous step. Use the same values as the names of the keys.
 
-This way each entry under the node `eosc/transfer/destination` in the configuration
-file becomes one possible value for the destination storage parameter `dest` of the
-API endpoints.
+The enum documents the accepted values in the OpenAPI specification; the runtime accepts any key
+configured under `eosc/transfer/destination` for the destination storage parameter `dest`.
 
 
 ## Managing storage elements
@@ -286,15 +292,13 @@ hide the complexity of different types of storage technologies. It can mean both
 an element of the storage system's hierarchy (directory, folder, container, bucket, etc.)
 and the entity that stores the data (file, object, etc.).
 
-The API supports managing storage elements in a destination storage. Each data transfer
-service that gets integrated can optionally implement this functionality. Moreover, data
-transfer services that support multiple storage types can selectively implement this
-functionality for just a subset of the supported storage types (see the
-method `TransferService::canBrowseStorage()`
-[above](#1-implement-the-interface-for-a-generic-data-transfer-service)).
+The API supports managing storage elements in a destination storage. This functionality is
+available when the destination points at a storage system through its `storage` key. A transfer
+service can serve many destinations while only some of them have a storage system configured, so
+storage management can be enabled per destination.
 
-Clients can query if this functionality is implemented for a storage type by
-using the endpoint `GET /storage/info`.
+Clients can query whether a destination supports this functionality by using the endpoint
+`GET /storage/destination`.
 
 This functionality covers:
 
@@ -312,9 +316,10 @@ This functionality covers:
 
 The application configuration file is in `src/main/resources/application.yml`.
 
-See [here](#integrating-new-doi-parsers) for how to configure the data repository
-parsers used by the API and [here](#integrating-new-data-transfer-services) for
-how to extend the API with new transfer services and storage types.
+See [Integrating new DOI parsers](#integrating-new-doi-parsers) for how to configure the data
+repository parsers used by the API and
+[Integrating new data transfer services](#integrating-new-data-transfer-services) for how to extend
+the API with new transfer services and storage types.
 
 The API automatically generates metrics for the calls to the endpoints. You can also enable
 histogram buckets for these metrics, to support quantiles in the telemetry dashboards (e.g.
@@ -323,16 +328,14 @@ generate under the setting `eosc/qos/quantiles`. Similarly, you can also enable 
 service level objectives (SLOs) by listing all SLOs for call duration, expressed in milliseconds,
 under the setting `eosc/qos/slos`.
 
-<!-- markdownlint-disable no-bare-urls -->
-You can review the metrics generated by the API at http://localhost:8081/metrics
-<!-- markdownlint-enable no-bare-urls -->
+<!-- markdownlint-disable-next-line MD034 -->
+You can review the metrics generated by the API at
+[http://localhost:8089/metrics](http://localhost:8089/metrics).
 
-> The API needs a certificate for an EGI service account to
-> [register and configure S3 storage systems](https://fts3-docs.web.cern.ch/fts3-docs/docs/s3_support.html)
-> with the wrapped [EGI Data Transfer](https://docs.egi.eu/users/data/management/data-transfer/)
-> service. Such a certificate is included in the file `src/main/resources/fts-keystore.jks`, but
-> the password for this certificate is not included. [Contact EGI](https://www.egi.eu/contact-us/)
-> to obtain a service account and a new certificate (together with its password) when deploying this API.
+> The transfer engine is called with the caller's OIDC access token. The only certificate material
+> the API needs is the truststore for the engine's TLS certificate, configured with
+> `trust-store-file` (for EGI Data Transfer: `cern-truststore.jks`). The truststore password is not
+> committed; supply it at deployment time.
 
 
 ## Running the API in dev mode
@@ -340,12 +343,12 @@ You can review the metrics generated by the API at http://localhost:8081/metrics
 You can run your application in dev mode that enables live coding using:
 
 ```shell script
-./mvnw compile quarkus:dev
+./mvnw.sh compile quarkus:dev
 ```
 
-<!-- markdownlint-disable no-bare-urls -->
-Then open the Dev UI, which is available in dev mode only, at http://localhost:8081/q/dev/.
-<!-- markdownlint-enable no-bare-urls -->
+<!-- markdownlint-disable-next-line MD034 -->
+Then open the Dev UI, which is available in dev mode only, at
+[http://localhost:8089/q/dev/](http://localhost:8089/q/dev/).
 
 
 ## Packaging and running the API
@@ -353,7 +356,7 @@ Then open the Dev UI, which is available in dev mode only, at http://localhost:8
 The application can be packaged using:
 
 ```shell script
-./mvnw package
+./mvnw.sh package
 ```
 
 It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
@@ -365,7 +368,7 @@ The application is now runnable using `java -jar target/quarkus-app/quarkus-run.
 If you want to build an _über-jar_, execute the following command:
 
 ```shell script
-./mvnw package -Dquarkus.package.type=uber-jar
+./mvnw.sh package -Dquarkus.package.type=uber-jar
 ```
 
 The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
@@ -399,15 +402,15 @@ Steps to run the API in a container:
   - Provide an email address in the environment variable `SERVICE_EMAIL` to be used,
   together with the domain name, to automatically request a SSL certificate for the
   SSL terminator.
-  - In the environment variable `FTS_KEY_STORE_FILE` provide a path to a
-  Java keystore file containing a new [EGI service account certificate](#configuration),
-  and in the environment variable `FTS_KEY_STORE_PASSWORD` provide the password for it.
+  - In the environment variable `FTS_TRUST_STORE_FILE` provide a path to a Java truststore
+  containing the certificate authority of the transfer engine, and in
+  `FTS_TRUST_STORE_PASSWORD` provide its password.
   - In the environment variable `TELEMETRY_PORT` provide the port on which to publish
   the Grafana telemetry dashboard. This will be available on the same domain name as
   the API itself.
 
-2. Run the command `build.sh` (or `build.cmd` on Windows) to build and run the containers
-that implement the EOSC Data Transfer API.
+2. Run the command `src/main/docker/deploy.sh` (or `src/main/docker/deploy.cmd` on Windows) to build
+and run the containers that implement the EOSC Data Transfer API.
 
 3. The SSL terminator will automatically use [Let's Encrypt](https://letsencrypt.org)
 to request an SSL certificate for HTTPS.
@@ -428,7 +431,11 @@ certificate and will only do dry runs for requesting a certificate to avoid the
 
 ## Running the API with telemetry using Kubernetes
 
-TODO Describe prerequisites for the K8s cluster (Argo) nd the steps to deploy it
+This repository does not ship Kubernetes manifests. Deploy the image
+`registry.egi.eu/eosc-beyond.eu/eosc-data-transfer` and provide the same configuration through
+environment variables as the Docker Compose deployment. The telemetry containers can be replaced by
+any OTLP-compatible collector, Prometheus and Loki installation; see
+[Architecture](docs/explanation/architecture.md) for the signals involved.
 
 
 ## Related Guides

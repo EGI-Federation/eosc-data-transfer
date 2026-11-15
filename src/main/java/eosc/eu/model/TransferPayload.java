@@ -14,13 +14,17 @@ import java.util.List;
 @Schema(description="Describes one file to be transferred (any source to any destination)")
 public class TransferPayload {
 
-    @Schema(description="Multiple sources for the file to be transferred, will try them all until one is available")
+    @Schema(description = "Multiple sources for the file to be transferred, will try them all until one is " +
+                          "available",
+            example = "https://zenodo.org/record/6511035/files/data.zip")
     public List<String> sources;
 
-    @Schema(description="Multiple destinations where to transfer the file, will try them all until one succeeds")
+    @Schema(description = "Multiple destinations where to transfer the file, will try them all until one " +
+                          "succeeds. The protocol of the URI selects the storage system",
+            example = "https://dcache.example.org/data/data.zip")
     public List<String> destinations;
 
-    @Schema(description="User defined checksum in the form 'algorithm:value'")
+    @Schema(description = "User defined checksum in the form 'algorithm:value'", example = "adler32:12345678")
     public String checksum;
 
 
@@ -34,6 +38,7 @@ public class TransferPayload {
 
     /**
      * Check if valid (at least one source and one destination)
+     * @return true if the payload has at least one source and one destination
      */
     public boolean isValid() {
         if(null == this.sources || null == this.destinations ||

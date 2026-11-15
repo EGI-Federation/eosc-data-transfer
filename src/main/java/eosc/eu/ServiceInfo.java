@@ -6,6 +6,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,6 +25,7 @@ import java.util.concurrent.Flow;
 
 
 @Path("/")
+@Tag(name = "Service Info", description = "Version information for the running service.")
 public class ServiceInfo {
 
     private static final Logger log = Logger.getLogger(ServiceInfo.class);
@@ -51,17 +53,18 @@ public class ServiceInfo {
 
 
     /**
-     * Parse Digital Object Identifier at specified URL and return list of files.
-     * @return API Response, wraps an ActionSuccess or an ActionError entity
+     * Return the version of the running service.
+     * @return API Response, wraps the version string or an ActionError entity
      */
     @GET
     @Path("/version")
     @PermitAll
-    @Operation(operationId = "version",  summary = "Return service version information")
+    @Operation(operationId = "version",  summary = "Return service version information",
+               description = "Returns the version of the running service as plain text.")
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Success",
+            @APIResponse(responseCode = "200", description = "Version string",
                     content = @Content(mediaType = MediaType.TEXT_PLAIN,
-                    schema = @Schema(implementation = String.class))),
+                    schema = @Schema(implementation = String.class, example = "1.1.107"))),
     })
     public Uni<Response> version() {
 

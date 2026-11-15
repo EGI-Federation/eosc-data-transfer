@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.107]
+
+- Documented every API operation, parameter and response in the generated OpenAPI specification
+- Added described API tags and grouped the operations by API area in Swagger UI
+- Described all schema fields, with units, examples and timestamp formats
+- Added high-level documentation under `docs/`: documentation map, tutorial, architecture,
+  endpoint reference and error reference
+- Corrected stale commands, endpoints, configuration keys and deployment variables in `README.md`
+- OpenAPI: documented `/transfers/estimate` as `202` and removed the unused `207` response
+- OpenAPI: documented `storm` as a destination value
+- `GET /transfers` now applies the documented `active` default when `state` is omitted
+- Made `mvnw.sh` executable, so the documented `./mvnw.sh` command works
+
 ## [1.1.106]
 
 - Added endpoint to estimate cost of transfer in credits
@@ -183,4 +196,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented endpoints to start, cancel, query, search transfers
 - Implemented endpoints to create, rename, delete, query folders
 - Implemented endpoints to rename, delete, query files
-- Refactored all endpoints to return Uni<Response>
+- Refactored all endpoints to return `Uni<Response>`

@@ -17,34 +17,41 @@ import cern.model.JobFileInfo;
  * The status of one transfer payload in a transfer job
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(description="The status of a file transfer, part of a transfer job")
+@Schema(description="The status of one file in a transfer job; returned when the caller asks for " +
+                    "fileInfo=failed or fileInfo=all")
 public class TransferPayloadInfo {
 
+    @Schema(description = "Type discriminator of this schema", example = "TransferPayloadInfo")
     public String kind = "TransferPayloadInfo";
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Schema(description="File state")
+    @Schema(description="State of this individual file")
     public FileState fileState;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Schema(description="Source storage element")
+    @Schema(description="Source storage element", example = "https://zenodo.org/record/6511035/files/data.zip")
     public String sourceSE;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Schema(description="Destination storage element")
+    @Schema(description="Destination storage element", example = "https://dcache.example.org/data/data.zip")
     public String destinationSE;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Size of the file in bytes")
     public Optional<Long> size;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
-    @Schema(description="Date and time when transfer of the file started", example = "2022-10-15T20:14:22Z+2")
+    @Schema(implementation = String.class, format = "date-time",
+            description="Date and time when transfer of the file started",
+            example = "2022-10-15T20:14:22+0100")
     public Date startedAt;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
-    @Schema(description="Date and time when transfer of the file finished", example = "2022-10-15T20:25:32Z+2")
+    @Schema(implementation = String.class, format = "date-time",
+            description="Date and time when transfer of the file finished",
+            example = "2022-10-15T20:25:32+0100")
     public Date finishedAt;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -52,15 +59,19 @@ public class TransferPayloadInfo {
     public String reason;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Transfer priority of this file, 1 (lowest) to 5 (highest)")
     public Optional<Integer> priority;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Number of retry attempts for this file")
     public Optional<Integer> retry;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Checksum in the form 'algorithm:value'")
     public String checksum;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Engine-specific metadata recorded for this file")
     public Map<String, String> fileMetadata;
 
 
@@ -90,8 +101,7 @@ public class TransferPayloadInfo {
     /***
      * The status of a file in a transfer
      */
-    @Schema(description="Will be 'succeeded' when all files transferred successfully, "+
-            "and 'failed' if all files failed to transfer.")
+    @Schema(description="State of one file in a transfer")
     public enum FileState
     {
         submitted("submitted"),
@@ -143,6 +153,7 @@ public class TransferPayloadInfo {
     /***
      * For which files in a transfer to return status
      */
+    @Schema(description = "Controls which per-file details are included: 'none', only 'failed' files, or 'all'")
     public enum FileDetails
     {
         none("none"),

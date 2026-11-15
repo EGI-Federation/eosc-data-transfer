@@ -23,26 +23,29 @@ import eosc.eu.model.TransferPayloadInfo.FileState;
  * Extended details of a transfer job.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(description = "Full status of a transfer, including job metadata and optional per-file details")
 public class TransferInfoExtended extends TransferInfo {
 
     // NOTE: When adding/renaming fields, also update all translateTransferInfoFieldName() methods
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Schema(description="Job state")
+    @Schema(description = "Current state of the transfer")
     public TransferState jobState;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Key/value metadata recorded with the job")
     public Map<String, String> jobMetadata;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Schema(description="Source storage system")
+    @Schema(description="Source storage system, as reported by the transfer engine")
     public String sourceSS;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Schema(description="Destination storage system")
+    @Schema(description="Destination storage system, as reported by the transfer engine")
     public String destinationSS;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "True if the engine verified the checksums of the transferred files")
     public boolean verifyChecksum;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -50,15 +53,19 @@ public class TransferInfoExtended extends TransferInfo {
     public Optional<Boolean> overwrite;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Transfer priority, 1 (lowest) to 5 (highest)")
     public Optional<Integer> priority;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Number of retry attempts configured for each file")
     public Optional<Integer> retry;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Delay between retries, in seconds")
     public Optional<Integer> retryDelay;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Maximum time the job may stay in the queue, in seconds")
     public Optional<Integer> maxTimeInQueue;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -67,29 +74,35 @@ public class TransferInfoExtended extends TransferInfo {
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
-    @Schema(description="Date and time when transfer was submitted", example = "2022-10-15T20:14:22Z+2")
+    @Schema(implementation = String.class, format = "date-time",
+            description="Date and time when transfer was submitted", example = "2022-10-15T20:14:22+0100")
     public Date submittedAt;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Host that submitted the job to the transfer engine")
     public String submittedTo;
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
-    @Schema(description="Date and time when transfer ended", example = "2022-10-15T20:14:22Z+2")
+    @Schema(implementation = String.class, format = "date-time",
+            description="Date and time when transfer ended", example = "2022-10-15T20:25:32+0100")
     public Date finishedAt;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Virtual organisation of the user who started the transfer")
     public String voName;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Distinguished name of the user who started the transfer, as reported by the engine")
     public String userId;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Identifier of the credential used by the engine")
     public String credId;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description="Detailed status of each transfer payload in this job "+
-                        "(if the used transfer engine can supply it)")
+                        "(only when requested with fileInfo=failed or fileInfo=all)")
     public Optional<List<TransferPayloadInfo>> payload;
 
 
@@ -159,8 +172,7 @@ public class TransferInfoExtended extends TransferInfo {
     /***
      * The status of a transfer
      */
-    @Schema(description="Will be 'succeeded' when all files transferred successfully, "+
-                        "and 'failed' if all files failed to transfer.")
+    @Schema(description = "Overall state of the transfer; 'partial' means some files failed and some succeeded")
     public enum TransferState
     {
         submitted("submitted"),

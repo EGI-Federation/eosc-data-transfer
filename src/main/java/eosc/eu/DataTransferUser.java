@@ -7,6 +7,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
@@ -30,6 +31,7 @@ import eosc.eu.model.*;
  */
 @Path("/user")
 @Produces(MediaType.APPLICATION_JSON)
+@Tag(name = "Data Transfer User", description = "Information about the authenticated caller.")
 public class DataTransferUser extends DataTransferBase {
 
     private static final Logger log = Logger.getLogger(DataTransferUser.class);
@@ -53,7 +55,9 @@ public class DataTransferUser extends DataTransferBase {
     @NoCache
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "getUserInfo",  summary = "Retrieve information about authenticated user")
+    @Operation(operationId = "getUserInfo",  summary = "Retrieve information about authenticated user",
+               description = "Returns the identity, virtual organisations and groups of the caller, as derived " +
+                             "from the OIDC access token.")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -68,6 +72,9 @@ public class DataTransferUser extends DataTransferBase {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Service misconfigured or unavailable",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "503", description="Try again later",

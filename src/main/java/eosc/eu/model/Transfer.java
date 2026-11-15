@@ -16,14 +16,16 @@ import java.util.ArrayList;
  * A new transfer job
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(description = "A request to transfer one or more files, with the job parameters to apply")
 public class Transfer {
 
     private static final Logger LOG = Logger.getLogger(Transfer.class);
 
-    @Schema(description="The files to be transferred")
+    @Schema(description = "One entry per file to transfer; each entry lists all known sources and all " +
+                          "desired destinations")
     public List<TransferPayload> files;
 
-    @Schema(description="Transfer parameters")
+    @Schema(description = "Job-wide parameters; omitted values use the engine defaults")
     public TransferParameters params;
 
 
@@ -76,10 +78,11 @@ public class Transfer {
      * The supported transfer destinations
      * Used as list of values for "dest" parameter of the API endpoints
      */
+    @Schema(description = "Destination storage type that selects the transfer engine and storage system")
     public enum Destination
     {
         dcache("dcache"),
-        //storm("storm"),
+        storm("storm"),
         s3("s3"),
         s3s("s3s"),
         ftp("ftp");
@@ -97,6 +100,8 @@ public class Transfer {
      * The supported authorization models
      * Used as list of values for "auth" field of storages in configuration file
      */
+    @Schema(description = "How clients authenticate to a storage system: 'token' reuses the OIDC access " +
+                          "token, 'keys' needs an access key and a secret key")
     public enum AuthorizeWith
     {
         token("token"),

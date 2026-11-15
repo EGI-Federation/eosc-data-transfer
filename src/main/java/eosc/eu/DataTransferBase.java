@@ -22,10 +22,13 @@ public class DataTransferBase {
     public static final String DEFAULT_DESTINATION = "dcache";
     public static final String DEFAULT_FILE_INFO = "none";
     public static final String HEADER_STORAGE_AUTH = "Authorization-Storage";
-    public static final String DESTINATION_STORAGE = "The destination of the transfer";
-    public static final String FILE_INFO_FOR = "Selects for which files to return transfer status";
-    public static final String STORAGE_AUTH = "Optional credentials for the destination storage, " +
-                                              "Base-64 encoded 'user:password' or 'access-key:secret-key'";
+    public static final String DESTINATION_STORAGE = "Destination storage type; selects the transfer engine " +
+            "and storage system for this operation. Defaults to 'dcache'. Call GET /storage/destinations " +
+            "to list the values configured on this instance";
+    public static final String FILE_INFO_FOR = "Which per-file details to include: 'none', 'failed' or 'all'";
+    public static final String STORAGE_AUTH = "Credentials for the destination storage, Base-64 encoded " +
+            "'user:password' (WebDAV/FTP) or 'access-key:secret-key' (S3). Only needed when the storage " +
+            "does not accept the OIDC access token";
 
     private final Logger log;
 
@@ -67,7 +70,7 @@ public class DataTransferBase {
 
         return destinationConfig;
     }
-    
+
     /**
      * Prepare REST client for the appropriate data transfer engine, based on the destination
      * Mapping is in the configuration file under `eosc.transfer.destination`

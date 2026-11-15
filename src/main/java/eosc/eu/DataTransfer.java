@@ -2,11 +2,13 @@ package eosc.eu;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
@@ -45,6 +47,7 @@ import eosc.eu.model.TransferInfoExtended.TransferState;
  */
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
+@Tag(name = "Data Transfer", description = "Estimate, start, search, inspect and cancel data transfers.")
 public class DataTransfer extends DataTransferBase {
 
     private static final Logger log = Logger.getLogger(DataTransfer.class);
@@ -75,7 +78,7 @@ public class DataTransfer extends DataTransferBase {
     /**
      * Estimate the cost (in credits) of transferring multiple files.
      * @param auth The access token needed to call the service.
-     * @param files The details of the transfer (source files with sizes).
+     * @param transfer The files to estimate, with their sources and sizes.
      * @param destination The type of destination storage (selects transfer service to call).
      * @return API Response, wraps an ActionSuccess(TransferInfo) or an ActionError entity
      */
@@ -83,10 +86,13 @@ public class DataTransfer extends DataTransferBase {
     @Path("/transfers/estimate")
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "estimateTransfer",  summary = "Estimate cost of a data transfer")
+    @Operation(operationId = "estimateTransfer",  summary = "Estimate cost of a data transfer",
+               description = "Estimates the cost in credits of moving the supplied files to the selected " +
+                             "destination. The cost is calculated from the total size of the files and the " +
+                             "bytes-per-credit setting of the transfer service that handles the destination.")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Accepted",
+            @APIResponse(responseCode = "202", description = "Cost estimated",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                             schema = @Schema(implementation = TransferEstimationInfo.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
@@ -100,13 +106,20 @@ public class DataTransfer extends DataTransferBase {
                             schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Transfer service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
                             schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> estimateTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                           @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                           @Parameter(schema = @Schema(implementation = Destination.class),
-                                                     description = DESTINATION_STORAGE)
+                                                     description = DESTINATION_STORAGE,
+                                                     example = DEFAULT_DESTINATION)
                                           String destination,
+                                          @RequestBody(description = "Files to estimate, each with its sources " +
+                                                                    "and its size in bytes",
+                                                       required = true)
                                           TransferEstimation transfer) {
 
         final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
@@ -192,10 +205,12 @@ public class DataTransfer extends DataTransferBase {
     @Path("/transfers")
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "startTransfer",  summary = "Initiate new data transfer")
+    @Operation(operationId = "startTransfer",  summary = "Initiate new data transfer",
+               description = "Submits a new transfer job and returns its identifier. The job is queued " +
+                             "immediately; use GET /transfer/{jobId} to follow its progress.")
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
-            @APIResponse(responseCode = "202", description = "Accepted",
+            @APIResponse(responseCode = "202", description = "Transfer accepted",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = TransferInfo.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
@@ -209,12 +224,20 @@ public class DataTransfer extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Transfer service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
-    public Uni<Response> startTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth, Transfer transfer,
+    public Uni<Response> startTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
+                                       @RequestBody(description = "Files to transfer, with all their sources " +
+                                                                 "and destinations, and the job parameters",
+                                                    required = true)
+                                       Transfer transfer,
                                        @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                        @Parameter(schema = @Schema(implementation = Destination.class),
-                                                  description = DESTINATION_STORAGE)
+                                                  description = DESTINATION_STORAGE,
+                                                  example = DEFAULT_DESTINATION)
                                        String destination,
                                        @RestHeader(HEADER_STORAGE_AUTH)
                                        @Parameter(required = false, description = STORAGE_AUTH)
@@ -357,9 +380,9 @@ public class DataTransfer extends DataTransferBase {
     @SecurityRequirement(name = "OIDC")
     @Authenticated
     @Operation(operationId = "findTransfers",  summary = "Find transfers matching search criteria",
-               description = "To prevent heavy queries, only non-terminal (active) jobs are returned.\n" +
-                             "If the _state_in_ filter is used, make sure to also provide either _limit_ " +
-                             "or _time_window_ to get completed jobs.")
+               description = "Searches the transfers handled by the selected destination. By default only " +
+                             "active jobs are returned; set 'state' and add either 'limit' or 'timeWindow' " +
+                             "to also get completed jobs.")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -378,30 +401,37 @@ public class DataTransfer extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Transfer service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> findTransfers(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                        @RestQuery("fields")
                                        @Parameter(description =
-                                               "Comma separated list of fields to return for each transfer")
+                                               "Comma separated list of fields to return for each transfer",
+                                               example = "jobId,jobState")
                                        String fields,
                                        @RestQuery("limit") @DefaultValue("100")
-                                       @Parameter(description = "Maximum number of transfers to return")
+                                       @Parameter(description = "Maximum number of transfers to return " +
+                                                                "(default 100)",
+                                                  example = "100")
                                        int limit,
                                        @RestQuery("timeWindow")
                                        @Parameter(description =
-                                               "For terminal states, limit results to 'hours[:minutes]' into the past")
+                                               "For terminal states, limit results to 'hours[:minutes]' into the past",
+                                               example = "01:30")
                                        String timeWindow,
-                                       @RestQuery("state")
+                                       @RestQuery("state") @DefaultValue("active")
                                        @Parameter(description =
-                                               "Comma separated list of job states to match, " +
-                                               "by default only finds active transfers")
+                                               "Job state to match; by default only active transfers are returned",
+                                               schema = @Schema(implementation = TransferState.class))
                                        TransferState stateIn,
                                        @RestQuery("sourceSE")
-                                       @Parameter(description = "Source storage element")
+                                       @Parameter(description = "Source storage element URI")
                                        String srcStorageElement,
                                        @RestQuery("destSE")
-                                       @Parameter(description = "Destination storage element")
+                                       @Parameter(description = "Destination storage element URI")
                                        String dstStorageElement,
                                        @RestQuery("voName")
                                        @Parameter(description =
@@ -412,7 +442,8 @@ public class DataTransfer extends DataTransferBase {
                                        String userId,
                                        @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                        @Parameter(schema = @Schema(implementation = Destination.class),
-                                                  description = DESTINATION_STORAGE)
+                                                  description = DESTINATION_STORAGE,
+                                                  example = DEFAULT_DESTINATION)
                                        String destination) {
 
         final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
@@ -502,14 +533,13 @@ public class DataTransfer extends DataTransferBase {
     @Path("/transfer/{jobId}")
     @SecurityRequirement(name = "OIDC")
     @Authenticated
-    @Operation(operationId = "getTransferInfo",  summary = "Retrieve information about a transfer")
+    @Operation(operationId = "getTransferInfo",  summary = "Retrieve information about a transfer",
+               description = "Returns the current status of a transfer. Set 'fileInfo' to 'failed' or " +
+                             "'all' to include the status of the individual files in the job.")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = TransferInfoExtended.class))),
-            @APIResponse(responseCode = "207", description="Transfer error",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
@@ -524,13 +554,24 @@ public class DataTransfer extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Transfer service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "503", description="Try again later",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getTransferInfo(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                         @RestPath("jobId") String jobId,
+                                         @RestPath("jobId")
+                                         @Parameter(required = true,
+                                                    description = "Identifier of the transfer, as returned " +
+                                                                  "when it was started")
+                                         String jobId,
                                          @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                          @Parameter(schema = @Schema(implementation = Destination.class),
-                                                    description = DESTINATION_STORAGE)
+                                                    description = DESTINATION_STORAGE,
+                                                    example = DEFAULT_DESTINATION)
                                          String destination,
                                          @RestQuery("fileInfo") @DefaultValue(DEFAULT_FILE_INFO)
                                          @Parameter(schema = @Schema(implementation = FileDetails.class),
@@ -600,12 +641,19 @@ public class DataTransfer extends DataTransferBase {
     @SecurityRequirement(name = "OIDC")
     @Authenticated
     @Operation(operationId = "getTransferInfoField",
-               summary = "Retrieve specific field from information about a transfer")
+               summary = "Retrieve specific field from information about a transfer",
+               description = "Returns one field of a transfer's status as JSON, or as plain text when the " +
+                             "value is a scalar. Any TransferInfoExtended field except 'kind' can be " +
+                             "requested; unsupported fields fail with error id 'fieldNotSupported'.")
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                    schema = @Schema(implementation = Object.class))),
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON,
+                                     schema = @Schema(implementation = Object.class)),
+                            @Content(mediaType = MediaType.TEXT_PLAIN,
+                                     schema = @Schema(implementation = String.class))
+                    }),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
@@ -620,14 +668,26 @@ public class DataTransfer extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Transfer service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> getTransferInfoField(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                              @RestPath("jobId") String jobId,
-                                              @RestPath("fieldName") String fieldName,
+                                              @RestPath("jobId")
+                                              @Parameter(required = true,
+                                                         description = "Identifier of the transfer")
+                                              String jobId,
+                                              @RestPath("fieldName")
+                                              @Parameter(required = true,
+                                                         description = "Name of the TransferInfoExtended " +
+                                                                       "field to return",
+                                                         example = "jobState")
+                                              String fieldName,
                                               @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                               @Parameter(schema = @Schema(implementation = Destination.class),
-                                                         description = DESTINATION_STORAGE)
+                                                         description = DESTINATION_STORAGE,
+                                                         example = DEFAULT_DESTINATION)
                                               String destination) {
 
         final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);
@@ -699,15 +759,12 @@ public class DataTransfer extends DataTransferBase {
     @SecurityRequirement(name = "OIDC")
     @Authenticated
     @Operation(operationId = "cancelTransfer",  summary = "Cancel a transfer",
-               description = "Returns the canceled transfer with its current status " +
+               description = "Requests cancellation and returns the transfer with its current status " +
                              "(canceled or any other final status).")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = TransferInfoExtended.class))),
-            @APIResponse(responseCode = "207", description="Transfer error",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                    schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "400", description="Invalid parameters or configuration",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class))),
@@ -722,13 +779,20 @@ public class DataTransfer extends DataTransferBase {
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "419", description="Re-delegate credentials",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Transfer service misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> cancelTransfer(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
-                                        @RestPath("jobId") String jobId,
+                                        @RestPath("jobId")
+                                        @Parameter(required = true,
+                                                   description = "Identifier of the transfer to cancel")
+                                        String jobId,
                                         @RestQuery("dest") @DefaultValue(DEFAULT_DESTINATION)
                                         @Parameter(schema = @Schema(implementation = Destination.class),
-                                                   description = DESTINATION_STORAGE)
+                                                   description = DESTINATION_STORAGE,
+                                                   example = DEFAULT_DESTINATION)
                                         String destination) {
 
         final var callerId = identity.getAttribute(CheckinUser.ATTR_USERID);

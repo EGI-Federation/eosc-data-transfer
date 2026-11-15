@@ -2,6 +2,7 @@ package eosc.eu.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +14,17 @@ import egi.s3.model.ObjectInfo;
  * Content of a storage
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(description = "A list of storage elements returned by a DOI parser or by a folder listing")
 public class StorageContent {
 
+    @Schema(description = "Type discriminator of this schema", example = "StorageContent")
     public String kind = "StorageContent";
+
+    @Schema(description = "Number of entries in 'elements'")
     public int count;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "The files and folders in this storage or data set")
     public List<StorageElement> elements;
 
 

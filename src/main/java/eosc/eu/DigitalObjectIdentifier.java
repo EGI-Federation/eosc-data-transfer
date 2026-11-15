@@ -6,7 +6,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.tuples.Tuple2;
@@ -18,6 +18,7 @@ import org.jboss.logging.MDC;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestQuery;
 
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -33,6 +34,8 @@ import parser.ParserHelper;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
+@Tag(name = "DOI Parsing",
+     description = "Turn persistent identifiers into the list of files they point to.")
 public class DigitalObjectIdentifier {
 
     private static final Logger log = Logger.getLogger(DigitalObjectIdentifier.class);
@@ -161,8 +164,11 @@ public class DigitalObjectIdentifier {
      */
     @GET
     @Path("/parser")
-    @SecurityRequirement(name = "OIDC")
-    @Operation(operationId = "parse",  summary = "Extract source files from DOI")
+    @PermitAll
+    @Operation(operationId = "parse",  summary = "Extract source files from DOI",
+               description = "Selects the first configured parser that recognises the identifier and returns " +
+                             "the files it points to. The parser is chosen automatically from the configured " +
+                             "list; the access token, if supplied, is forwarded to the data repository.")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Success",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -172,15 +178,21 @@ public class DigitalObjectIdentifier {
                     schema = @Schema(implementation = ActionError.class))),
             @APIResponse(responseCode = "404", description="Source not found",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "500", description="Parser misconfigured or unavailable",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ActionError.class))),
+            @APIResponse(responseCode = "503", description="Try again later",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = ActionError.class)))
     })
     public Uni<Response> parseDOI(@RestHeader(HttpHeaders.AUTHORIZATION) String auth,
                                   @Parameter(description = "The DOI to parse. Both canonical DOI notation "+
                                                            "and HTTP URLs are supported. ", required = true,
                                              example = "doi:10.5281/zenodo.6511035")
-                                  @RestQuery String doi,
+                                  @RestQuery("doi") String doi,
                                   @Parameter(hidden = true) @DefaultValue("1")
-                                  @RestQuery int depth) {
+                                  @RestQuery("depth") int depth) {
 
         MDC.put("doi", doi);
         MDC.put("depth", depth);

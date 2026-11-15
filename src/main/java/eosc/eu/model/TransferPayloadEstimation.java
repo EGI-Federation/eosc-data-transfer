@@ -14,10 +14,12 @@ import java.util.List;
 @Schema(description="Allows estimation of transfer cost for one file (any source)")
 public class TransferPayloadEstimation {
 
-    @Schema(description="Multiple sources for the file to be transferred, will try them all until one is available")
+    @Schema(description = "Multiple sources for the file to be transferred, will try them all until one is " +
+                          "available",
+            example = "https://zenodo.org/record/6511035/files/data.zip")
     public List<String> sources;
 
-    @Schema(description="The size of the file'")
+    @Schema(description = "Size of the file in bytes", example = "1073741824")
     public long size;
 
 
@@ -31,6 +33,7 @@ public class TransferPayloadEstimation {
 
     /**
      * Check if valid (at least one source, the size provided)
+     * @return true if the payload has at least one source and a positive size
      */
     public boolean isValid() {
         if(null == this.sources || this.size <= 0)

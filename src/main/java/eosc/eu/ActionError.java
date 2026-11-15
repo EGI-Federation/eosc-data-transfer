@@ -21,17 +21,22 @@ import jakarta.ws.rs.core.Response.Status;
  * The HTTP status will be returned as the status code of the failed endpoint and the other
  * members will be rendered as the body of the response of the failed endpoint.
  */
-@Schema(name = "Error")
+@Schema(name = "Error",
+        description = "Returned by every endpoint on failure: the HTTP status carries the outcome and " +
+                      "'id' identifies the cause")
 public class ActionError {
 
-    @Schema(description="Error type")
+    @Schema(description = "Stable lowerCamelCase error identifier, for example 'destInvalid' or 'noFiles'",
+            example = "destInvalid")
     public String id;
 
-    @Schema(description="Error message")
+    @Schema(description = "Human-readable explanation, when the service can supply one",
+            example = "No configuration found for destination <unknown>")
     @JsonInclude(Include.NON_EMPTY)
     public Optional<String> description;
 
-    @Schema(description="Additional details about the error")
+    @Schema(description = "Additional context; the keys depend on the operation, for example 'jobId', " +
+                          "'seUri' or 'destination'")
     @JsonInclude(Include.NON_EMPTY)
     public Optional<Map<String, String>> details;
 

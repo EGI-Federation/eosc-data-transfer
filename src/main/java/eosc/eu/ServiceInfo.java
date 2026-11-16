@@ -64,7 +64,7 @@ public class ServiceInfo {
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Version string",
                     content = @Content(mediaType = MediaType.TEXT_PLAIN,
-                    schema = @Schema(implementation = String.class, example = "1.1.107"))),
+                    schema = @Schema(implementation = String.class, example = "1.1.107-rc"))),
     })
     public Uni<Response> version() {
 

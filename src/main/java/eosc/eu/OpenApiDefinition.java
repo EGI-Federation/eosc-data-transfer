@@ -12,7 +12,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * take precedence over annotations.
  */
 @OpenAPIDefinition(
-    info = @Info(title = "EOSC Data Transfer API", version = "1.1.107"),
+    info = @Info(title = "EOSC Data Transfer API", version = "1.1.107-rc"),
     tags = {
         @Tag(name = "DOI Parsing",
              description = "Turn persistent identifiers into the list of files they point to."),

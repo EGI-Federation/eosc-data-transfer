@@ -31,6 +31,7 @@ public class ActionParameters {
 
     /**
      * Construct with destination
+     * @param destination The destination for this action
      */
     public ActionParameters(String destination) {
         this.destination = destination;
@@ -39,6 +40,7 @@ public class ActionParameters {
 
     /**
      * Copy constructor
+     * @param ap Parameters to copy
      */
     public ActionParameters(ActionParameters ap) {
         this.parser = ap.parser;
@@ -51,6 +53,7 @@ public class ActionParameters {
 
     /**
      * Check if the embedded API Response is a success
+     * @return true if action was successful
      */
     public boolean succeeded() {
         return Family.familyOf(this.response.getStatus()) == Family.SUCCESSFUL;
@@ -58,6 +61,7 @@ public class ActionParameters {
 
     /**
      * Check if the embedded API Response is a failure
+     * @return true if action failed
      */
     public boolean failed() {
         return Family.familyOf(this.response.getStatus()) != Family.SUCCESSFUL;
@@ -65,6 +69,8 @@ public class ActionParameters {
 
     /**
      * Get failure Uni
+     * @param <T> is the type of the Uni
+     * @return runtime exception as Uni
      */
     public static <T> Uni<T> failedUni() {
         return Uni.createFrom().failure(new RuntimeException());
@@ -72,6 +78,8 @@ public class ActionParameters {
 
     /**
      * Get failure Multi
+     * @param <T> is the type of the Multi
+     * @return runtime exception as Multi
      */
     public static <T> Multi<T> failedMulti() {
         return Multi.createFrom().failure(new RuntimeException());

@@ -268,7 +268,8 @@ public class WebDavStorage implements IStorageService {
                 }
                 catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("statObject", INTERNAL_SERVER_ERROR, msg));
+                    return Uni.createFrom().failure(new TransferServiceException("statObject",
+                                                                                  INTERNAL_SERVER_ERROR, msg));
                 }
                 return Uni.createFrom().completionStage(stats);
             })
@@ -331,7 +332,8 @@ public class WebDavStorage implements IStorageService {
                 }
                 catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("makeBucket", INTERNAL_SERVER_ERROR, msg));
+                    return Uni.createFrom().failure(new TransferServiceException("makeBucket",
+                                                                                  INTERNAL_SERVER_ERROR, msg));
                 }
                 return Uni.createFrom().completionStage(nope);
             })
@@ -420,7 +422,7 @@ public class WebDavStorage implements IStorageService {
                             else if(type.equals(ServerException.class))
                                 code = ((ServerException)e).statusCode();
                             return Uni.createFrom().failure(new TransferServiceException("deleteObject", code,
-                                                                                e.getMessage().replaceAll("\\.$", "")));
+                                                                   e.getMessage().replaceAll("\\.$", "")));
                         }
 
                     MDC.put("objectCount", objects.size());
@@ -464,7 +466,7 @@ public class WebDavStorage implements IStorageService {
                             else if(type.equals(ServerException.class))
                                 code = ((ServerException)e).statusCode();
                             return Uni.createFrom().failure(new TransferServiceException("deleteError", code,
-                                                                                    e.getMessage().replaceAll("\\.$", "")));
+                                                                    e.getMessage().replaceAll("\\.$", "")));
                         }
                     }
 
@@ -477,7 +479,8 @@ public class WebDavStorage implements IStorageService {
                     else {
                         MDC.put("errorCount", details.size());
                         log.infof("Failed to delete %d prefixed objects", objectCount.get());
-                        return Uni.createFrom().failure(new TransferServiceException("deleteError", INTERNAL_SERVER_ERROR, details));
+                        return Uni.createFrom().failure(new TransferServiceException("deleteError",
+                                                                                     INTERNAL_SERVER_ERROR, details));
                     }
 
                     return Uni.createFrom().nullItem();
@@ -499,7 +502,8 @@ public class WebDavStorage implements IStorageService {
 
                     } catch(Exception e) {
                         var msg = e.getMessage().replaceAll("\\.$", "");
-                        return Uni.createFrom().failure(new TransferServiceException("removeBucket", INTERNAL_SERVER_ERROR, msg));
+                        return Uni.createFrom().failure(new TransferServiceException("removeBucket",
+                                                                                      INTERNAL_SERVER_ERROR, msg));
                     }
                     return Uni.createFrom().completionStage(deleted);
                 }
@@ -559,7 +563,8 @@ public class WebDavStorage implements IStorageService {
                 }
                 catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("removeObject", INTERNAL_SERVER_ERROR, msg));
+                    return Uni.createFrom().failure(new TransferServiceException("removeObject",
+                                                                                  INTERNAL_SERVER_ERROR, msg));
                 }
                 return Uni.createFrom().completionStage(nope);
             })
@@ -679,7 +684,8 @@ public class WebDavStorage implements IStorageService {
                     removed = minio.removeObject(removeArgs);
                 } catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("removeObject", INTERNAL_SERVER_ERROR, msg));
+                    return Uni.createFrom().failure(new TransferServiceException("removeObject",
+                                                                                  INTERNAL_SERVER_ERROR, msg));
                 }
                 return Uni.createFrom().completionStage(removed);
             })

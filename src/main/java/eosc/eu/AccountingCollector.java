@@ -58,9 +58,9 @@ public class AccountingCollector {
 
     @Inject
     OidcClient client;
-    private TokensHelper tokenHelper;
+    private final TokensHelper tokenHelper;
 
-    private Vertx vertx;
+    private final Vertx vertx;
 
     private static AccountingService accounting;
 
@@ -72,6 +72,7 @@ public class AccountingCollector {
     /***
      * Construct with a data source
      * @param ds is the injected Redis data source
+     * @param vertx Vertx service to pass along when getting a transfer service for a destination
      */
     public AccountingCollector(ReactiveRedisDataSource ds, Vertx vertx) {
         this.tokenHelper = new TokensHelper();

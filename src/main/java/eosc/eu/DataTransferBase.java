@@ -71,7 +71,7 @@ public class DataTransferBase {
 
         return destinationConfig;
     }
-    
+
     /**
      * Prepare REST client for the appropriate data transfer engine, based on the destination
      * Mapping is in the configuration file under `eosc.transfer.destination`

@@ -10,7 +10,7 @@ import io.vertx.mutiny.core.Vertx;
 /***
  * Generic data storage service abstraction
  */
-public interface StorageService {
+public interface IStorageService {
 
     /***
      * Initialize the service, avoids the need to inject configuration.

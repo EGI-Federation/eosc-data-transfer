@@ -18,7 +18,7 @@ import java.util.ArrayList;
  * See https://quarkus.io/guides/micrometer
  */
 @Singleton
-public class MetricsCustomization {
+public class IMetricsCustomization {
 
     private static final Logger log = Logger.getLogger(MetricsConfig.class);
 

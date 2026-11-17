@@ -15,7 +15,7 @@ import eosc.eu.model.StorageContent;
  * REST client to invoke ourselves (recursively)
  */
 @Produces(MediaType.APPLICATION_JSON)
-public interface DataTransferSelf {
+public interface IDataTransferSelf {
 
     @GET
     @Path("/parser")

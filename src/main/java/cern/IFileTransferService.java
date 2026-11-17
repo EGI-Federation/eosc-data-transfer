@@ -20,7 +20,7 @@ import cern.model.*;
  */
 @RegisterProvider(value = FileTransferServiceExceptionMapper.class)
 @Produces(MediaType.APPLICATION_JSON)
-public interface FileTransferService {
+public interface IFileTransferService {
 
     @POST
     @Path("/jobs")

@@ -89,14 +89,14 @@ public class DigitalObjectIdentifier {
                 MDC.put("doiParser", parserConfig.name());
                 log.debug("Trying next parser");
 
-                ParserService parser = null;
+                IParserService parser = null;
 
                 try {
                     // Get the class of the parser
                     var classType = Class.forName(parserConfig.className());
 
                     // Instantiate parser
-                    parser = (ParserService)classType.getDeclaredConstructor(String.class).newInstance(parserId);
+                    parser = (IParserService)classType.getDeclaredConstructor(String.class).newInstance(parserId);
                 }
                 catch (ClassNotFoundException | NoSuchMethodException | InstantiationException |
                        InvocationTargetException | IllegalAccessException | IllegalArgumentException e) {

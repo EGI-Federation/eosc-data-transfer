@@ -13,7 +13,7 @@ import eosc.eu.TransferConfig.TransferServiceConfig;
 /***
  * Generic data transfer service abstraction
  */
-public interface TransferService {
+public interface ITransferService {
 
     /***
      * Initialize the service, avoids the need to inject configuration.

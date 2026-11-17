@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.108]
+
+- Refactor interface names to start with I
+
 ## [1.1.107]
 
 - Added endpoint to estimate cost of transfer in credits
@@ -130,10 +134,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.46]
 
 - Parsers can now return file checksums in the form algorithm:checksum
-- Parsers can mark returned files as not available, it's up to clients to decide whether or not to attempt to
+- Parsers can mark returned files as not available, it's up to clients to decide whether to attempt to
   transfer these
-- Parsers can group returned files into collections (file sets), and/or can return the original path of a file
-  in the data record, allowing reconstruction of the folder hierarchy at the destination
+- Parsers can group returned files into collections (file sets), and/or can return the original
+  path of a file in the data record, allowing reconstruction of the folder hierarchy at the destination
 - Documented Java17 dependency and fixed some typos
 
 ## [1.1.44]
@@ -182,4 +186,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented endpoints to start, cancel, query, search transfers
 - Implemented endpoints to create, rename, delete, query folders
 - Implemented endpoints to rename, delete, query files
-- Refactored all endpoints to return Uni<Response>
+- Refactored all endpoints to return `Uni<Response>`

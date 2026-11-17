@@ -80,10 +80,10 @@ public class DataTransferBase {
      * @param vertx Vertx service in case you need a custom client
      * @param log is the logger to use
      * @param logInit is true to log the success of the initializing the picked transfer engine
-     * @return an initialized TransferService for the specified destination, or null on error
+     * @return an initialized ITransferService for the specified destination, or null on error
      */
-    public static TransferService getTransferService(TransferConfig config, String tsID, Vertx vertx,
-                                                     Logger log, boolean logInit) {
+    public static ITransferService getTransferService(TransferConfig config, String tsID, Vertx vertx,
+                                                      Logger log, boolean logInit) {
 
         MDC.put("serviceId", tsID);
 
@@ -95,10 +95,10 @@ public class DataTransferBase {
         }
 
         // Get the class of the transfer service we should use
-        TransferService ts = null;
+        ITransferService ts = null;
         try {
             var classType = Class.forName(serviceConfig.className());
-            ts = (TransferService)classType.getDeclaredConstructor().newInstance();
+            ts = (ITransferService)classType.getDeclaredConstructor().newInstance();
             if(ts.initService(serviceConfig, vertx)) {
                 if(logInit) {
                     var tsName = ts.getServiceName();
@@ -202,7 +202,7 @@ public class DataTransferBase {
                     try {
                         // Get the class of the storage system we should use and instantiate it
                         var classType = Class.forName(storageConfig.className());
-                        params.ss = (StorageService) classType.getDeclaredConstructor().newInstance();
+                        params.ss = (IStorageService) classType.getDeclaredConstructor().newInstance();
 
                         // If we got a URL to a storage element, create a client for that particular storage system
                         if(null != storageElementUrl) {

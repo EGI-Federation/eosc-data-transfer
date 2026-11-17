@@ -15,7 +15,7 @@ import java.io.IOException;
 
 
 /**
- * Custom exception mapper for FileTransferService API calls, allows access to response body in case of error
+ * Custom exception mapper for IFileTransferService API calls, allows access to response body in case of error
  */
 @Priority(Priorities.USER)
 public final class FileTransferServiceExceptionMapper implements ResponseExceptionMapper<FileTransferServiceException> {

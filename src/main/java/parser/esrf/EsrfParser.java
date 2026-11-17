@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 
 import eosc.eu.PortConfig;
 import eosc.eu.ParsersConfig.ParserConfig;
-import eosc.eu.ParserService;
+import eosc.eu.IParserService;
 import eosc.eu.TransferServiceException;
 import eosc.eu.model.*;
 import parser.ParserHelper;
@@ -27,7 +27,7 @@ import parser.esrf.model.EsrfCredentials;
 /***
  * Class for parsing ESRF DOIs
  */
-public class EsrfParser implements ParserService {
+public class EsrfParser implements IParserService {
 
     private static final Logger log = Logger.getLogger(EsrfParser.class);
 
@@ -114,7 +114,7 @@ public class EsrfParser implements ParserService {
      * @param helper Helper class that can follow (and cache) redirects.
      * @return Return true if the parser service can parse this DOI.
      */
-    public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String doi, ParserHelper helper) {
+    public Uni<Tuple2<Boolean, IParserService>> canParseDOI(String doi, ParserHelper helper) {
 
         log.debug("Check if DOI points to ESRF record");
 
@@ -153,7 +153,7 @@ public class EsrfParser implements ParserService {
                     MDC.put("doiType", this.id);
                 }
 
-                return Uni.createFrom().item(Tuple2.of(isSupported, (ParserService)this));
+                return Uni.createFrom().item(Tuple2.of(isSupported, (IParserService)this));
             })
             .onFailure().invoke(e -> {
                 log.error("Failed to check if DOI points to ESRF record");

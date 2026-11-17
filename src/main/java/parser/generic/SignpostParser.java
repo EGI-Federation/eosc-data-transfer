@@ -1,6 +1,6 @@
 package parser.generic;
 
-import eosc.eu.DataTransferSelf;
+import eosc.eu.IDataTransferSelf;
 import eosc.eu.PortConfig;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import eosc.eu.ParsersConfig.ParserConfig;
-import eosc.eu.ParserService;
+import eosc.eu.IParserService;
 import eosc.eu.TransferServiceException;
 import eosc.eu.model.*;
 import parser.generic.model.*;
@@ -27,7 +27,7 @@ import parser.ParserHelper;
 /***
  * Class for parsing DOIs to pages that support Signposting
  */
-public class SignpostParser implements ParserService {
+public class SignpostParser implements IParserService {
 
     private static final int MAX_RECURSION = 3;
     private static final Logger log = Logger.getLogger(SignpostParser.class);
@@ -36,7 +36,7 @@ public class SignpostParser implements ParserService {
     private String name;
     private int timeout;
     private ParserHelper helper;
-    private static DataTransferSelf parser;
+    private static IDataTransferSelf parser;
 
 
     /***
@@ -75,7 +75,7 @@ public class SignpostParser implements ParserService {
             // Create the REST client for ourselves
             parser = RestClientBuilder.newBuilder()
                     .baseUrl(urlParserService)
-                    .build(DataTransferSelf.class);
+                    .build(IDataTransferSelf.class);
 
             return true;
         }
@@ -110,7 +110,7 @@ public class SignpostParser implements ParserService {
      * @param helper Helper class that can follow (and cache) redirects.
      * @return Return true if the parser service can parse this DOI.
      */
-    public Uni<Tuple2<Boolean, ParserService>> canParseDOI(String doi, ParserHelper helper) {
+    public Uni<Tuple2<Boolean, IParserService>> canParseDOI(String doi, ParserHelper helper) {
 
         log.debug("Check if DOI supports Signposting");
 
@@ -143,7 +143,7 @@ public class SignpostParser implements ParserService {
                     MDC.put("doiType", this.id);
                 }
 
-                return Uni.createFrom().item(Tuple2.of(hasLinks, (ParserService)this));
+                return Uni.createFrom().item(Tuple2.of(hasLinks, (IParserService)this));
             })
             .onFailure().invoke(e -> {
                 log.error("Failed to check if DOI supports Signposting");

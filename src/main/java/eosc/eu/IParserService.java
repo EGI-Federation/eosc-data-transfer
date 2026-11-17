@@ -11,7 +11,7 @@ import parser.ParserHelper;
 /***
  * Generic parser service abstraction
  */
-public interface ParserService {
+public interface IParserService {
 
     /***
      * Initialize the service, avoids the need to inject configuration.
@@ -45,7 +45,7 @@ public interface ParserService {
      * @param helper Helper class that can follow (and cache) redirects.
      * @return Return true if the parser service can parse this DOI
      */
-    Uni<Tuple2<Boolean, ParserService>> canParseDOI(String doi, ParserHelper helper);
+    Uni<Tuple2<Boolean, IParserService>> canParseDOI(String doi, ParserHelper helper);
 
     /**
      * Parse the DOI and return a set of files in the data set.

@@ -14,9 +14,9 @@ import io.smallrye.mutiny.Multi;
  */
 public class ActionParameters {
 
-    public ParserService parser;
-    public TransferService ts;
-    public StorageService ss;
+    public IParserService parser;
+    public ITransferService ts;
+    public IStorageService ss;
     public String destination;  // Destination key
     public String authType;     // See Transfer.AuthorizeWith
     public Response response;

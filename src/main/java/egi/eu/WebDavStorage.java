@@ -32,7 +32,7 @@ import io.minio.messages.Item;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 
-import eosc.eu.StorageService;
+import eosc.eu.IStorageService;
 import eosc.eu.TransferServiceException;
 import eosc.eu.TransferConfig.StorageSystemConfig;
 import eosc.eu.model.*;
@@ -44,7 +44,7 @@ import egi.s3.model.*;
 /***
  * Class for manipulating storage elements in WebDAV systems
  */
-public class WebDavStorage implements StorageService {
+public class WebDavStorage implements IStorageService {
 
     private static final Logger log = Logger.getLogger(MinioStorage.class);
 

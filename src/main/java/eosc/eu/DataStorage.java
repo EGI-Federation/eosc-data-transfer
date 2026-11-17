@@ -164,7 +164,7 @@ public class DataStorage extends DataTransferBase {
 
         log.info("Retrieve information about a destination");
 
-        var ts = new AtomicReference<TransferService>(null);
+        var ts = new AtomicReference<ITransferService>(null);
         var destDesc = new AtomicReference<String>(null);
         var storageAuth = new AtomicReference<String>(null);
         var storageProtocol = new AtomicReference<String>(null);

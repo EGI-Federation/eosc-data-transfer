@@ -1,7 +1,9 @@
 package egi.eu;
 
+import cern.IFileTransferService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eosc.eu.ITransferService;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.vertx.mutiny.core.Vertx;
@@ -25,14 +27,12 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import cern.model.*;
-import cern.FileTransferService;
 
 import static jakarta.ws.rs.core.HttpHeaders.*;
 import static eosc.eu.Utils.loadKeyStore;
 
 import cern.FileTransferServiceException;
 import eosc.eu.model.*;
-import eosc.eu.TransferService;
 import eosc.eu.TransferServiceException;
 import eosc.eu.DataStorageCredentials;
 import eosc.eu.model.TransferInfoExtended.TransferState;
@@ -43,7 +43,7 @@ import eosc.eu.model.TransferPayloadInfo.FileDetails;
 /***
  * Class for working with EGI Data Transfer
  */
-public class EgiDataTransfer implements TransferService {
+public class EgiDataTransfer implements ITransferService {
 
     private static final Logger log = Logger.getLogger(EgiDataTransfer.class);
     private static Set<String> infoFieldsAsIs;
@@ -51,7 +51,7 @@ public class EgiDataTransfer implements TransferService {
 
     private String name;
     private String url;
-    private FileTransferService fts; // REST client used for transfers
+    private IFileTransferService fts; // REST client used for transfers
     private int timeout;
 
     @Inject
@@ -110,7 +110,7 @@ public class EgiDataTransfer implements TransferService {
             if(ots.isPresent())
                 rcb.trustStore(ots.get());
 
-            fts = rcb.build(FileTransferService.class);
+            fts = rcb.build(IFileTransferService.class);
 
             return true;
         }

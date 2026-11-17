@@ -8,7 +8,7 @@ import jakarta.ws.rs.core.Response;
 
 
 /**
- * Exception class for FileTransferService API calls
+ * Exception class for IFileTransferService API calls
  */
 public class FileTransferServiceException extends WebApplicationException {
 

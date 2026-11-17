@@ -25,7 +25,7 @@ import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 
 import eosc.eu.DataStorageCredentials;
-import eosc.eu.StorageService;
+import eosc.eu.IStorageService;
 import eosc.eu.TransferServiceException;
 import eosc.eu.TransferConfig.StorageSystemConfig;
 import eosc.eu.model.*;
@@ -36,7 +36,7 @@ import egi.s3.model.*;
 /***
  * Class for manipulating storage elements in S3 storage systems
  */
-public class MinioStorage implements StorageService {
+public class MinioStorage implements IStorageService {
 
     private static final Logger log = Logger.getLogger(MinioStorage.class);
 

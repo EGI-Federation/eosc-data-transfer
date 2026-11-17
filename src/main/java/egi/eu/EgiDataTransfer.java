@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
+import io.vertx.mutiny.core.Vertx;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
@@ -71,10 +72,11 @@ public class EgiDataTransfer implements TransferService {
     /***
      * Initialize the REST client for the File Transfer Service that powers EGI Data Transfer
      * @param serviceConfig Configuration loaded from the config file
+     * @param vertx Vertx service in case you need custom clients
      * @return true on success
      */
     @PostConstruct
-    public boolean initService(TransferServiceConfig serviceConfig) {
+    public boolean initService(TransferServiceConfig serviceConfig, Vertx vertx) {
 
         this.name = serviceConfig.name();
         this.timeout = serviceConfig.timeout();

@@ -1,6 +1,7 @@
 package eosc.eu;
 
 import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.core.Vertx;
 import jakarta.ws.rs.core.Response;
 
 import eosc.eu.model.*;
@@ -17,9 +18,10 @@ public interface TransferService {
     /***
      * Initialize the service, avoids the need to inject configuration.
      * @param config Service configuration loaded from the config file.
+     * @param vertx Vertx service in case you need custom clients.
      * @return true on success
      */
-    boolean initService(TransferServiceConfig config);
+    boolean initService(TransferServiceConfig config, Vertx vertx);
 
     /***
      * Get the human-readable name of the service.

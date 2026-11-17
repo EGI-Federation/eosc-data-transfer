@@ -13,7 +13,8 @@ and science-related services. It was designed, delivered, and is contiunously im
 [Horizon Europe](https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/horizon-europe_en)
 project, funded by the European Commission. EOSC was initially delivered by the
 [EOSC Future](https://eoscfuture.eu), while the
-[EOSC Beyond](https://www.eosc-beyond.eu) project continues this development to deliver the
+[EOSC Beyond](https://www.eosc-beyond.eu) and
+[EOSC Mesh](https://www.eosc-mesh.eu) projects continue this development to deliver the
 next generation of EOSC core services.
 
 This project builds a generic data transfer service that can be used in EOSC

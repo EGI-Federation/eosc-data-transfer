@@ -2,6 +2,7 @@ package egi.eu;
 
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
+import io.vertx.mutiny.core.Vertx;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
@@ -53,12 +54,14 @@ public class MinioStorage implements StorageService {
     /***
      * Initialize the client for the S3 storage system.
      * @param serviceConfig Configuration loaded from the config file.
+     * @param vertx Vertx service in case you need custom clients.
      * @param storageElementUrl the URL to a folder or file on the target storage system.
-     * @param storageAuth Optional credentials for the storage system, Base-64 encoded "accesskey:secretkey"
+     * @param storageAuth Credentials for the storage system, Base-64 encoded "key:value"
      * @return true on success
      */
     @PostConstruct
-    public boolean initService(StorageSystemConfig serviceConfig, String storageElementUrl, String storageAuth) {
+    public boolean initService(StorageSystemConfig serviceConfig, Vertx vertx, String storageElementUrl,
+                               String storageAuth) {
 
         if(null != this.minio)
             return true;
@@ -69,6 +72,10 @@ public class MinioStorage implements StorageService {
         MDC.put("storageElement", storageElementUrl);
         log.debug("Obtaining client for S3 compatible object storage");
 
+        if(!serviceConfig.authType().equalsIgnoreCase(StorageSystemConfig.AUTH_TYPE_KEYS)) {
+            log.error("Invalid credential type");
+            return false;
+        }
         if(null == storageAuth) {
             log.error("No credentials for storage system");
             return false;
@@ -150,16 +157,15 @@ public class MinioStorage implements StorageService {
 
     /**
      * List all buckets or all objects in a bucket.
-     * @param auth Optional access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
+     * @param storageAuth Credentials for the storage system, Base-64 encoded "key:value" (ignored)
      * @param folderUri The link to the bucket to list content of. If the URI has no path (or just /),
      *                  it will list all the buckets. If the path contains the bucket (with or without
      *                  a terminating /), it will return the objects and virtual folders directly in the
      *                  bucket. To list content of virtual folders, the folderUri must end in a slash (/).
      * @return List of folder content
      */
-    public Uni<StorageContent> listFolderContent(String auth, String storageAuth, String folderUri) {
-        if(null == minio)
+    public Uni<StorageContent> listFolderContent(String storageAuth, String folderUri) {
+        if(null == this.minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         var bucket = new AtomicReference<String>(null);
@@ -274,13 +280,12 @@ public class MinioStorage implements StorageService {
 
     /**
      * Get the details of an object. Fails if called for a bucket.
-     * @param auth Optional access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
+     * @param storageAuth Credentials for the storage system, Base-64 encoded "key:value" (ignored)
      * @param seUri The link to the file or folder to det details of.
      * @return Details about the object
      */
-    public Uni<StorageElement> getStorageElementInfo(String auth, String storageAuth, String seUri) {
-        if(null == minio || null == this.baseUri)
+    public Uni<StorageElement> getStorageElementInfo(String storageAuth, String seUri) {
+        if(null == this.minio || null == this.baseUri)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<StorageElement> result = Uni.createFrom().nullItem()
@@ -333,13 +338,12 @@ public class MinioStorage implements StorageService {
 
     /**
      * Create new bucket.
-     * @param auth Optional access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
+     * @param storageAuth Credentials for the storage system, Base-64 encoded "key:value" (ignored)
      * @param folderUri The link to the bucket to create. The bucket name must be unique.
      * @return Confirmation message
      */
-    public Uni<String> createFolder(String auth, String storageAuth, String folderUri) {
-        if(null == minio)
+    public Uni<String> createFolder(String storageAuth, String folderUri) {
+        if(null == this.minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<String> result = Uni.createFrom().nullItem()
@@ -398,13 +402,12 @@ public class MinioStorage implements StorageService {
     /**
      * Delete existing bucket or virtual folder. If deleting a bucket, the bucket must be empty.
      * If deleting a virtual folder, it will delete all objects in that virtual folder (and deeper).
-     * @param auth Optional access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
+     * @param storageAuth Credentials for the storage system, Base-64 encoded "key:value" (ignored)
      * @param folderUri The link to the bucket or virtual folder to delete.
      * @return Confirmation message
      */
-    public Uni<String> deleteFolder(String auth, String storageAuth, String folderUri) {
-        if(null == minio)
+    public Uni<String> deleteFolder(String storageAuth, String folderUri) {
+        if(null == this.minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         var bucket = new AtomicReference<String>(null);
@@ -571,13 +574,12 @@ public class MinioStorage implements StorageService {
 
     /**
      * Delete existing object.
-     * @param auth Optional access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
+     * @param storageAuth Credentials for the storage system, Base-64 encoded "key:value" (ignored)
      * @param fileUri The link to the object to delete.
      * @return Confirmation message
      */
-    public Uni<String> deleteFile(String auth, String storageAuth, String fileUri) {
-        if(null == minio)
+    public Uni<String> deleteFile(String storageAuth, String fileUri) {
+        if(null == this.minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         Uni<String> result = Uni.createFrom().nullItem()
@@ -631,14 +633,13 @@ public class MinioStorage implements StorageService {
      * Rename an object. Attempts to rename a bucket or a virtual folder will fail.
      * Note: Rename is not supported even for objects. Instead, the object is copied to
      *       the new location with the new name, then the old one will be deleted.
-     * @param auth Optional access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
+     * @param storageAuth Credentials for the storage system, Base-64 encoded "key:value" (ignored)
      * @param seOld The link to the storage element to rename.
      * @param seNew The link to the new name/location of the storage element.
      * @return Confirmation message
      */
-    public Uni<String> renameStorageElement(String auth, String storageAuth, String seOld, String seNew) {
-        if(null == minio)
+    public Uni<String> renameStorageElement(String storageAuth, String seOld, String seNew) {
+        if(null == this.minio)
             throw new TransferServiceException("configInvalid");
 
         var bucketOld = new AtomicReference<String>(null);

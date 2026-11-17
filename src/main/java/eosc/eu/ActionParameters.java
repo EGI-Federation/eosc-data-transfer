@@ -18,6 +18,7 @@ public class ActionParameters {
     public TransferService ts;
     public StorageService ss;
     public String destination;  // Destination key
+    public String authType;     // See Transfer.AuthorizeWith
     public Response response;
 
 
@@ -44,6 +45,7 @@ public class ActionParameters {
         this.ts = ap.ts;
         this.ss = ap.ss;
         this.destination = ap.destination;
+        this.authType = ap.authType;
         this.response = ap.response;
     }
 

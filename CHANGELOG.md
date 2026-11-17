@@ -5,9 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.106]
+## [1.1.107]
 
 - Added endpoint to estimate cost of transfer in credits
+- Interfaces TransferService and StorageService are now initialized with advanced Vertx client
+- Implemented WeDAV storage support
 - Upgrade to latest Quarkus version
 
 ## [1.1.105]
@@ -44,9 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed exception while parsing byte array returned by REST client calls
 - Added server in Swagger UI to access locally run API
 - Corrected deprecated configuration params
-
-## [1.1.92]
-
 - Upgrade to latest Quarkus version
 
 ## [1.1.90]

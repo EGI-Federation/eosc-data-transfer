@@ -3,6 +3,7 @@ package eosc.eu;
 import io.quarkus.oidc.client.OidcClient;
 import io.quarkus.oidc.client.runtime.TokensHelper;
 import io.quarkus.oidc.common.runtime.OidcConstants;
+import io.vertx.mutiny.core.Vertx;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.jboss.logging.Logger;
@@ -57,7 +58,9 @@ public class AccountingCollector {
 
     @Inject
     OidcClient client;
-    TokensHelper tokenHelper;
+    private TokensHelper tokenHelper;
+
+    private Vertx vertx;
 
     private static AccountingService accounting;
 
@@ -70,9 +73,10 @@ public class AccountingCollector {
      * Construct with a data source
      * @param ds is the injected Redis data source
      */
-    public AccountingCollector(ReactiveRedisDataSource ds) {
+    public AccountingCollector(ReactiveRedisDataSource ds, Vertx vertx) {
         this.tokenHelper = new TokensHelper();
         this.stream = null != ds ? ds.stream(String.class) : null;
+        this.vertx = vertx;
 
         // Get a unique consumer name
         this.instance = DynamicConfiguration.getInstanceName();
@@ -125,7 +129,7 @@ public class AccountingCollector {
             return;
         }
 
-        // Subscribe to job stream in Redis
+        // Subscribe to job stream in Redis with a new client
         this.consumer = this.stream.xgroupCreate(JOBSTORE_STREAM, GROUP, "0-0")
 
             .onFailure().recoverWithNull()
@@ -143,18 +147,23 @@ public class AccountingCollector {
     void onStop() {
         MDC.put("consumerId", this.instance);
         log.info("Accounting collector is stopping...");
-        this.consumer.cancel();
-        log.info("Canceled stream listener");
+
+        // Remove consumer from consumer group
         this.stream.xgroupDelConsumer(JOBSTORE_STREAM, GROUP, this.instance)
 
+            .onFailure().recoverWithItem(e -> {
+                log.errorf("Cannot remove consumer from consumer group (%s)", e.getMessage());
+                return -1L;
+            })
             .subscribe()
             .with(unack -> {
-                MDC.put("consumerId", this.instance);
                 if(unack > 0)
                     log.infof("Accounting collector stopped with %d unacknowledged messages", unack);
                 else
                     log.infof("Accounting collector stopped");
             });
+
+        this.consumer.cancel();
     }
 
     /***
@@ -271,7 +280,7 @@ public class AccountingCollector {
             return Uni.createFrom().failure(new TransferServiceException("destInvalid"));
         }
 
-        final var ts = DataTransferBase.getTransferService(transfer, destinationConfig.serviceId(), log, false);
+        final var ts = DataTransferBase.getTransferService(transfer, destinationConfig.serviceId(), vertx, log, false);
         if(null == ts)
             // Could not the transfer engine used for this destination
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));

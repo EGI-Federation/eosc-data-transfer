@@ -84,6 +84,8 @@ eosc:
 quarkus:
   application:
     name: data-transfer
+  devservices:
+    enabled: false
   oidc:
     auth-server-url: https://${eosc.service.checkin.server}/auth/realms/egi
     introspection-path: /protocol/openid-connect/token/introspect

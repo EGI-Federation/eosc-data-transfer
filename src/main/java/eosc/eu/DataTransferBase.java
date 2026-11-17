@@ -1,6 +1,7 @@
 package eosc.eu;
 
 import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.core.Vertx;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 
@@ -24,13 +25,16 @@ public class DataTransferBase {
     public static final String HEADER_STORAGE_AUTH = "Authorization-Storage";
     public static final String DESTINATION_STORAGE = "The destination of the transfer";
     public static final String FILE_INFO_FOR = "Selects for which files to return transfer status";
-    public static final String STORAGE_AUTH = "Optional credentials for the destination storage, " +
-                                              "Base-64 encoded 'user:password' or 'access-key:secret-key'";
+    public static final String STORAGE_AUTH = "Optional credentials for the destination storage, access token or " +
+                                               "Base-64 encoded 'user:password' or 'access-key:secret-key'";
 
     private final Logger log;
 
     @Inject
     protected TransferConfig config;
+
+    @Inject
+    protected Vertx vertx;
 
 
     /***
@@ -73,11 +77,12 @@ public class DataTransferBase {
      * Mapping is in the configuration file under `eosc.transfer.destination`
      * @param config is a configuration object mapping `eosc.transfer`
      * @param tsID is the ID of the transfer engine to use
+     * @param vertx Vertx service in case you need a custom client
      * @param log is the logger to use
      * @param logInit is true to log the success of the initializing the picked transfer engine
      * @return an initialized TransferService for the specified destination, or null on error
      */
-    public static TransferService getTransferService(TransferConfig config, String tsID,
+    public static TransferService getTransferService(TransferConfig config, String tsID, Vertx vertx,
                                                      Logger log, boolean logInit) {
 
         MDC.put("serviceId", tsID);
@@ -94,7 +99,7 @@ public class DataTransferBase {
         try {
             var classType = Class.forName(serviceConfig.className());
             ts = (TransferService)classType.getDeclaredConstructor().newInstance();
-            if(ts.initService(serviceConfig)) {
+            if(ts.initService(serviceConfig, vertx)) {
                 if(logInit) {
                     var tsName = ts.getServiceName();
                     MDC.put("serviceName", tsName);
@@ -134,7 +139,7 @@ public class DataTransferBase {
                     return Uni.createFrom().failure(new TransferServiceException("destInvalid"));
 
                 var params = new ActionParameters(destination);
-                params.ts = getTransferService(config, destinationConfig.serviceId(), log, true);
+                params.ts = getTransferService(config, destinationConfig.serviceId(), this.vertx, log, true);
                 if(null == params.ts)
                     // Could not get REST client
                     return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
@@ -153,12 +158,14 @@ public class DataTransferBase {
      * @param storageElementUrl is the fully qualified URL to a storage element (file or folder), which
      *                          is used to create a REST client for this particular storage system, or
      *                          null to not attempt creation of a REST client
-     * @param auth Optional credentials for the storage system (if it uses access tokens)
-     * @param storageAuth Optional credentials for the storage system, Base-64 encoded "key:value"
+     * @param auth Default credentials for the storage system, if it uses access tokens and
+     *             parameter `storageAuth` is not provided
+     * @param storageAuth Optional credentials for the destination storage, either access token or
+     *                    Base-64 encoded "key:value"
      * @return ActionParameters instance on success, with fields "destination" and "ss" filled in
      */
     protected Uni<ActionParameters> getStorageSystem(ActionParameters params, String storageElementUrl,
-                                       String auth, String storageAuth) {
+                                                     String auth, String storageAuth) {
 
         log.debug("Selecting storage system");
 
@@ -199,12 +206,14 @@ public class DataTransferBase {
 
                         // If we got a URL to a storage element, create a client for that particular storage system
                         if(null != storageElementUrl) {
-                            var authType = storageConfig.authType();
-                            var authorization = (null != authType &&
-                                    authType.equalsIgnoreCase(Transfer.AuthorizeWith.keys.toString())) ?
-                                    storageAuth : auth;
+                            params.authType = storageConfig.authType();
+                            String authorization = storageAuth;
+                            if((null == authorization || authorization.isBlank()) &&
+                               null != params.authType &&
+                               params.authType.equalsIgnoreCase(Transfer.AuthorizeWith.keys.toString()))
+                                authorization = auth;
 
-                            if(params.ss.initService(storageConfig, storageElementUrl, authorization)) {
+                            if(params.ss.initService(storageConfig, this.vertx, storageElementUrl, authorization)) {
                                 var ssName = params.ss.getServiceName();
                                 MDC.put("storageName", ssName);
                                 log.infof("Storage elements handled by %s", ssName);
@@ -232,8 +241,10 @@ public class DataTransferBase {
      * @param storageElementUrl is the fully qualified URL to a storage element (file or folder), which
      *                          is used to create a REST client for this particular storage system, or
      *                          null to not attempt creation of a REST client
-     * @param auth Optional credentials for the storage system (if it uses access tokens)
-     * @param storageAuth Optional credentials for the storage system, Base-64 encoded "key:value"
+     * @param auth Default credentials for the storage system, if it uses access tokens and
+     *             parameter `storageAuth` is not provided
+     * @param storageAuth Optional credentials for the destination storage, either access token or
+     *                    Base-64 encoded "key:value"
      * @return ActionParameters instance on success, with fields "destination" and "ss" filled in, but "ss"
      *         will be null if storage element manipulation is not supported on the indicated destination
      */
@@ -248,7 +259,8 @@ public class DataTransferBase {
      * Embed credentials in storage element URL
      * @param destination is the type of destination storage.
      * @param seUri is the URI to the storage element.
-     * @param storageAuth contains the Base64-encoded 'username:password'
+     * @param storageAuth Optional credentials for the destination storage, either access token or
+     *                    Base-64 encoded "key:value"
      * @return Updated URL with embedded credentials, null on error
      */
     protected String applyStorageCredentials(String destination, String seUri, String storageAuth) {

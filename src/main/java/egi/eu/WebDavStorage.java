@@ -1,36 +1,43 @@
 package egi.eu;
 
-import io.minio.errors.*;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.mutiny.core.Vertx;
+import io.vertx.mutiny.core.buffer.Buffer;
+import io.vertx.mutiny.ext.web.client.WebClient;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
+import static org.jboss.resteasy.reactive.RestResponse.StatusCode.*;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.PropertyException;
+import jakarta.ws.rs.core.HttpHeaders;
 
-import java.io.IOException;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.minio.*;
+import io.minio.errors.*;
 import io.minio.messages.Item;
-import io.minio.messages.Bucket;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 
-import eosc.eu.DataStorageCredentials;
 import eosc.eu.StorageService;
 import eosc.eu.TransferServiceException;
 import eosc.eu.TransferConfig.StorageSystemConfig;
 import eosc.eu.model.*;
 
+import egi.webdav.model.*;
 import egi.s3.model.*;
 
 
@@ -43,35 +50,44 @@ public class WebDavStorage implements StorageService {
 
     private String name;
     private String baseUri;
-    private MinioAsyncClient minio;
+    private String authType;
+    private WebClient client;
     private int timeout;
 
+    private MinioAsyncClient minio;
 
     /***
-     * Constructor
+     * Default constructor
      */
     public WebDavStorage() {}
 
     /***
      * Initialize the client for the WebDAV system.
      * @param serviceConfig Configuration loaded from the config file
+     * @param vertx Vertx service in case you need custom clients
      * @param storageElementUrl the URL to a folder or file on the target storage system
-     * @param storageAuth Credentials for the storage system, Base-64 encoded "accesskey:secretkey"
+     * @param storageAuth Credentials for the storage system, either an access token
+     *                    or Base-64 encoded "key:value", according to the configuration.
+     *                    Check parameter config.authType to determine which one is it.
      * @return true on success
      */
     @PostConstruct
-    public boolean initService(StorageSystemConfig serviceConfig, String storageElementUrl, String storageAuth) {
+    public boolean initService(StorageSystemConfig serviceConfig, Vertx vertx, String storageElementUrl,
+                               String storageAuth) {
 
-        if(null != minio)
+        if(null != this.client)
             return true;
+
+        if(null == vertx) {
+            log.error("Vertx has not been initialized");
+            return false;
+        }
 
         this.name = serviceConfig.name();
         this.timeout = serviceConfig.timeout();
+        this.authType = serviceConfig.authType();
 
-        MDC.put("storageElement", storageElementUrl);
-        log.debug("Obtaining client for S3 compatible object storage");
-
-        // Get the base URL for the S3 storage system
+        // Get the base URL for the storage system
         try {
             URI uriStorageSystem = new URI(storageElementUrl);
             this.baseUri = uriStorageSystem.getScheme() + "://" + uriStorageSystem.getAuthority();
@@ -80,21 +96,23 @@ public class WebDavStorage implements StorageService {
             return false;
         }
 
-        try {
-            // Create the WebDAV client for the storage system
-            //var userInfo = new DataStorageCredentials(storageAuth);
-            minio = MinioAsyncClient.builder()
-                        .endpoint(this.baseUri)
-                        //.credentials(userInfo.getAccessKey(), userInfo.getSecretKey())
-                        .build();
+        // Create the client
+        this.client = WebClient.create(vertx);
 
-            return true;
-        }
-        catch(IllegalArgumentException iae) {
-            log.error(iae.getMessage());
-        }
+        return null != this.client;
+    }
 
-        return false;
+    /**
+     * Return value to send in Authorization HTTP header
+     * @param storageAuth Credentials for the storage system, access token or Base-64 encoded "key:value"
+     * @return Authorization HTTP header value
+     */
+    private String getStorageAuthHeader(String storageAuth) {
+        if(null != this.authType && this.authType.equalsIgnoreCase(Transfer.AuthorizeWith.keys.toString()))
+            // Default to access tokens as credentials
+            return "Bearer " + storageAuth;
+
+        return "Basic " + storageAuth;
     }
 
     /***
@@ -108,17 +126,6 @@ public class WebDavStorage implements StorageService {
      * @return Base URL.
      */
     public String getServiceBaseUrl() { return this.baseUri; }
-
-    /**
-     * Retrieve information about current user.
-     * @return User information.
-     */
-    public Uni<eosc.eu.model.UserInfo> getUserInfo() {
-        if(null == minio)
-            return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
-
-        return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
-    }
 
     /***
      * Extract the bucket and object name from an URI.
@@ -158,16 +165,15 @@ public class WebDavStorage implements StorageService {
 
     /**
      * List all buckets or all objects in a bucket.
-     * @param tsAuth Optional access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
+     * @param storageAuth Credentials for the storage system, access token or Base-64 encoded "key:value"
      * @param folderUri The link to the bucket to list content of. If the URI has no path (or just /),
      *                  it will list all the buckets. If the path contains the bucket (with or without
      *                  a terminating /), it will return the objects and virtual folders directly in the
      *                  bucket. To list content of virtual folders, the folderUri must end in a slash (/).
      * @return List of folder content.
      */
-    public Uni<StorageContent> listFolderContent(String tsAuth, String storageAuth, String folderUri) {
-        if(null == minio)
+    public Uni<StorageContent> listFolderContent(String storageAuth, String folderUri) {
+        if(null == this.client)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
         var bucket = new AtomicReference<String>(null);
@@ -178,99 +184,41 @@ public class WebDavStorage implements StorageService {
                 .after(Duration.ofMillis(this.timeout))
                 .failWith(new TransferServiceException("listFolderContentTimeout"))
             .chain(unused -> {
-                // Split the storage element URI into bucket and object names
-                return getBucketObjectFromUri(folderUri);
-            })
-            .chain(buckobj -> {
-                // Got the URI parsed
-                var bucketName = buckobj.getItem1();
-                var objectName = buckobj.getItem2();
-                if(null != objectName && '/' != objectName.charAt(objectName.length() - 1))
-                    // This is an object, not a bucket, bail
-                    return Uni.createFrom().failure(new TransferServiceException("notFolder"));
-
-                if(null != bucketName && !bucketName.isBlank())
-                    bucket.set(bucketName);
-                else
-                    // If no bucket name, then we need to list the buckets
-                    return Uni.createFrom().nullItem();
-
-                // Prepare to list objects
-                var listArgs = ListObjectsArgs.builder().bucket(bucketName);
-                if(null != objectName && !objectName.isBlank())
-                    listArgs.prefix(objectName);
-
-                return Uni.createFrom().item(listArgs.build());
-            })
-            .chain(listArgs -> {
-                if(null != listArgs) {
-                    // If we have arguments for listing objects, skip this step
-                    loa.set(listArgs);
-                    return Uni.createFrom().nullItem();
-                }
-
-                CompletableFuture<List<Bucket>> buckets = null;
+                // Prepare the XML payload for the request
+                JAXBContext context = null;
+                Marshaller marshaller = null;
                 try {
-                    // List buckets
-                    buckets = minio.listBuckets();
-                } catch(Exception e) {
-                    var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("listBuckets", msg));
+                    context = JAXBContext.newInstance(PropFind.class);
+                    marshaller = context.createMarshaller();
+                } catch(JAXBException e) {
+                    throw new RuntimeException(e);
                 }
 
-                return Uni.createFrom().completionStage(buckets);
+                try {
+                    marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true); // Enable pretty printing
+                } catch(PropertyException e) {
+                    throw new RuntimeException(e);
+                }
+
+                PropFind pf = new PropFind();
+                StringWriter writer = new StringWriter();
+                try {
+                    marshaller.marshal(pf, writer);
+                } catch(JAXBException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // Make a PROPFIND request
+                return this.client
+                        .requestAbs(HttpMethod.PROPFIND, folderUri)
+                        .putHeader(HttpHeaders.AUTHORIZATION, getStorageAuthHeader(storageAuth))
+                        .sendBuffer(Buffer.buffer(writer.toString()));
             })
-            .chain(bucketList -> {
-                if(null != bucketList)
-                    // If we got buckets, skip this step
-                    return Uni.createFrom().item(Tuple2.of(bucketList, null));
+            .chain(response -> {
+                // Got a list of objects
 
-                // List objects
-                var listArgs = loa.get();
-                var objects = minio.listObjects(listArgs);
-                return Uni.createFrom().item(Tuple2.of(null, objects));
-            })
-            .chain(contentLists -> {
-                // When we get here, we have either a list of buckets or a list of objects
-                var buckets = (List<Bucket>)contentLists.getItem1();
-                var objects = (Iterable<Result<Item>>)contentLists.getItem2();
 
-                var content = new ArrayList<ObjectInfo>();
-                String bucketUri = null;
-
-                if(null != buckets) {
-                    // Got list of buckets
-                    bucketUri = this.baseUri;
-                    for(var b : buckets) {
-                        var objInfo = new ObjectInfo(null, b);
-                        content.add(objInfo);
-                    }
-                }
-                else if(null != objects) {
-                    // Got list of objects
-                    var bucketName = bucket.get();
-                    bucketUri = this.baseUri + "/" + bucketName;
-                    for(var object : objects)
-                        try {
-                            var item = object.get();
-                            var objInfo = new ObjectInfo(bucketUri, item);
-                            objInfo.bucket = bucketName;
-                            content.add(objInfo);
-                        }
-                        catch(Exception e) {
-                            var code = 0;
-                            var type = e.getClass();
-                            if(type.equals(ErrorResponseException.class))
-                                code = ((ErrorResponseException)e).response().code();
-                            else if(type.equals(ServerException.class))
-                                code = ((ServerException)e).statusCode();
-                            return Uni.createFrom().failure(new TransferServiceException("listObjects", code,
-                                                                        e.getMessage().replaceAll("\\.$", "")));
-                        }
-                }
-
-                MDC.put("seCount", content.size());
-                return Uni.createFrom().item(new StorageContent(bucketUri, content));
+                return Uni.createFrom().item(new StorageContent());
             })
             .onFailure().invoke(e -> {
                 log.error(e);
@@ -280,13 +228,12 @@ public class WebDavStorage implements StorageService {
     }
 
     /**
-     * Get the details of an object. Fails if called for a bucket.
-     * @param tsAuth Optional access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
+     * Get the details of an object.
+     * @param storageAuth Credentials for the storage system, access token or Base-64 encoded "key:value"
      * @param seUri The link to the file or folder to det details of.
      * @return Details about the object.
      */
-    public Uni<StorageElement> getStorageElementInfo(String tsAuth, String storageAuth, String seUri) {
+    public Uni<StorageElement> getStorageElementInfo(String storageAuth, String seUri) {
         if(null == minio || null == this.baseUri)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
@@ -321,7 +268,7 @@ public class WebDavStorage implements StorageService {
                 }
                 catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("statObject", msg));
+                    return Uni.createFrom().failure(new TransferServiceException("statObject", INTERNAL_SERVER_ERROR, msg));
                 }
                 return Uni.createFrom().completionStage(stats);
             })
@@ -339,12 +286,11 @@ public class WebDavStorage implements StorageService {
 
     /**
      * Create new bucket.
-     * @param tsAuth Optional access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
+     * @param storageAuth Credentials for the storage system, access token or Base-64 encoded "key:value"
      * @param folderUri The link to the bucket to create. The bucket name must be unique.
      * @return Confirmation message.
      */
-    public Uni<String> createFolder(String tsAUth, String storageAuth, String folderUri) {
+    public Uni<String> createFolder(String storageAuth, String folderUri) {
         if(null == minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
@@ -385,7 +331,7 @@ public class WebDavStorage implements StorageService {
                 }
                 catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("makeBucket", msg));
+                    return Uni.createFrom().failure(new TransferServiceException("makeBucket", INTERNAL_SERVER_ERROR, msg));
                 }
                 return Uni.createFrom().completionStage(nope);
             })
@@ -403,12 +349,11 @@ public class WebDavStorage implements StorageService {
     /**
      * Delete existing bucket or virtual folder. If deleting a bucket, the bucket must be empty.
      * If deleting a virtual folder, it will delete all objects in that virtual folder (and deeper).
-     * @param tsAuth Optional access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
+     * @param storageAuth Credentials for the storage system, access token or Base-64 encoded "key:value"
      * @param folderUri The link to the bucket or virtual folder to delete.
      * @return Confirmation message.
      */
-    public Uni<String> deleteFolder(String tsAuth, String storageAuth, String folderUri) {
+    public Uni<String> deleteFolder(String storageAuth, String folderUri) {
         if(null == minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
@@ -468,7 +413,7 @@ public class WebDavStorage implements StorageService {
                             objects.add(new DeleteObject(objInfo.getName()));
                         }
                         catch(Exception e) {
-                            var code = 0;
+                            var code = INTERNAL_SERVER_ERROR;
                             var type = e.getClass();
                             if(type.equals(ErrorResponseException.class))
                                 code = ((ErrorResponseException)e).response().code();
@@ -512,7 +457,7 @@ public class WebDavStorage implements StorageService {
                             var msg = e.message();
                             details.add(Tuple2.of(code, msg));
                         } catch(Exception e) {
-                            var code = 0;
+                            var code = INTERNAL_SERVER_ERROR;
                             var type = e.getClass();
                             if(type.equals(ErrorResponseException.class))
                                 code = ((ErrorResponseException)e).response().code();
@@ -532,7 +477,7 @@ public class WebDavStorage implements StorageService {
                     else {
                         MDC.put("errorCount", details.size());
                         log.infof("Failed to delete %d prefixed objects", objectCount.get());
-                        return Uni.createFrom().failure(new TransferServiceException("deleteError", details));
+                        return Uni.createFrom().failure(new TransferServiceException("deleteError", INTERNAL_SERVER_ERROR, details));
                     }
 
                     return Uni.createFrom().nullItem();
@@ -554,7 +499,7 @@ public class WebDavStorage implements StorageService {
 
                     } catch(Exception e) {
                         var msg = e.getMessage().replaceAll("\\.$", "");
-                        return Uni.createFrom().failure(new TransferServiceException("removeBucket", msg));
+                        return Uni.createFrom().failure(new TransferServiceException("removeBucket", INTERNAL_SERVER_ERROR, msg));
                     }
                     return Uni.createFrom().completionStage(deleted);
                 }
@@ -575,12 +520,11 @@ public class WebDavStorage implements StorageService {
 
     /**
      * Delete existing object.
-     * @param tsAuth Optional access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
+     * @param storageAuth Credentials for the storage system, access token or Base-64 encoded "key:value"
      * @param fileUri The link to the object to delete.
      * @return Confirmation message.
      */
-    public Uni<String> deleteFile(String tsAuth, String storageAuth, String fileUri) {
+    public Uni<String> deleteFile(String storageAuth, String fileUri) {
         if(null == minio)
             return Uni.createFrom().failure(new TransferServiceException("configInvalid"));
 
@@ -615,7 +559,7 @@ public class WebDavStorage implements StorageService {
                 }
                 catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("removeObject", msg));
+                    return Uni.createFrom().failure(new TransferServiceException("removeObject", INTERNAL_SERVER_ERROR, msg));
                 }
                 return Uni.createFrom().completionStage(nope);
             })
@@ -634,13 +578,12 @@ public class WebDavStorage implements StorageService {
      * Rename an object. Attempts to rename a bucket or a virtual folder will fail.
      * Note: Rename is not supported even for objects. Instead, the object is copied to
      *       the new location with the new name, then the old one will be deleted.
-     * @param tsAuth Optional access token needed to call the service.
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value"
+     * @param storageAuth Credentials for the storage system, access token or Base-64 encoded "key:value"
      * @param seOld The link to the storage element to rename.
      * @param seNew The link to the new name/location of the storage element.
      * @return Confirmation message.
      */
-    public Uni<String> renameStorageElement(String tsAuth, String storageAuth, String seOld, String seNew) {
+    public Uni<String> renameStorageElement(String storageAuth, String seOld, String seNew) {
         if(null == minio)
             throw new TransferServiceException("configInvalid");
 
@@ -736,7 +679,7 @@ public class WebDavStorage implements StorageService {
                     removed = minio.removeObject(removeArgs);
                 } catch(Exception e) {
                     var msg = e.getMessage().replaceAll("\\.$", "");
-                    return Uni.createFrom().failure(new TransferServiceException("removeObject", msg));
+                    return Uni.createFrom().failure(new TransferServiceException("removeObject", INTERNAL_SERVER_ERROR, msg));
                 }
                 return Uni.createFrom().completionStage(removed);
             })

@@ -208,7 +208,7 @@ public class DataStorage extends DataTransferBase {
                     storageProtocol.set(storageConfig.protocol());
                 }
 
-                return getStorageSystem(destination, null, null, null);
+                return getStorageSystem(destination, "https://a.b.org/folder/file", "abc", "YTpi");
             })
             .chain(params -> {
                 // Use the saved transfer service instance
@@ -243,7 +243,8 @@ public class DataStorage extends DataTransferBase {
      * @param auth The access token needed to call the service.
      * @param folderUri The link to the folder to list content of.
      * @param destination The type of destination storage (selects transfer service to call).
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
+     * @param storageAuth Optional credentials for the destination storage, either access token or
+     *                    Base-64 encoded "key:value"
      * @return API Response, wraps an ActionSuccess(StorageContent) or an ActionError entity
      */
     @GET
@@ -324,8 +325,15 @@ public class DataStorage extends DataTransferBase {
                 if(null == params || null == params.ss)
                     return Uni.createFrom().failure(new TransferServiceException("seNotSupported"));
 
+                // Pick credentials to use
+                String authorization = storageAuth;
+                if((null == authorization || authorization.isBlank()) &&
+                   null != params.authType &&
+                   params.authType.equalsIgnoreCase(Transfer.AuthorizeWith.keys.toString()))
+                    authorization = auth;
+
                 // List folder content
-                return params.ss.listFolderContent(auth, storageAuth, folderUriWithAuth);
+                return params.ss.listFolderContent(authorization, folderUriWithAuth);
             })
             .chain(content -> {
                 // Got folder content, success
@@ -347,7 +355,8 @@ public class DataStorage extends DataTransferBase {
      * @param auth The access token needed to call the service.
      * @param seUri The link to the file to get details of.
      * @param destination The type of destination storage (selects transfer service to call).
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
+     * @param storageAuth Optional credentials for the destination storage, either access token or
+     *                    Base-64 encoded "key:value"
      * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
      */
     @GET
@@ -425,8 +434,15 @@ public class DataStorage extends DataTransferBase {
                 if(null == params || null == params.ss)
                     return Uni.createFrom().failure(new TransferServiceException("seNotSupported"));
 
+                // Pick credentials to use
+                String authorization = storageAuth;
+                if((null == authorization || authorization.isBlank()) &&
+                   null != params.authType &&
+                   params.authType.equalsIgnoreCase(Transfer.AuthorizeWith.keys.toString()))
+                    authorization = auth;
+
                 // Get storage element info
-                return params.ss.getStorageElementInfo(auth, storageAuth, seUriWithAuth);
+                return params.ss.getStorageElementInfo(authorization, seUriWithAuth);
             })
             .chain(seinfo -> {
                 // Got storage element info, success
@@ -448,7 +464,8 @@ public class DataStorage extends DataTransferBase {
      * @param auth The access token needed to call the service.
      * @param seUri The link to the folder to get details of.
      * @param destination The type of destination storage (selects transfer service to call).
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
+     * @param storageAuth Optional credentials for the destination storage, either access token or
+     *                    Base-64 encoded "key:value"
      * @return API Response, wraps an ActionSuccess(StorageElement) or an ActionError entity
      */
     @GET
@@ -500,7 +517,8 @@ public class DataStorage extends DataTransferBase {
      * @param auth The access token needed to call the service.
      * @param seUri The link to the folder to create.
      * @param destination The type of destination storage (selects transfer service to call).
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
+     * @param storageAuth Optional credentials for the destination storage, either access token or
+     *                    Base-64 encoded "key:value"
      * @return API Response, wraps an ActionError entity in case of error
      */
     @POST
@@ -575,8 +593,15 @@ public class DataStorage extends DataTransferBase {
                 if(null == params || null == params.ss)
                     return Uni.createFrom().failure(new TransferServiceException("seNotSupported"));
 
+                // Pick credentials to use
+                String authorization = storageAuth;
+                if((null == authorization || authorization.isBlank()) &&
+                   null != params.authType &&
+                   params.authType.equalsIgnoreCase(Transfer.AuthorizeWith.keys.toString()))
+                    authorization = auth;
+
                 // Create folder
-                return params.ss.createFolder(auth, storageAuth, seUriWithAuth);
+                return params.ss.createFolder(authorization, seUriWithAuth);
             })
             .chain(created -> {
                 // Folder got created, success
@@ -598,7 +623,8 @@ public class DataStorage extends DataTransferBase {
      * @param auth The access token needed to call the service.
      * @param seUri The link to the folder to delete.
      * @param destination The type of destination storage (selects transfer service to call).
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
+     * @param storageAuth Optional credentials for the destination storage, either access token or
+     *                    Base-64 encoded "key:value"
      * @return API Response, wraps an ActionError entity in case of error
      */
     @DELETE
@@ -677,8 +703,16 @@ public class DataStorage extends DataTransferBase {
                 if(null == params || null == params.ss)
                     return Uni.createFrom().failure(new TransferServiceException("seNotSupported"));
 
+                // Pick credentials to use
+                String authorization = storageAuth;
+                if((null == authorization || authorization.isBlank()) &&
+                   null != params.authType &&
+                   params.authType.equalsIgnoreCase(Transfer.AuthorizeWith.keys.toString()))
+                    authorization = auth;
+
+
                 // Delete folder
-                return params.ss.deleteFolder(auth, storageAuth, seUriWithAuth);
+                return params.ss.deleteFolder(authorization, seUriWithAuth);
             })
             .chain(deleted -> {
                 // Folder got deleted, success
@@ -700,7 +734,8 @@ public class DataStorage extends DataTransferBase {
      * @param auth The access token needed to call the service.
      * @param seUri The link to the file to delete.
      * @param destination The type of destination storage (selects transfer service to call).
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
+     * @param storageAuth Optional credentials for the destination storage, either access token or
+     *                    Base-64 encoded "key:value"
      * @return API Response, wraps an ActionError entity in case of error
      */
     @DELETE
@@ -779,8 +814,15 @@ public class DataStorage extends DataTransferBase {
                 if(null == params || null == params.ss)
                     return Uni.createFrom().failure(new TransferServiceException("seNotSupported"));
 
+                // Pick credentials to use
+                String authorization = storageAuth;
+                if((null == authorization || authorization.isBlank()) &&
+                   null != params.authType &&
+                   params.authType.equalsIgnoreCase(Transfer.AuthorizeWith.keys.toString()))
+                    authorization = auth;
+
                 // Delete file
-                return params.ss.deleteFile(auth, storageAuth, seUriWithAuth);
+                return params.ss.deleteFile(authorization, seUriWithAuth);
             })
             .chain(deleted -> {
                 // File got deleted, success
@@ -802,7 +844,8 @@ public class DataStorage extends DataTransferBase {
      * @param auth The access token needed to call the service.
      * @param operation The links to the old and new storage element URLs.
      * @param destination The type of destination storage (selects transfer service to call).
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
+     * @param storageAuth Optional credentials for the destination storage, either access token or
+     *                    Base-64 encoded "key:value"
      * @return API Response, wraps an ActionError entity in case of error
      */
     @PUT
@@ -886,8 +929,15 @@ public class DataStorage extends DataTransferBase {
                 if(null == params || null == params.ss)
                     return Uni.createFrom().failure(new TransferServiceException("seNotSupported"));
 
+                // Pick credentials to use
+                String authorization = storageAuth;
+                if((null == authorization || authorization.isBlank()) &&
+                   null != params.authType &&
+                   params.authType.equalsIgnoreCase(Transfer.AuthorizeWith.keys.toString()))
+                    authorization = auth;
+
                 // Rename storage element
-                return params.ss.renameStorageElement(auth, storageAuth, seUriOldWithAuth, seUriNewWithAuth);
+                return params.ss.renameStorageElement(authorization, seUriOldWithAuth, seUriNewWithAuth);
             })
             .chain(renamed -> {
                 // Storage element got renamed, success
@@ -910,7 +960,8 @@ public class DataStorage extends DataTransferBase {
      * @param auth The access token needed to call the service.
      * @param operation The links to the old and new storage element URLs.
      * @param destination The type of destination storage (selects transfer service to call).
-     * @param storageAuth Optional credentials for the destination storage, Base-64 encoded "key:value".
+     * @param storageAuth Optional credentials for the destination storage, either access token or
+     *                    Base-64 encoded "key:value"
      * @return API Response, wraps an ActionError entity in case of error
      */
     @PUT

@@ -77,7 +77,7 @@ services:
 
   # State store (transfer jobs)
   redis:
-    image: redis:8.6.1-alpine
+    image: redis:8-alpine
     container_name: redis
     command: redis-server /etc/redis/redis.conf
     volumes:
@@ -114,7 +114,7 @@ services:
 
   # Loki (logs)
   loki:
-    image: grafana/loki:3.6
+    image: grafana/loki:3
     container_name: loki
     volumes:
       - loki:/loki
@@ -129,7 +129,7 @@ services:
 
   # Jaeger (traces)
   jaeger:
-    image: cr.jaegertracing.io/jaegertracing/jaeger:2.15.0
+    image: cr.jaegertracing.io/jaegertracing/jaeger:latest
     container_name: jaeger
     command:
       - "--config"
@@ -152,7 +152,7 @@ services:
 
   # Prometheus (metrics)
   prometheus:
-    image: prom/prometheus:v3.9.1
+    image: prom/prometheus:v3
     container_name: prometheus
     command:
       - --config.file=/etc/prometheus/prometheus-config.yaml
@@ -171,7 +171,7 @@ services:
 
   # Grafana (dashboard)
   grafana:
-    image: grafana/grafana:12.3.2
+    image: grafana/grafana:13.3.1
     container_name: grafana
     deploy:
       resources:

@@ -1,4 +1,4 @@
-FROM nginx:1.23.0
+FROM nginx
 
 MAINTAINER Levente Farkas (levente.farkas@egi.eu)
 

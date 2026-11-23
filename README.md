@@ -7,7 +7,7 @@
 ![GitHub issues](https://img.shields.io/github/issues/EGI-Federation/eosc-data-transfer?label=Issues)
 ![GitHub issues labeled bugs](https://img.shields.io/github/issues-search/EGI-Federation/eosc-data-transfer?label=Bugs&color=red&query=is%3Aopen%20label%3Abug)
 
-The [European Open Science Cloud]([https://eosc-portal.eu](https://open-science-cloud.ec.europa.eu/)) (EOSC) gives European
+The [European Open Science Cloud](https://open-science-cloud.ec.europa.eu/) (EOSC) gives European
 researchers access to a wide web of [FAIR data](https://en.wikipedia.org/wiki/FAIR_data)
 and science-related services. It was designed, delivered, and is contiunously improved under the
 [Horizon Europe](https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/horizon-europe_en)
